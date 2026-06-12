@@ -1,0 +1,45 @@
+name: Firmware Build & Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: PlatformIO kur
+        run: pip install platformio
+      - name: wifi_config.h olustur (Secrets'tan)
+        run: |
+          mkdir -p include
+          cat > include/wifi_config.h << CFG
+          #pragma once
+          #define WIFI_SSID     "${{ secrets.WIFI_SSID }}"
+          #define WIFI_PASS     "${{ secrets.WIFI_PASS }}"
+          #define MDNS_HOSTNAME "magpanel"
+          #define OTA_PASSWORD  "${{ secrets.OTA_PASSWORD }}"
+          #define FW_VERSION    "build-${{ github.run_number }}"
+          #define FW_BUILD      ${{ github.run_number }}
+          #define GITHUB_OTA_BASE "https://github.com/${{ github.repository }}/releases/latest/download"
+          #define GITHUB_AUTO_OTA 1
+          CFG
+      - name: Derle
+        run: pio run -e esp32-s3-devkitc-1
+      - name: Cikti hazirla
+        run: |
+          cp .pio/build/esp32-s3-devkitc-1/firmware.bin firmware.bin
+          echo "${{ github.run_number }}" > version.txt
+      - name: Release guncelle (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "MagPanel build ${{ github.run_number }}"
+          files: |
+            firmware.bin
+            version.txt
