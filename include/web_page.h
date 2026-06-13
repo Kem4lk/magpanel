@@ -118,11 +118,12 @@ function stopGif(){gifStop=true;if(gifTimer){clearTimeout(gifTimer);gifTimer=nul
 async function playGif(file){
  let buf,dec;
  try{buf=await file.arrayBuffer();dec=new ImageDecoder({data:buf,type:'image/gif'});}
- catch(e){return false;}
- try{await dec.tracks.ready;}catch(e){}        // once iz metadata'si hazir olsun (selectedTrack/frameCount dolsun)
- try{await dec.completed;}catch(e){}           // sonra tum kareler ayristirilsin
+ catch(e){addLog('DBG GIF: decoder olusturulamadi: '+e);return false;}
+ try{await dec.tracks.ready;}catch(e){addLog('DBG GIF: tracks.ready hata: '+e);}
+ try{await dec.completed;}catch(e){addLog('DBG GIF: completed hata: '+e);}
  const track=dec.tracks&&dec.tracks.selectedTrack;
  const n=track?track.frameCount:0;
+ addLog('DBG GIF: track='+(track?'var':'yok')+' frameCount='+n);
  if(!n||n<2){dec.close();return false;}
  const frames=[];                              // her kare: {onizleme, gonderim, gecikme}
  for(let i=0;i<n;i++){
@@ -154,10 +155,11 @@ async function playGif(file){
 async function loadImg(file){
  if(!file||!file.type.startsWith('image/'))return;
  stopGif();                                    // onceki animasyonu durdur
- if(file.type==='image/gif'&&'ImageDecoder'in window){
-  if(await playGif(file))return;               // animasyon basladi
- }
- const img=new Image();
+ if(file.type==='image/gif'){
+  if(!('ImageDecoder'in window)){addLog('DBG GIF: ImageDecoder yok (Safari/Firefox desteklemiyor)');}
+  else if(await playGif(file))return;
+  else addLog('DBG GIF: playGif false dondu (kare<2 veya decode hatasi)');
+ } const img=new Image();
  img.onload=()=>{const s=Math.max(80/img.width,120/img.height),
   w=img.width*s,h=img.height*s;
   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
