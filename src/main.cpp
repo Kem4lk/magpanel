@@ -296,6 +296,7 @@ static void handleIndex(AsyncWebServerRequest *r){
       if(n>maxLen) n=maxLen;
       memcpy_P(buf, INDEX_HTML + tailSrc + off, n); return n;
     });
+  res->addHeader("Cache-Control", "no-store");
   r->send(res);
 }
 
