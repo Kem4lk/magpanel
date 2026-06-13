@@ -508,14 +508,6 @@ void loop(){
     if(millis()-wifiDownSince>60000) ESP.restart();
   } else wifiDownSince=0;
 
-#if GITHUB_AUTO_OTA
-  static uint32_t lastChk=0;
-  uint32_t up=millis();
-  if(((lastChk==0 && up>30000) || (lastChk && up-lastChk>300000))
-     && WiFi.status()==WL_CONNECTED && ESP.getFreeHeap()>15000){
-    lastChk=up; checkGithubOTA();
-  }
-#endif
   if(otaNowRequested && WiFi.status()==WL_CONNECTED && !otaActive){
     otaNowRequested=false; checkGithubOTA();
   }
