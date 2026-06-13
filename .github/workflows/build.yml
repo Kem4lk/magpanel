@@ -35,6 +35,12 @@ jobs:
         run: |
           cp .pio/build/esp32-s3-devkitc-1/firmware.bin firmware.bin
           echo "${{ github.run_number }}" > version.txt
+      - name: "'latest' etiketini bu commit'e sabitle"
+        # action-gh-release mevcut etiketi tasimaz; etiketi her derlemede
+        # gercek build commit'ine sabitler (eski/yanlis commit'e kilitlenmesini onler).
+        run: |
+          git tag -f latest "${GITHUB_SHA}"
+          git push -f origin "refs/tags/latest"
       - name: Release guncelle (latest)
         uses: softprops/action-gh-release@v2
         with:
