@@ -10,6 +10,7 @@
      0x03          : temizle
    Acilista Mona gosterilir; IP seri porta yazilir; http://magpanel.local
    uzerinden gomulu test sayfasi acilir (iOS app ayni protokolu konusur). */
+#include <stdarg.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <AsyncTCP.h>
@@ -28,6 +29,38 @@
 Matrix matrix;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+
+// ---- Kablosuz log: seri + WebSocket'e ayni anda yazar, son satirlari tamponlar ----
+#define LOG_LINES 50
+#define LOG_LINE_LEN 120
+static char     logBuf[LOG_LINES][LOG_LINE_LEN];
+static uint8_t  logHead = 0;     // siradaki yazilacak slot
+static uint8_t  logCount = 0;    // dolu slot sayisi
+static void logf(const char *fmt, ...){
+  char line[LOG_LINE_LEN];
+  va_list ap; va_start(ap, fmt);
+  vsnprintf(line, sizeof(line), fmt, ap);
+  va_end(ap);
+  Serial.println(line);                                  // her zaman seri porta
+  strncpy(logBuf[logHead], line, LOG_LINE_LEN-1);
+  logBuf[logHead][LOG_LINE_LEN-1]=0;
+  logHead = (logHead+1) % LOG_LINES;
+  if(logCount < LOG_LINES) logCount++;
+  // canli izleyenlere yayinla (metin frame, "L:" onekli)
+  if(ws.count()){
+    String msg = "L:"; msg += line;
+    ws.textAll(msg);
+  }
+}
+// Yeni baglanan istemciye gecmis loglari sirayla gonder
+static void sendLogHistory(AsyncWebSocketClient *c){
+  uint8_t idx = (logHead + LOG_LINES - logCount) % LOG_LINES;
+  for(uint8_t i=0;i<logCount;i++){
+    String msg = "L:"; msg += logBuf[idx];
+    c->text(msg);
+    idx = (idx+1) % LOG_LINES;
+  }
+}
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
 static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
@@ -81,12 +114,12 @@ void drawGallery(uint8_t idx){
   memcpy(framebuf, GALLERY_DATA[idx], FRAME_BYTES);  // galeriyi framebuf'a al
   haveFrame = true;
   renderFrame();                                     // mozaik dahil ortak render
-  Serial.printf("Galeri: %s\n", GALLERY_NAMES[idx]);
+  logf("Galeri: %s", GALLERY_NAMES[idx]);
 }
 
 void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
                void *arg, uint8_t *data, size_t len){
-  if(type==WS_EVT_CONNECT){ Serial.printf("WS istemci #%u baglandi\n", client->id()); return; }
+  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendLogHistory(client); return; }
   if(type==WS_EVT_DISCONNECT){ Serial.printf("WS istemci #%u ayrildi\n", client->id()); return; }
   if(type!=WS_EVT_DATA) return;
   AwsFrameInfo *info=(AwsFrameInfo*)arg;
@@ -141,7 +174,7 @@ void handleMessage(const uint8_t *buf, size_t len){
     case 0x08:                                   // mozaik blok boyutu (1=kapali, 2..40)
       if(len>=2){
         mosaicBlock = buf[1] < 1 ? 1 : (buf[1] > 40 ? 40 : buf[1]);
-        Serial.printf("Mozaik blok: %u\n", mosaicBlock);
+        logf("Mozaik blok: %u", mosaicBlock);
         redrawCurrent();
       }
       break;
@@ -154,10 +187,9 @@ void setup(){
   esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
   // PSRAM durumu
   if(psramFound()){
-    Serial.printf("PSRAM bulundu: %u KB toplam, %u KB bos\n",
-                  ESP.getPsramSize()/1024, ESP.getFreePsram()/1024);
+    logf("PSRAM bulundu: %u KB toplam, %u KB bos", ESP.getPsramSize()/1024, ESP.getFreePsram()/1024);
   } else {
-    Serial.println("UYARI: PSRAM bulunamadi! (platformio.ini memory_type kontrol et)");
+    logf("UYARI: PSRAM bulunamadi!");
   }
   esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
   matrix.initMatrix(); delay(10);
@@ -170,11 +202,11 @@ void setup(){
   Serial.print("WiFi baglaniyor");
   for(int i=0;i<60 && WiFi.status()!=WL_CONNECTED;i++){ delay(500); Serial.print("."); }
   if(WiFi.status()==WL_CONNECTED){
-    Serial.printf("\nMagPanel %s (build %d) | IP: %s\n", FW_VERSION, FW_BUILD, WiFi.localIP().toString().c_str());
+    logf("MagPanel %s (build %d) | IP: %s", FW_VERSION, FW_BUILD, WiFi.localIP().toString().c_str());
     if(MDNS.begin(MDNS_HOSTNAME)){
       MDNS.addService("http","tcp",80);
       MDNS.addService("magpanel","tcp",80);      // iOS Bonjour kesfi icin
-      Serial.printf("mDNS: http://%s.local\n", MDNS_HOSTNAME);
+      logf("mDNS: http://%s.local", MDNS_HOSTNAME);
     }
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
@@ -216,7 +248,7 @@ void setup(){
       Serial.println("HATA: AsyncTCP gorevi baslamadi - 2sn sonra yeniden deneniyor");
       delay(2000); ESP.restart();
     }
-    Serial.println("HTTP + WS sunucu hazir");
+    logf("HTTP + WS sunucu hazir");
 
     // ---- PlatformIO OTA (espota) ----
     ArduinoOTA.setHostname(MDNS_HOSTNAME);
@@ -246,7 +278,7 @@ void checkGithubOTA(){
   http.end();
   if(remote <= FW_BUILD) return;
 
-  Serial.printf("GitHub OTA: build %d -> %d, indiriliyor...\n", FW_BUILD, remote);
+  logf("GitHub OTA: build %d -> %d, indiriliyor...", FW_BUILD, remote);
   otaActive = true;            // panel taramasi ve sunucu durur (espota ile ayni disiplin)
   ws.closeAll(); ws.enable(false); server.end();
 
@@ -261,7 +293,7 @@ void checkGithubOTA(){
       ok = Update.end(true);
     }
   }
-  Serial.println(ok ? "GitHub OTA tamam, yeniden baslatiliyor" : "GitHub OTA basarisiz");
+  logf(ok ? "GitHub OTA tamam, yeniden baslatiliyor" : "GitHub OTA basarisiz");
   delay(300); ESP.restart();   // basarisizsa da restart: sunucu kapali, temiz baslangic
 }
 
@@ -277,11 +309,8 @@ void loop(){
   static uint32_t dbg=0;
   if(millis()-dbg>5000){
     dbg=millis();
-    Serial.printf("[NET] status=%d RSSI=%d IP=%s GW=%s heap=%u minheap=%u maxblok=%u\n",
-      WiFi.status(), WiFi.RSSI(),
-      WiFi.localIP().toString().c_str(),
-      WiFi.gatewayIP().toString().c_str(),
-      ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+    logf("[NET] heap=%u min=%u blok=%u RSSI=%d",
+      ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap(), WiFi.RSSI());
   }
   if(msgReady){ handleMessage(rxbuf,(size_t)msgLen); msgReady=false; }
   static uint32_t t=0;
@@ -299,7 +328,7 @@ void loop(){
   static uint32_t lastChk=0;
   uint32_t up=millis();
   if(((lastChk==0 && up>30000) || (lastChk && up-lastChk>300000))
-     && WiFi.status()==WL_CONNECTED && ESP.getFreeHeap()>60000){
+     && WiFi.status()==WL_CONNECTED && ESP.getFreeHeap()>15000){
     lastChk=up; checkGithubOTA();
   }
 #endif
