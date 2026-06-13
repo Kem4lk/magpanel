@@ -141,20 +141,22 @@ async function playVideo(file){
  try{await vid.play();}catch(e){addLog('DBG VID: play() hatasi: '+e);URL.revokeObjectURL(url);return false;}
  addLog('DBG VID: oynatma basladi, RAF dongusu kuruluyor');
  gifStop=false;
- let frameCount=0;
+ let frameCount=0,lastSend=0;
  function step(){
   if(gifStop){vid.pause();vid.src='';URL.revokeObjectURL(url);addLog('DBG VID: durduruldu, toplam kare='+frameCount);return;}
   if(vid.readyState>=2){
    const s=Math.max(80/vid.videoWidth,120/vid.videoHeight),
     w=vid.videoWidth*s,h=vid.videoHeight*s;
    ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-   ctx.drawImage(vid,(80-w)/2,(120-h)/2,w,h);
-   const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-   for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
-   ctx.putImageData(d,0,0);
-   if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(b);
-   frameCount++;
-   if(frameCount===1||frameCount===10)addLog('DBG VID: kare gonderildi #'+frameCount+' bufAmt='+ws.bufferedAmount);
+   ctx.drawImage(vid,(80-w)/2,(120-h)/2,w,h);                 // her RAF'ta onizleme guncel
+   // ~15fps gonderim: panel ve WiFi 60fps'i kaldiramaz; fazlasi heap/banding yapar
+   const now=performance.now();
+   if(now-lastSend>=66 && ws&&ws.readyState===1&&ws.bufferedAmount<40000){
+    const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+    for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
+    ws.send(b);lastSend=now;frameCount++;
+    if(frameCount===1||frameCount===30)addLog('DBG VID: kare gonderildi #'+frameCount+' bufAmt='+ws.bufferedAmount);
+   }
   } else if(frameCount===0){addLog('DBG VID: readyState='+vid.readyState+' (bekleniyor)');}
   gifIsRaf=true;gifTimer=requestAnimationFrame(step);
  }
@@ -209,16 +211,19 @@ async function playGifFallback(file){
  catch(e){URL.revokeObjectURL(url);addLog('DBG GIF fallback: yuklenemedi: '+e);return false;}
  addLog('DBG GIF fallback: '+img.naturalWidth+'x'+img.naturalHeight+' - animasyon basladi');
  gifStop=false;
+ let lastSend=0;
  function step(){
   if(gifStop){URL.revokeObjectURL(url);return;}
   const s=Math.max(80/img.naturalWidth,120/img.naturalHeight),
    w=img.naturalWidth*s,h=img.naturalHeight*s;
   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-  ctx.drawImage(img,(80-w)/2,(120-h)/2,w,h);
-  const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-  for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
-  ctx.putImageData(d,0,0);
-  if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(b);
+  ctx.drawImage(img,(80-w)/2,(120-h)/2,w,h);                  // her RAF'ta onizleme guncel
+  const now=performance.now();                                // ~15fps gonderim sinirla
+  if(now-lastSend>=66 && ws&&ws.readyState===1&&ws.bufferedAmount<40000){
+   const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+   for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
+   ws.send(b);lastSend=now;
+  }
   gifIsRaf=true;gifTimer=requestAnimationFrame(step);
  }
  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
