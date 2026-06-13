@@ -258,6 +258,47 @@ void handleMessage(const uint8_t *buf, size_t len){
   }
 }
 
+// ---- Index sayfasi: PROGMEM'den parça parça (akitilarak) gönderilir ----
+// Eski yöntem (FPSTR ile ~9 KB'lik tek heap String ayirip replace + send) bellek
+// baskisi/parçalanma altinda yarim gönderilebiliyordu: gövde (butonlar) görünüyor
+// ama sondaki <script> bloğu kesiliyor -> JS parse hatasi -> hiçbir global tanimlanmiyor
+// -> "art is not defined", "ws is not defined" gibi inline handler hatalari.
+// Burada sayfa dogrudan flash'tan, Content-Length ile, küçük tamponlar halinde
+// akitilir (büyük heap ayrimi yok); {{VER}} yer tutucusu uçuşta degistirilir.
+static void handleIndex(AsyncWebServerRequest *r){
+  const size_t htmlLen = strlen_P(INDEX_HTML);
+  size_t phPos = htmlLen;                          // {{VER}} ofseti (bulunamazsa = htmlLen)
+  for(size_t i=0; i+7<=htmlLen; i++){
+    if(pgm_read_byte(INDEX_HTML+i)  =='{' && pgm_read_byte(INDEX_HTML+i+1)=='{' &&
+       pgm_read_byte(INDEX_HTML+i+2)=='V' && pgm_read_byte(INDEX_HTML+i+3)=='E' &&
+       pgm_read_byte(INDEX_HTML+i+4)=='R' && pgm_read_byte(INDEX_HTML+i+5)=='}' &&
+       pgm_read_byte(INDEX_HTML+i+6)=='}'){ phPos=i; break; }
+  }
+  const bool   found    = (phPos < htmlLen);
+  const size_t verLen   = found ? strlen(FW_VERSION) : 0;         // yer tutucu yoksa ekleme yapma
+  const size_t headLen  = phPos;                                  // {{VER}} öncesi
+  const size_t tailSrc  = found ? phPos+7 : htmlLen;             // {{VER}} sonrasi kaynak
+  const size_t tailLen  = htmlLen - tailSrc;
+  const size_t totalLen = headLen + verLen + tailLen;
+
+  AsyncWebServerResponse *res = r->beginResponse("text/html; charset=utf-8", totalLen,
+    [headLen,verLen,tailSrc,tailLen,totalLen](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+      if(index >= totalLen) return 0;
+      if(index < headLen){                                        // bölge 1: head (flash)
+        size_t n = headLen - index; if(n>maxLen) n=maxLen;
+        memcpy_P(buf, INDEX_HTML + index, n); return n;
+      }
+      if(index < headLen + verLen){                              // bölge 2: versiyon (RAM)
+        size_t off = index - headLen, n = verLen - off; if(n>maxLen) n=maxLen;
+        memcpy(buf, FW_VERSION + off, n); return n;
+      }
+      size_t off = index - headLen - verLen, n = tailLen - off;  // bölge 3: tail (flash)
+      if(n>maxLen) n=maxLen;
+      memcpy_P(buf, INDEX_HTML + tailSrc + off, n); return n;
+    });
+  r->send(res);
+}
+
 void setup(){
   Serial.begin(115200); delay(1000);
   esp_task_wdt_deinit();
@@ -303,11 +344,7 @@ void setup(){
     }
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
-    server.on("/",HTTP_GET,[](AsyncWebServerRequest *r){
-      String page = FPSTR(INDEX_HTML);
-      page.replace("{{VER}}", FW_VERSION);
-      r->send(200,"text/html",page);
-    });
+    server.on("/", HTTP_GET, handleIndex);   // PROGMEM'den akitilir (truncation'a karşi sağlam)
 
     // ---- Tarayicidan OTA: http://magpanel.local/update (kullanici: admin) ----
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest *r){
