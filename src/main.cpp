@@ -22,10 +22,6 @@
 #include "esp_log.h"
 #include <Update.h>
 #include <Preferences.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 #include <Matrix.h>
 #include "gallery.h"
 #include "wifi_config.h"
@@ -35,75 +31,57 @@ Matrix matrix;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// ---- BLE WiFi Provisioning ----
+// ---- AP-modu WiFi Provisioning (USB'siz kablosuz kurulum) ----
+// WiFi baglanamazsa panel 'MagPanel-Setup' adli acik bir WiFi agi yayinlar.
+// Telefon/laptop o aga baglanir, http://192.168.4.1 acar, yeni SSID+sifre girer.
+// Kimlik NVS'e kaydedilir; panel yeniden baslar ve yeni agla baglanir. App gerekmez.
 static Preferences prefs;
-#define BLE_SVC_UUID  "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define BLE_CRED_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-#define BLE_STAT_UUID "beb5483f-36e1-4688-b7f5-ea07361b26a8"
-static volatile bool     bleCredRx = false;
-static String            bleNewSsid, bleNewPass;
-static BLECharacteristic *bleStat  = nullptr;
+static volatile bool apSaved = false;
+static const char PROV_HTML[] =
+  "<!DOCTYPE html><html><head><meta charset=utf-8>"
+  "<meta name=viewport content='width=device-width,initial-scale=1'>"
+  "<title>MagPanel WiFi Kurulum</title><style>"
+  "body{font-family:sans-serif;max-width:420px;margin:32px auto;padding:0 16px}"
+  "input{width:100%;padding:11px;margin:6px 0;box-sizing:border-box;font-size:16px}"
+  "button{width:100%;padding:13px;margin-top:8px;font-size:16px;background:#06f;color:#fff;border:0;border-radius:8px}"
+  "</style></head><body><h2>MagPanel WiFi Kurulum</h2>"
+  "<form method=POST action=/save>"
+  "<label>WiFi Adi (SSID)</label><input name=ssid required>"
+  "<label>Sifre</label><input name=pass type=password>"
+  "<button type=submit>Kaydet ve Baglan</button></form></body></html>";
 
-class BLECredCB : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *c) override {
-    String v = String(c->getValue().c_str());
-    int s = v.indexOf('\n');
-    if(s > 0){
-      bleNewSsid = v.substring(0, s);
-      bleNewPass = v.substring(s + 1);
-      bleCredRx = true;
-      if(bleStat){ bleStat->setValue("connecting"); bleStat->notify(); }
-    }
-  }
-};
-
-static void runBLEProvisioning(){
-  Serial.println("WiFi basarisiz - BLE provisioning: 'MagPanel-Setup'");
-  Serial.println("nRF Connect ile baglanin, CRED karakterine 'SSID\\nSIFRE' yazin");
+static void runAPProvisioning(){
+  Serial.println("WiFi yok - AP modu: 'MagPanel-Setup' agina baglanip http://192.168.4.1 acin");
   for(int y=0;y<PANEL_PHY_RES_Y;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,0,0,60);
   matrix.update();
-  WiFi.disconnect(true); WiFi.mode(WIFI_OFF); delay(300);
 
-  BLEDevice::init("MagPanel-Setup");
-  BLEServer  *srv = BLEDevice::createServer();
-  BLEService *svc = srv->createService(BLE_SVC_UUID);
-  BLECharacteristic *cred = svc->createCharacteristic(BLE_CRED_UUID, BLECharacteristic::PROPERTY_WRITE);
-  cred->setCallbacks(new BLECredCB());
-  bleStat = svc->createCharacteristic(BLE_STAT_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  bleStat->addDescriptor(new BLE2902());
-  bleStat->setValue("waiting");
-  svc->start();
-  BLEAdvertising *adv = BLEDevice::getAdvertising();
-  adv->addServiceUUID(BLE_SVC_UUID);
-  adv->setScanResponse(true);
-  adv->start();
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("MagPanel-Setup");
+  Serial.printf("AP IP: %s\n", WiFi.softAPIP().toString().c_str());
 
-  while(true){
-    matrix.refresh(); delay(20);
-    if(!bleCredRx) continue;
-    bleCredRx = false;
-    Serial.printf("BLE cred: SSID='%s'\n", bleNewSsid.c_str());
-    BLEDevice::stopAdvertising();
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(bleNewSsid.c_str(), bleNewPass.c_str());
-    int t = 0;
-    while(WiFi.status() != WL_CONNECTED && t++ < 30) delay(500);
-    if(WiFi.status() == WL_CONNECTED){
+  static AsyncWebServer apsrv(80);
+  apsrv.on("/", HTTP_GET, [](AsyncWebServerRequest *r){
+    r->send(200, "text/html", PROV_HTML);
+  });
+  apsrv.on("/save", HTTP_POST, [](AsyncWebServerRequest *r){
+    String ssid, pass;
+    if(r->hasParam("ssid", true)) ssid = r->getParam("ssid", true)->value();
+    if(r->hasParam("pass", true)) pass = r->getParam("pass", true)->value();
+    if(ssid.length()){
       prefs.begin("wificfg", false);
-      prefs.putString("ssid", bleNewSsid);
-      prefs.putString("pass", bleNewPass);
+      prefs.putString("ssid", ssid);
+      prefs.putString("pass", pass);
       prefs.end();
-      Serial.println("BLE provisioning OK - yeniden baslatiliyor");
-      if(bleStat){ bleStat->setValue("OK"); bleStat->notify(); }
-      delay(800);
-      BLEDevice::deinit(true);
-      ESP.restart();
-    } else {
-      Serial.println("BLE: WiFi basarisiz - tekrar deneyin");
-      if(bleStat){ bleStat->setValue("wifi-failed"); bleStat->notify(); }
-      BLEDevice::startAdvertising();
-    }
+      r->send(200, "text/html",
+        "<meta charset=utf-8><h2>Kaydedildi. Panel yeniden baslatiliyor...</h2>");
+      apSaved = true;
+    } else r->send(400, "text/plain", "SSID bos olamaz");
+  });
+  apsrv.begin();
+
+  while(true){                       // kayit gelene kadar AP'de bekle (panel mavi)
+    matrix.refresh(); delay(20);
+    if(apSaved){ delay(1000); ESP.restart(); }
   }
 }
 
@@ -275,7 +253,7 @@ void setup(){
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   esp_wifi_set_ps(WIFI_PS_NONE);
-  // Oncelik: NVS (BLE ile kaydedilmis) → derlenmis sabit → BLE provisioning
+  // Oncelik: NVS (AP modunda kaydedilmis) → derlenmis sabit → AP provisioning
   prefs.begin("wificfg", true);
   String nvsSsid = prefs.getString("ssid", "");
   String nvsPass = prefs.getString("pass", "");
@@ -293,7 +271,7 @@ void setup(){
     for(int i=0;i<60&&WiFi.status()!=WL_CONNECTED;i++){ delay(500); Serial.print("."); }
     wifiOk = WiFi.status()==WL_CONNECTED;
   }
-  if(!wifiOk) runBLEProvisioning();  // NVS'e kaydeder, ESP.restart() yapar, geri donmez
+  if(!wifiOk) runAPProvisioning();   // NVS'e kaydeder, ESP.restart() yapar, geri donmez
   if(wifiOk){
     logf("MagPanel %s (build %d) | IP: %s", FW_VERSION, FW_BUILD, WiFi.localIP().toString().c_str());
     if(MDNS.begin(MDNS_HOSTNAME)){
