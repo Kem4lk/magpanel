@@ -104,14 +104,22 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button class=ghbtn onclick="otaCheck()">&#8593; GitHub'dan Güncelle</button>
 </footer>
 <script>
-let ws;
+let ws,otaPending=false;
 function connect(){
  ws=new WebSocket(`ws://${location.host}/ws`);ws.binaryType='arraybuffer';
- ws.onopen=()=>dot.classList.add('on');
- ws.onclose=()=>{dot.classList.remove('on');setTimeout(connect,2000);};
+ ws.onopen=()=>{
+  dot.classList.add('on');
+  if(otaPending){otaPending=false;setGhBtn(false,'&#8593; GitHub\'dan Güncelle');addLog('OTA: Baglandi - yeni firmware aktif!');}
+ };
+ ws.onclose=()=>{
+  dot.classList.remove('on');
+  if(otaPending)setGhBtn(true,'Güncelleniyor...');
+  setTimeout(connect,2000);
+ };
  ws.onmessage=e=>{if(typeof e.data==='string'&&e.data.startsWith('L:'))addLog(e.data.slice(2));};
 }
 connect();
+function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
 const ctx=c.getContext('2d',{willReadFrequently:true});
 ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
 
@@ -294,7 +302,11 @@ function addLog(line){
 }
 function otaCheck(){
  if(!ws||ws.readyState!==1){addLog('OTA: WebSocket bagli degil');return;}
+ setGhBtn(true,'Kontrol ediliyor...');
+ otaPending=true;
  ws.send(new Uint8Array([9]));
+ // 12 sn icinde WS kapanmazsa guncel demektir
+ setTimeout(()=>{if(otaPending&&ws.readyState===1){otaPending=false;setGhBtn(false,'&#8593; GitHub\'dan Güncelle');addLog('OTA: Guncel, guncelleme yok.');}},12000);
 }
 function toggleLog(){
  logPaused=!logPaused;
