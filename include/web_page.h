@@ -123,15 +123,19 @@ function stopGif(){
 }
 
 async function playVideo(file){
+ addLog('DBG VID: basliyor type='+file.type+' size='+file.size);
  const url=URL.createObjectURL(file);
  const vid=document.createElement('video');
  vid.src=url;vid.muted=true;vid.loop=true;vid.playsInline=true;
  try{await new Promise((res,rej)=>{vid.onloadedmetadata=res;vid.onerror=rej;});}
- catch(e){URL.revokeObjectURL(url);addLog('DBG VID: yukleme hatasi: '+e);return false;}
- vid.play();
+ catch(e){URL.revokeObjectURL(url);addLog('DBG VID: metadata hatasi: '+e);return false;}
+ addLog('DBG VID: metadata OK '+vid.videoWidth+'x'+vid.videoHeight+' sure='+vid.duration.toFixed(1)+'s');
+ try{await vid.play();}catch(e){addLog('DBG VID: play() hatasi: '+e);URL.revokeObjectURL(url);return false;}
+ addLog('DBG VID: oynatma basladi, RAF dongusu kuruluyor');
  gifStop=false;
+ let frameCount=0;
  function step(){
-  if(gifStop){vid.pause();vid.src='';URL.revokeObjectURL(url);return;}
+  if(gifStop){vid.pause();vid.src='';URL.revokeObjectURL(url);addLog('DBG VID: durduruldu, toplam kare='+frameCount);return;}
   if(vid.readyState>=2){
    const s=Math.max(80/vid.videoWidth,120/vid.videoHeight),
     w=vid.videoWidth*s,h=vid.videoHeight*s;
@@ -141,7 +145,9 @@ async function playVideo(file){
    for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
    ctx.putImageData(d,0,0);
    if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(b);
-  }
+   frameCount++;
+   if(frameCount===1||frameCount===10)addLog('DBG VID: kare gonderildi #'+frameCount+' bufAmt='+ws.bufferedAmount);
+  } else if(frameCount===0){addLog('DBG VID: readyState='+vid.readyState+' (bekleniyor)');}
   gifIsRaf=true;gifTimer=requestAnimationFrame(step);
  }
  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
