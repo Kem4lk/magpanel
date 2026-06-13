@@ -43,6 +43,15 @@ details summary{cursor:pointer;font-size:13px;text-transform:uppercase;
 letter-spacing:1.2px;color:var(--mut);font-weight:600;margin-bottom:6px;list-style:none}
 details summary::after{content:' +';color:var(--acc)}
 details[open] summary::after{content:' \2212'}
+.loghdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.loghdr span{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:#9aa}
+.logbtn{padding:5px 14px;font-size:12px;font-weight:600;border-radius:8px;
+ background:var(--card);border:1px solid var(--line);color:var(--acc);cursor:pointer}
+.logbtn.paused{background:var(--acc);border-color:var(--acc);color:#1a1206}
+.logbox{margin:0;max-height:180px;overflow-y:auto;background:#0a0e14;
+ border:1px solid var(--line);border-radius:10px;padding:10px;
+ font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.5;
+ color:#8fa;white-space:pre-wrap;word-break:break-word}
 footer{text-align:center;margin-top:18px}
 footer a{color:var(--mut);font-size:12px;text-decoration:none}
 </style></head><body>
@@ -85,6 +94,9 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button onclick="testRamp()">Gri merdiven</button>
 </div></details></div>
 
+<div class=card><div class=loghdr><span>LOG</span>
+<button id=logbtn class=logbtn onclick="toggleLog()">Durdur</button></div>
+<pre id=logbox class=logbox></pre></div>
 <footer><a href=/update>firmware güncelle</a></footer>
 <script>
 let ws;
@@ -92,6 +104,7 @@ function connect(){
  ws=new WebSocket(`ws://${location.host}/ws`);ws.binaryType='arraybuffer';
  ws.onopen=()=>dot.classList.add('on');
  ws.onclose=()=>{dot.classList.remove('on');setTimeout(connect,2000);};
+ ws.onmessage=e=>{if(typeof e.data==='string'&&e.data.startsWith('L:'))addLog(e.data.slice(2));};
 }
 connect();
 const ctx=c.getContext('2d',{willReadFrequently:true});
@@ -151,5 +164,20 @@ function px(e){const r=c.getBoundingClientRect(),
 c.onpointerdown=e=>{drawing=true;c.setPointerCapture(e.pointerId);px(e);};
 c.onpointermove=e=>{if(drawing)px(e);};
 c.onpointerup=c.onpointercancel=()=>drawing=false;
+let logPaused=false;
+function addLog(line){
+ if(logPaused)return;
+ const b=logbox;const atBottom=b.scrollHeight-b.scrollTop-b.clientHeight<30;
+ b.textContent+=line+"\n";
+ // en fazla 200 satir tut
+ const lines=b.textContent.split("\n");
+ if(lines.length>200)b.textContent=lines.slice(-200).join("\n");
+ if(atBottom)b.scrollTop=b.scrollHeight;
+}
+function toggleLog(){
+ logPaused=!logPaused;
+ logbtn.textContent=logPaused?"Devam":"Durdur";
+ logbtn.classList.toggle('paused',logPaused);
+}
 </script></body></html>
 )rawliteral";
