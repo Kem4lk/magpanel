@@ -4,6 +4,7 @@
      0x05 + 1B     : gomulu galeri tablosu (0..GALLERY_COUNT-1)
      0x06 + 3B     : kanal kazanclari R,G,B (beyaz nokta kalibrasyonu)
      0x07 + 2B     : kontrast, doygunluk (128 = notr)
+     0x08 + 1B     : mozaik blok boyutu (1=kapali, 2..40)
      0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
      0x03          : temizle
@@ -16,6 +17,8 @@
 #include <ArduinoOTA.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include "esp_wifi.h"
+#include "esp_log.h"
 #include <Update.h>
 #include <Matrix.h>
 #include "gallery.h"
@@ -26,6 +29,7 @@ Matrix matrix;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
+static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
 #ifndef FW_BUILD
 #define FW_BUILD 0
@@ -42,9 +46,28 @@ static volatile size_t  msgLen   = 0;
 static volatile bool    msgReady = false;
 
 void renderFrame(){
-  const uint8_t *p=framebuf;
-  for(int y=0;y<PANEL_PHY_RES_Y;y++)for(int x=0;x<80;x++,p+=3)
-    matrix.drawPixel((uint8_t)x,(uint8_t)y,p[0],p[1],p[2]);
+  uint8_t b = mosaicBlock < 1 ? 1 : mosaicBlock;
+  if(b == 1){
+    const uint8_t *p=framebuf;
+    for(int y=0;y<PANEL_PHY_RES_Y;y++)for(int x=0;x<80;x++,p+=3)
+      matrix.drawPixel((uint8_t)x,(uint8_t)y,p[0],p[1],p[2]);
+  } else {
+    // NxN bloklara bol, her blogun ortalama rengini tum bloga yaz
+    for(int by=0; by<PANEL_PHY_RES_Y; by+=b){
+      for(int bx=0; bx<80; bx+=b){
+        uint32_t sr=0,sg=0,sb=0,cnt=0;
+        for(int dy=0; dy<b && by+dy<PANEL_PHY_RES_Y; dy++)
+          for(int dx=0; dx<b && bx+dx<80; dx++){
+            const uint8_t *q = framebuf + ((by+dy)*80 + (bx+dx))*3;
+            sr+=q[0]; sg+=q[1]; sb+=q[2]; cnt++;
+          }
+        uint8_t r=sr/cnt, g=sg/cnt, bl=sb/cnt;
+        for(int dy=0; dy<b && by+dy<PANEL_PHY_RES_Y; dy++)
+          for(int dx=0; dx<b && bx+dx<80; dx++)
+            matrix.drawPixel((uint8_t)(bx+dx),(uint8_t)(by+dy),r,g,bl);
+      }
+    }
+  }
   matrix.update();
 }
 // Parlaklik/kazanc/kontrast degisince panel kendi icerigini yeniden cizer -
@@ -55,13 +78,9 @@ void redrawCurrent(){
 }
 void drawGallery(uint8_t idx){
   if(idx>=GALLERY_COUNT) return;
-  const uint8_t *art=GALLERY_DATA[idx];
-  matrix.clear_pixels();
-  for(int y=0;y<PANEL_PHY_RES_Y;y++)for(int x=0;x<80;x++){
-    int i=(y*80+x)*3;
-    matrix.drawPixel((uint8_t)x,(uint8_t)y,art[i],art[i+1],art[i+2]);
-  }
-  matrix.update();
+  memcpy(framebuf, GALLERY_DATA[idx], FRAME_BYTES);  // galeriyi framebuf'a al
+  haveFrame = true;
+  renderFrame();                                     // mozaik dahil ortak render
   Serial.printf("Galeri: %s\n", GALLERY_NAMES[idx]);
 }
 
@@ -119,18 +138,35 @@ void handleMessage(const uint8_t *buf, size_t len){
         redrawCurrent();
       }
       break;
+    case 0x08:                                   // mozaik blok boyutu (1=kapali, 2..40)
+      if(len>=2){
+        mosaicBlock = buf[1] < 1 ? 1 : (buf[1] > 40 ? 40 : buf[1]);
+        Serial.printf("Mozaik blok: %u\n", mosaicBlock);
+        redrawCurrent();
+      }
+      break;
   }
 }
 
 void setup(){
   Serial.begin(115200); delay(1000);
   esp_task_wdt_deinit();
+  esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
+  // PSRAM durumu
+  if(psramFound()){
+    Serial.printf("PSRAM bulundu: %u KB toplam, %u KB bos\n",
+                  ESP.getPsramSize()/1024, ESP.getFreePsram()/1024);
+  } else {
+    Serial.println("UYARI: PSRAM bulunamadi! (platformio.ini memory_type kontrol et)");
+  }
+  esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
   matrix.initMatrix(); delay(10);
   drawGallery(0);                                // acilis ekrani (Mona Lisa)
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-  WiFi.setSleep(false);                          // guc tasarrufu kapali: 200ms ping ve gecikme duzelir
+  WiFi.setSleep(false);                          // guc tasarrufu kapali
+  esp_wifi_set_ps(WIFI_PS_NONE);                 // uyku TAMAMEN kapali (en agresif)
   Serial.print("WiFi baglaniyor");
   for(int i=0;i<60 && WiFi.status()!=WL_CONNECTED;i++){ delay(500); Serial.print("."); }
   if(WiFi.status()==WL_CONNECTED){
@@ -235,7 +271,18 @@ void loop(){
     return;                 // flash yazimi kesintisiz tamamlanir
   }
   matrix.refresh();
+  yield();                  // WiFi/TCP-IP yiginina CPU birak (ARP/ping cevaplari icin sart)
   ArduinoOTA.handle();
+  // ---- gecici ag teshisi: 5 sn'de bir baglanti durumu ----
+  static uint32_t dbg=0;
+  if(millis()-dbg>5000){
+    dbg=millis();
+    Serial.printf("[NET] status=%d RSSI=%d IP=%s GW=%s heap=%u minheap=%u maxblok=%u\n",
+      WiFi.status(), WiFi.RSSI(),
+      WiFi.localIP().toString().c_str(),
+      WiFi.gatewayIP().toString().c_str(),
+      ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+  }
   if(msgReady){ handleMessage(rxbuf,(size_t)msgLen); msgReady=false; }
   static uint32_t t=0;
   if(millis()-t>2000){ ws.cleanupClients(); t=millis(); }
