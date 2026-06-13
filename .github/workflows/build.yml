@@ -38,6 +38,7 @@ jobs:
       - name: "'latest' etiketini bu commit'e sabitle"
         # action-gh-release mevcut etiketi tasimaz; etiketi her derlemede
         # gercek build commit'ine sabitler (eski/yanlis commit'e kilitlenmesini onler).
+        continue-on-error: true   # etiket itilemezse derleme ve release adimi yine de calissin
         run: |
           git tag -f latest "${GITHUB_SHA}"
           git push -f origin "refs/tags/latest"
