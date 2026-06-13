@@ -76,6 +76,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
  oninput="brv.value=this.value" onchange="ws.send(new Uint8Array([4,this.value]))"><output id=brv>110</output></label>
 <label><span>Kontrast</span><input type=range id=ct min=60 max=200 value=128 oninput="setImg()"><output id=ctv>128</output></label>
 <label><span>Doygunluk</span><input type=range id=sa min=0 max=220 value=128 oninput="setImg()"><output id=sav>128</output></label>
+<label><span>Mozaik</span><input type=range id=mz min=1 max=20 value=1 oninput="setMosaic()"><output id=mzv>1</output></label>
 <label><span>R kazanç</span><input type=range id=gr min=60 max=255 value=255 oninput="setGain()"><output id=grv>255</output></label>
 <label><span>G kazanç</span><input type=range id=gg min=60 max=255 value=255 oninput="setGain()"><output id=ggv>255</output></label>
 <label><span>B kazanç</span><input type=range id=gb min=60 max=255 value=255 oninput="setGain()"><output id=gbv>255</output></label>
@@ -128,6 +129,9 @@ function setGain(){grv.value=gr.value;ggv.value=gg.value;gbv.value=gb.value;
 let iT=null;
 function setImg(){ctv.value=ct.value;sav.value=sa.value;
  clearTimeout(iT);iT=setTimeout(()=>ws.send(new Uint8Array([7,ct.value,sa.value])),150);}
+let mT=null;
+function setMosaic(){mzv.value=mz.value;
+ clearTimeout(mT);mT=setTimeout(()=>ws.send(new Uint8Array([8,parseInt(mz.value)])),150);}
 function testW(){ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
 function testRamp(){for(let i=0;i<6;i++){const v=40+i*43;
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
