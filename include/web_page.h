@@ -52,8 +52,10 @@ details[open] summary::after{content:' \2212'}
  border:1px solid var(--line);border-radius:10px;padding:10px;
  font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.5;
  color:#8fa;white-space:pre-wrap;word-break:break-word}
-footer{text-align:center;margin-top:18px}
+footer{text-align:center;margin-top:18px;display:flex;justify-content:center;align-items:center;gap:14px}
 footer a{color:var(--mut);font-size:12px;text-decoration:none}
+.ghbtn{font-size:12px;padding:6px 14px;border-radius:8px;background:var(--acc);
+ border:none;color:#1a1206;font-weight:600;cursor:pointer}
 </style></head><body>
 <header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; 80&times;120</span>
 <span class=dot id=dot></span></header>
@@ -97,7 +99,10 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=card><div class=loghdr><span>LOG</span>
 <button id=logbtn class=logbtn onclick="toggleLog()">Durdur</button></div>
 <pre id=logbox class=logbox></pre></div>
-<footer><a href=/update>firmware güncelle</a></footer>
+<footer>
+<a href=/update>firmware güncelle</a>
+<button class=ghbtn onclick="otaCheck()">&#8593; GitHub'dan Güncelle</button>
+</footer>
 <script>
 let ws;
 function connect(){
@@ -252,6 +257,10 @@ function addLog(line){
  const lines=b.textContent.split("\n");
  if(lines.length>200)b.textContent=lines.slice(-200).join("\n");
  if(atBottom)b.scrollTop=b.scrollHeight;
+}
+function otaCheck(){
+ if(!ws||ws.readyState!==1){addLog('OTA: WebSocket bagli degil');return;}
+ ws.send(new Uint8Array([9]));
 }
 function toggleLog(){
  logPaused=!logPaused;

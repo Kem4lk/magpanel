@@ -120,6 +120,7 @@ static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
 static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
 static volatile uint32_t lastOtaActivity = 0;   // OTA ilerleme zaman damgasi (takilma kurtarma icin)
+static volatile bool otaNowRequested = false;    // 0x09 WS opcode: manuel GitHub OTA tetikle
 #ifndef FW_BUILD
 #define FW_BUILD 0
 #endif
@@ -233,6 +234,10 @@ void handleMessage(const uint8_t *buf, size_t len){
         logf("Mozaik blok: %u", mosaicBlock);
         redrawCurrent();
       }
+      break;
+    case 0x09:                                   // manuel GitHub OTA tetikle
+      otaNowRequested = true;
+      logf("GitHub OTA: manuel kontrol istendi...");
       break;
   }
 }
@@ -427,7 +432,7 @@ void checkGithubOTA(){
   if(http.GET()!=200){ http.end(); return; }
   int remote = http.getString().toInt();
   http.end();
-  if(remote <= FW_BUILD) return;
+  if(remote <= FW_BUILD){ logf("GitHub OTA: guncel (build %d)", FW_BUILD); return; }
 
   logf("GitHub OTA: build %d -> %d, indiriliyor...", FW_BUILD, remote);
   otaActive = true;            // panel taramasi ve sunucu durur (espota ile ayni disiplin)
@@ -511,4 +516,7 @@ void loop(){
     lastChk=up; checkGithubOTA();
   }
 #endif
+  if(otaNowRequested && WiFi.status()==WL_CONNECTED && !otaActive){
+    otaNowRequested=false; checkGithubOTA();
+  }
 }
