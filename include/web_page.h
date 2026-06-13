@@ -119,8 +119,10 @@ async function playGif(file){
  let buf,dec;
  try{buf=await file.arrayBuffer();dec=new ImageDecoder({data:buf,type:'image/gif'});}
  catch(e){return false;}
- try{await dec.completed;}catch(e){}
- const n=dec.tracks.selectedTrack?dec.tracks.selectedTrack.frameCount:0;
+ try{await dec.tracks.ready;}catch(e){}        // once iz metadata'si hazir olsun (selectedTrack/frameCount dolsun)
+ try{await dec.completed;}catch(e){}           // sonra tum kareler ayristirilsin
+ const track=dec.tracks&&dec.tracks.selectedTrack;
+ const n=track?track.frameCount:0;
  if(!n||n<2){dec.close();return false;}
  const frames=[];                              // her kare: {onizleme, gonderim, gecikme}
  for(let i=0;i<n;i++){
