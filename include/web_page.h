@@ -104,14 +104,22 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button class=ghbtn onclick="otaCheck()">&#8593; GitHub'dan Güncelle</button>
 </footer>
 <script>
-let ws;
+let ws,otaPending=false;
 function connect(){
  ws=new WebSocket(`ws://${location.host}/ws`);ws.binaryType='arraybuffer';
- ws.onopen=()=>dot.classList.add('on');
- ws.onclose=()=>{dot.classList.remove('on');setTimeout(connect,2000);};
+ ws.onopen=()=>{
+  dot.classList.add('on');
+  if(otaPending){otaPending=false;setGhBtn(false,'&#8593; GitHub\'dan Güncelle');addLog('OTA: Baglandi - yeni firmware aktif!');}
+ };
+ ws.onclose=()=>{
+  dot.classList.remove('on');
+  if(otaPending)setGhBtn(true,'Güncelleniyor...');
+  setTimeout(connect,2000);
+ };
  ws.onmessage=e=>{if(typeof e.data==='string'&&e.data.startsWith('L:'))addLog(e.data.slice(2));};
 }
 connect();
+function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
 const ctx=c.getContext('2d',{willReadFrequently:true});
 ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
 
@@ -193,15 +201,43 @@ async function playGif(file){
  return true;
 }
 
+// GIF fallback (Safari/Firefox): <img> ile native animasyon, RAF ile kare yakala
+async function playGifFallback(file){
+ const url=URL.createObjectURL(file);
+ const img=new Image();
+ try{await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});}
+ catch(e){URL.revokeObjectURL(url);addLog('DBG GIF fallback: yuklenemedi: '+e);return false;}
+ addLog('DBG GIF fallback: '+img.naturalWidth+'x'+img.naturalHeight+' - animasyon basladi');
+ gifStop=false;
+ function step(){
+  if(gifStop){URL.revokeObjectURL(url);return;}
+  const s=Math.max(80/img.naturalWidth,120/img.naturalHeight),
+   w=img.naturalWidth*s,h=img.naturalHeight*s;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+  ctx.drawImage(img,(80-w)/2,(120-h)/2,w,h);
+  const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+  for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
+  ctx.putImageData(d,0,0);
+  if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(b);
+  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+ }
+ gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+ return true;
+}
+
 async function loadImg(file){
  if(!file)return;
  stopGif();                                    // onceki animasyonu/videoyu durdur
  if(file.type.startsWith('video/')){await playVideo(file);return;}
  if(!file.type.startsWith('image/'))return;
  if(file.type==='image/gif'){
-  if(!('ImageDecoder'in window)){addLog('DBG GIF: ImageDecoder yok (Safari/Firefox desteklemiyor)');}
-  else if(await playGif(file))return;
-  else addLog('DBG GIF: playGif false dondu (kare<2 veya decode hatasi)');
+  if('ImageDecoder'in window){
+   if(await playGif(file))return;
+   addLog('DBG GIF: playGif false dondu (kare<2 veya decode hatasi)');
+  } else {
+   addLog('DBG GIF: ImageDecoder yok, img fallback kullaniliyor');
+   if(await playGifFallback(file))return;
+  }
  } const img=new Image();
  img.onload=()=>{const s=Math.max(80/img.width,120/img.height),
   w=img.width*s,h=img.height*s;
@@ -266,7 +302,11 @@ function addLog(line){
 }
 function otaCheck(){
  if(!ws||ws.readyState!==1){addLog('OTA: WebSocket bagli degil');return;}
+ setGhBtn(true,'Kontrol ediliyor...');
+ otaPending=true;
  ws.send(new Uint8Array([9]));
+ // 12 sn icinde WS kapanmazsa guncel demektir
+ setTimeout(()=>{if(otaPending&&ws.readyState===1){otaPending=false;setGhBtn(false,'&#8593; GitHub\'dan Güncelle');addLog('OTA: Guncel, guncelleme yok.');}},12000);
 }
 function toggleLog(){
  logPaused=!logPaused;
