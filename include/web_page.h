@@ -110,8 +110,51 @@ connect();
 const ctx=c.getContext('2d',{willReadFrequently:true});
 ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
 
-function loadImg(file){
+let gifStop=false,gifTimer=null;
+function stopGif(){gifStop=true;if(gifTimer){clearTimeout(gifTimer);gifTimer=null;}}
+
+// GIF: kareleri ImageDecoder ile ayristir, 80x120'ye olcekle, sirayla panele
+// gonder (gercek animasyon). Tek kareli/desteksiz ise false doner -> statik yol.
+async function playGif(file){
+ let buf,dec;
+ try{buf=await file.arrayBuffer();dec=new ImageDecoder({data:buf,type:'image/gif'});}
+ catch(e){return false;}
+ try{await dec.completed;}catch(e){}
+ const n=dec.tracks.selectedTrack?dec.tracks.selectedTrack.frameCount:0;
+ if(!n||n<2){dec.close();return false;}
+ const frames=[];                              // her kare: {onizleme, gonderim, gecikme}
+ for(let i=0;i<n;i++){
+  let r;try{r=await dec.decode({frameIndex:i});}catch(e){break;}
+  const im=r.image;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+  const s=Math.max(80/im.displayWidth,120/im.displayHeight),
+   w=im.displayWidth*s,h=im.displayHeight*s;
+  ctx.drawImage(im,(80-w)/2,(120-h)/2,w,h);
+  const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+  for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
+  frames.push({img:d,buf:b,delay:Math.max((im.duration||100000)/1000,50)});
+  im.close();
+ }
+ dec.close();
+ if(frames.length<2)return false;
+ gifStop=false;let i=0;
+ (function step(){
+  if(gifStop)return;
+  const fr=frames[i];
+  ctx.putImageData(fr.img,0,0);                // tarayicida da onizle
+  if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(fr.buf);  // birikme olmadan gonder
+  i=(i+1)%frames.length;
+  gifTimer=setTimeout(step,fr.delay);
+ })();
+ return true;
+}
+
+async function loadImg(file){
  if(!file||!file.type.startsWith('image/'))return;
+ stopGif();                                    // onceki animasyonu durdur
+ if(file.type==='image/gif'&&'ImageDecoder'in window){
+  if(await playGif(file))return;               // animasyon basladi
+ }
  const img=new Image();
  img.onload=()=>{const s=Math.max(80/img.width,120/img.height),
   w=img.width*s,h=img.height*s;
@@ -132,9 +175,9 @@ function sendFrame(){const d=ctx.getImageData(0,0,80,120).data,
  b=new Uint8Array(1+28800);b[0]=1;
  for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
  ws.send(b);}
-function clr(){ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
  ws.send(new Uint8Array([3]));}
-function art(i){ws.send(new Uint8Array([5,i]));}
+function art(i){stopGif();ws.send(new Uint8Array([5,i]));}
 
 let gT=null;
 function setGain(){grv.value=gr.value;ggv.value=gg.value;gbv.value=gb.value;
@@ -145,8 +188,8 @@ function setImg(){ctv.value=ct.value;sav.value=sa.value;
 let mT=null;
 function setMosaic(){mzv.value=mz.value;
  clearTimeout(mT);mT=setTimeout(()=>ws.send(new Uint8Array([8,parseInt(mz.value)])),150);}
-function testW(){ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
-function testRamp(){for(let i=0;i<6;i++){const v=40+i*43;
+function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
+function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43;
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
 
 let drawing=false;
@@ -161,7 +204,7 @@ function px(e){const r=c.getBoundingClientRect(),
  for(const[dx,dy]of[[0,0],[1,0],[0,1],[1,1]]){
   m[k++]=Math.min(x+dx,79);m[k++]=Math.min(y+dy,119);m[k++]=rr;m[k++]=g;m[k++]=bb;}
  ws.send(m);}
-c.onpointerdown=e=>{drawing=true;c.setPointerCapture(e.pointerId);px(e);};
+c.onpointerdown=e=>{stopGif();drawing=true;c.setPointerCapture(e.pointerId);px(e);};
 c.onpointermove=e=>{if(drawing)px(e);};
 c.onpointerup=c.onpointercancel=()=>drawing=false;
 let logPaused=false;
