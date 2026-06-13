@@ -69,7 +69,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=card><h2>Görsel &amp; Çizim</h2>
 <div class=zone id=zone>
 <canvas id=c width=80 height=120></canvas>
-<div class=hint>Görseli buraya sürükle, yapıştır (&#8984;V) ya da dosya seç &middot; parmağınla/fareyle çiz</div>
+<div class=hint>Görsel veya video sürükle, yapıştır (&#8984;V) ya da dosya seç &middot; parmağınla/fareyle çiz</div>
 </div>
 <div class=row>
 <input type=color id=col value="#ffb454">
@@ -77,7 +77,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button class=acc onclick="sendFrame()">Panele gönder</button>
 </div>
 <div class=row><button onclick="clr()">Paneli temizle</button></div>
-<input type=file id=f accept="image/*" hidden>
+<input type=file id=f accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v" hidden>
 </div>
 
 <div class=card><details><summary>Görüntü ayarları</summary>
@@ -110,8 +110,38 @@ connect();
 const ctx=c.getContext('2d',{willReadFrequently:true});
 ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
 
-let gifStop=false,gifTimer=null;
-function stopGif(){gifStop=true;if(gifTimer){clearTimeout(gifTimer);gifTimer=null;}}
+let gifStop=false,gifTimer=null,gifIsRaf=false;
+function stopGif(){
+ gifStop=true;
+ if(gifTimer){gifIsRaf?cancelAnimationFrame(gifTimer):clearTimeout(gifTimer);gifTimer=null;}
+ gifIsRaf=false;
+}
+
+async function playVideo(file){
+ const url=URL.createObjectURL(file);
+ const vid=document.createElement('video');
+ vid.src=url;vid.muted=true;vid.loop=true;vid.playsInline=true;
+ try{await new Promise((res,rej)=>{vid.onloadedmetadata=res;vid.onerror=rej;});}
+ catch(e){URL.revokeObjectURL(url);addLog('DBG VID: yukleme hatasi: '+e);return false;}
+ vid.play();
+ gifStop=false;
+ function step(){
+  if(gifStop){vid.pause();vid.src='';URL.revokeObjectURL(url);return;}
+  if(vid.readyState>=2){
+   const s=Math.max(80/vid.videoWidth,120/vid.videoHeight),
+    w=vid.videoWidth*s,h=vid.videoHeight*s;
+   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+   ctx.drawImage(vid,(80-w)/2,(120-h)/2,w,h);
+   const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+   for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
+   ctx.putImageData(d,0,0);
+   if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(b);
+  }
+  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+ }
+ gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+ return true;
+}
 
 // GIF: kareleri ImageDecoder ile ayristir, 80x120'ye olcekle, sirayla panele
 // gonder (gercek animasyon). Tek kareli/desteksiz ise false doner -> statik yol.
@@ -153,8 +183,10 @@ async function playGif(file){
 }
 
 async function loadImg(file){
- if(!file||!file.type.startsWith('image/'))return;
- stopGif();                                    // onceki animasyonu durdur
+ if(!file)return;
+ stopGif();                                    // onceki animasyonu/videoyu durdur
+ if(file.type.startsWith('video/')){await playVideo(file);return;}
+ if(!file.type.startsWith('image/'))return;
  if(file.type==='image/gif'){
   if(!('ImageDecoder'in window)){addLog('DBG GIF: ImageDecoder yok (Safari/Firefox desteklemiyor)');}
   else if(await playGif(file))return;
