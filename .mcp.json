@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "magpanel-deploy": {
+      "command": "node",
+      "args": ["tools/magpanel-mcp/index.js"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_REPO": "Kem4lk/magpanel"
+      }
+    }
+  }
+}
