@@ -119,6 +119,7 @@ static void sendLogHistory(AsyncWebSocketClient *c){
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
 static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
+static volatile uint32_t lastOtaActivity = 0;   // OTA ilerleme zaman damgasi (takilma kurtarma icin)
 #ifndef FW_BUILD
 #define FW_BUILD 0
 #endif
@@ -236,6 +237,27 @@ void handleMessage(const uint8_t *buf, size_t len){
   }
 }
 
+// ---- OTA "loading" ekrani: tum paneli kullanan, alttan dolan piksel ilerleme cubugu ----
+// Panel surekli DMA ile taranmiyor; her kare update() ile cipin SRAM'ine yazilir ve
+// gorunur kalmasi icin refresh() (GCLK) gerekir. Bu yuzden bu fonksiyon kareyi update()
+// ile yazar; OTA donguleri arada matrix.refresh() cagirarak paneli yanik tutar.
+//   pct 0..100 : dolu turuncu (alt), beyaz ilerleme cizgisi, koyu bos (ust)
+static void drawOtaLoading(uint8_t pct){
+  if(pct > 100) pct = 100;
+  const int W = PANEL_PHY_RES_X, H = PANEL_PHY_RES_Y;   // 80 x 120
+  const int fill  = (H * (int)pct) / 100;               // alttan dolu satir sayisi
+  const int edgeY = H - fill - 1;                        // ilerleme kenari (parlak)
+  for(int y = 0; y < H; y++){
+    uint8_t r, g, b;
+    if(y >= H - fill){       r = 255; g = 150; b = 30; } // dolu (turuncu)
+    else if(y == edgeY){     r = 255; g = 255; b = 255; }// ilerleme cizgisi (beyaz)
+    else {                   r = 4;   g = 4;   b = 10; } // bos (koyu)
+    for(int x = 0; x < W; x++) matrix.drawPixel((uint8_t)x, (uint8_t)y, r, g, b);
+  }
+  matrix.update();
+  lastOtaActivity = millis();
+}
+
 // ---- Index sayfasi: PROGMEM'den parça parça (akitilarak) gönderilir ----
 // Eski yöntem (FPSTR ile ~9 KB'lik tek heap String ayirip replace + send) bellek
 // baskisi/parçalanma altinda yarim gönderilebiliyordu: gövde (butonlar) görünüyor
@@ -343,10 +365,24 @@ void setup(){
       },
       [](AsyncWebServerRequest *r, String fn, size_t index, uint8_t *data, size_t len, bool final){
         if(!r->authenticate("admin", OTA_PASSWORD)) return;
-        if(index==0){ Serial.printf("OTA basliyor: %s\n", fn.c_str());
-                      Update.begin(UPDATE_SIZE_UNKNOWN); }
+        static int lastPct = -1;
+        if(index==0){
+          Serial.printf("OTA basliyor: %s\n", fn.c_str());
+          otaActive = true;                 // ana dongu paneli birsin; ekrani biz surecegiz
+          ws.closeAll(); ws.enable(false);
+          Update.begin(UPDATE_SIZE_UNKNOWN);
+          lastPct = -1; drawOtaLoading(0);
+        }
         if(len) Update.write(data, len);
-        if(final){ Update.end(true); Serial.println("OTA bitti"); }
+        size_t total = r->contentLength();              // multipart toplam (firmware'den biraz buyuk)
+        int pct = total ? (int)((uint64_t)(index+len) * 100 / total) : 0;
+        if(pct != lastPct){ drawOtaLoading((uint8_t)pct); for(int k=0;k<6;k++) matrix.refresh(); lastPct = pct; }
+        if(final){
+          bool ok = Update.end(true);
+          Serial.println(ok ? "OTA bitti" : "OTA HATA");
+          if(ok){ drawOtaLoading(100); for(int k=0;k<40;k++) matrix.refresh(); }
+          else  { otaActive = false; }                  // basarisizsa paneli geri ver
+        }
       });
 
     server.begin();
@@ -368,8 +404,13 @@ void setup(){
       ws.enable(false);
       server.end();         // async sunucuyu tamamen durdur
     });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total){
+      uint8_t pct = total ? (uint8_t)((uint64_t)progress * 100 / total) : 0;
+      drawOtaLoading(pct);
+      for(int k=0;k<10;k++) matrix.refresh();   // kareyi kisa sure goster
+    });
     ArduinoOTA.onEnd([](){ Serial.println("OTA tamam, restart"); });
-    ArduinoOTA.onError([](ota_error_t e){ Serial.printf("OTA hata: %u\n", e); });
+    ArduinoOTA.onError([](ota_error_t e){ otaActive=false; Serial.printf("OTA hata: %u\n", e); });
     ArduinoOTA.begin();
   } else Serial.println("\nWiFi BASARISIZ");
 }
@@ -396,10 +437,35 @@ void checkGithubOTA(){
   h2.setConnectTimeout(8000);
   bool ok=false;
   if(h2.begin(c2, String(GITHUB_OTA_BASE) + "/firmware.bin") && h2.GET()==200){
-    int len = h2.getSize();
-    if(Update.begin(len>0 ? (size_t)len : UPDATE_SIZE_UNKNOWN)){
-      Update.writeStream(*h2.getStreamPtr());
-      ok = Update.end(true);
+    int total = h2.getSize();
+    if(Update.begin(total>0 ? (size_t)total : UPDATE_SIZE_UNKNOWN)){
+      // Akarken yaz: her parcada ilerleme cubugunu guncelle, arada refresh() ile
+      // paneli yanik tut (writeStream tek blokta yazip ekrani karanlik birakirdi).
+      WiFiClient *stream = h2.getStreamPtr();
+      uint8_t  buf[1024];
+      size_t   written = 0;
+      int      lastPct = -1;
+      uint32_t lastData = millis();
+      drawOtaLoading(0);                                   // bos cubuk + panel yanik
+      while(h2.connected() && (total<=0 || written < (size_t)total)){
+        size_t avail = stream->available();
+        if(avail){
+          int n = stream->readBytes(buf, avail > sizeof(buf) ? sizeof(buf) : avail);
+          if(n > 0){
+            Update.write(buf, (size_t)n);
+            written += (size_t)n;
+            lastData = millis();
+            int pct = total>0 ? (int)(written * 100 / (size_t)total)
+                              : (int)((millis()/40) % 101);   // boyut bilinmiyorsa sweep
+            if(pct != lastPct){ drawOtaLoading((uint8_t)pct); lastPct = pct; }
+          }
+        }
+        matrix.refresh();                                  // her dongude GCLK -> panel yanik
+        if(millis() - lastData > 15000) break;             // 15 sn veri yoksa iptal
+        yield();                                           // TCP/WiFi yiginina nefes aldir
+      }
+      ok = (total<=0 || written == (size_t)total) && Update.end(true);
+      if(ok){ drawOtaLoading(100); for(int k=0;k<40;k++) matrix.refresh(); }
     }
   }
   logf(ok ? "GitHub OTA tamam, yeniden baslatiliyor" : "GitHub OTA basarisiz");
@@ -409,6 +475,9 @@ void checkGithubOTA(){
 void loop(){
   if(otaActive){            // OTA sirasinda SADECE OTA calisir:
     ArduinoOTA.handle();    // panel taramasi ve WS islemleri durur,
+    // Async (web/espota) OTA yarida kesilirse takilip kalmasin: 30 sn ilerleme
+    // yoksa paneli geri al. (checkGithubOTA senkron calisir, restart ile biter.)
+    if(lastOtaActivity && millis()-lastOtaActivity > 30000){ otaActive=false; ws.enable(true); redrawCurrent(); }
     return;                 // flash yazimi kesintisiz tamamlanir
   }
   matrix.refresh();

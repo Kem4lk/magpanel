@@ -38,3 +38,12 @@ VS Code + PlatformIO eklentisi. Proje klasorunu ac -> Build -> Upload.
 - GCLK cift-kenar sayimi: 74 vs 148 GCLK/satir denemesi gerekebilir.
 - VSYNC sirasinda GCLK duraklatma zamanlamasi hassas olabilir.
 - Kanal sirasi (ch15 ilk mi) panel PCB'sine bagli.
+
+## Guncelleme (OTA) ve tek komutla deploy
+- Her panel `GITHUB_AUTO_OTA` ile `releases/latest`'teki `version.txt`'i yoklar; build
+  numarasi artmissa `firmware.bin`'i indirip kurar. Kurulum sirasinda panelde **tum
+  piksellerden olusan, alttan dolan loading ekrani** gosterilir (`drawOtaLoading`).
+- "Yukle/deploy" demek icin: `tools/magpanel-mcp/` altindaki MCP sunucusu (repo kokundeki
+  `.mcp.json` ile otomatik kayitli). Claude'a **"yukle"** dediginizde `deploy_update` araci
+  CI'yi tetikler; firmware `latest` release'e gider ve internete bagli tum paneller otomatik
+  guncellenir. Kurulum: [tools/magpanel-mcp/README.md](tools/magpanel-mcp/README.md).
