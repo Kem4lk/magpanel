@@ -86,6 +86,7 @@ class Matrix : public GFX {
   // doygunluk -> kontrast -> kanal kazanci -> parlaklik -> CIE
   uint8_t img_contrast   = 128;
   uint8_t img_saturation = 128;
+  uint8_t img_blur       = 0;   // box blur yariçapı: 0=kapalı, 1=3x3, 2=5x5, 3=7x7
 
   ~Matrix() {
   }
