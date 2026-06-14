@@ -203,30 +203,99 @@ async function playGif(file){
  return true;
 }
 
-// GIF fallback (Safari/Firefox): <img> ile native animasyon, RAF ile kare yakala
-async function playGifFallback(file){
- const url=URL.createObjectURL(file);
- const img=new Image();
- try{await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});}
- catch(e){URL.revokeObjectURL(url);addLog('DBG GIF fallback: yuklenemedi: '+e);return false;}
- addLog('DBG GIF fallback: '+img.naturalWidth+'x'+img.naturalHeight+' - animasyon basladi');
- gifStop=false;
- let lastSend=0;
- function step(){
-  if(gifStop){URL.revokeObjectURL(url);return;}
-  const s=Math.max(80/img.naturalWidth,120/img.naturalHeight),
-   w=img.naturalWidth*s,h=img.naturalHeight*s;
-  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-  ctx.drawImage(img,(80-w)/2,(120-h)/2,w,h);                  // her RAF'ta onizleme guncel
-  const now=performance.now();                                // ~15fps gonderim sinirla
-  if(now-lastSend>=66 && ws&&ws.readyState===1&&ws.bufferedAmount<40000){
-   const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-   for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
-   ws.send(b);lastSend=now;
-  }
-  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+// === Minimal GIF89a cozucu (Safari/Firefox'ta ImageDecoder yok) ===
+// DOM disi <img>+canvas hilesi GIF animasyonunu ILERLETMEZ (hep 0. kare
+// yakalanir) -> Safari/iOS'ta animasyon olmamasinin sebebi buydu. Cozum:
+// GIF'i JS'te LZW + disposal kompoziti ile gercekten coz, kare listesi cikar.
+function gifDeinterlace(h){const r=[];for(let i=0;i<h;i+=8)r.push(i);for(let i=4;i<h;i+=8)r.push(i);for(let i=2;i<h;i+=4)r.push(i);for(let i=1;i<h;i+=2)r.push(i);return r;}
+function gifLZW(minCode,data,pixelCount){
+ const out=new Uint8Array(pixelCount);
+ const clearCode=1<<minCode,eoiCode=clearCode+1;
+ let codeSize=minCode+1,next=eoiCode+1,dict=[];
+ const reset=()=>{dict=[];for(let i=0;i<clearCode;i++)dict[i]=[i];dict[clearCode]=[];dict[eoiCode]=[];next=eoiCode+1;codeSize=minCode+1;};
+ reset();
+ let bitPos=0,outPos=0,prev=null;
+ const readCode=()=>{let code=0;for(let i=0;i<codeSize;i++){const bi=bitPos>>3;if(bi>=data.length)return eoiCode;if(data[bi]&(1<<(bitPos&7)))code|=(1<<i);bitPos++;}return code;};
+ while(outPos<pixelCount){
+  const code=readCode();
+  if(code===eoiCode)break;
+  if(code===clearCode){reset();prev=null;continue;}
+  let entry;
+  if(code<next&&dict[code])entry=dict[code];
+  else if(prev)entry=prev.concat(prev[0]);
+  else break;
+  for(let i=0;i<entry.length&&outPos<pixelCount;i++)out[outPos++]=entry[i];
+  if(prev){dict[next++]=prev.concat(entry[0]);if(next===(1<<codeSize)&&codeSize<12)codeSize++;}
+  prev=entry;
  }
- gifIsRaf=true;gifTimer=requestAnimationFrame(step);
+ return out;
+}
+function decodeGif(buf){
+ const d=new Uint8Array(buf);let p=0;
+ const rd=()=>d[p++],rd16=()=>{const v=d[p]|(d[p+1]<<8);p+=2;return v;};
+ if(rd()!==0x47||rd()!==0x49||rd()!==0x46)return null;   // "GIF"
+ p+=3;                                                    // surum (87a/89a)
+ const W=rd16(),H=rd16(),pk0=rd();rd();rd();              // mantiksal ekran + bg + en-boy
+ let gct=null;const gctSize=2<<(pk0&7);
+ if(pk0&0x80){gct=new Uint8Array(gctSize*3);for(let i=0;i<gctSize*3;i++)gct[i]=rd();}
+ const cc=document.createElement('canvas');cc.width=W;cc.height=H;
+ const cx=cc.getContext('2d',{willReadFrequently:true});
+ const frames=[];let delay=10,tIndex=-1,disposal=0,prevImg=null;
+ while(p<d.length){
+  const b=rd();
+  if(b===0x3B)break;                                      // trailer
+  if(b===0x21){const label=rd();                          // uzanti blogu
+   if(label===0xF9){rd();const f=rd();delay=rd16();tIndex=rd();rd();disposal=(f>>2)&7;if(!(f&1))tIndex=-1;}
+   else{let s;while((s=rd()))p+=s;}                        // diger uzantilari atla
+   continue;}
+  if(b!==0x2C)continue;                                    // sadece goruntu blogu
+  const ix=rd16(),iy=rd16(),iw=rd16(),ih=rd16(),ipk=rd();
+  let ct=gct;
+  if(ipk&0x80){const ls=2<<(ipk&7);ct=new Uint8Array(ls*3);for(let i=0;i<ls*3;i++)ct[i]=rd();}
+  const interlaced=ipk&0x40,minCode=rd();
+  const dat=[];let s;while((s=rd())){for(let i=0;i<s;i++)dat.push(rd());}
+  const idx=gifLZW(minCode,dat,iw*ih);
+  if(disposal===3)prevImg=cx.getImageData(0,0,W,H);        // disposal=3: kareden once durumu sakla
+  const fi=cx.getImageData(0,0,W,H),fd=fi.data,rows=interlaced?gifDeinterlace(ih):null;
+  for(let row=0;row<ih;row++){const sy=interlaced?rows[row]:row;
+   for(let col=0;col<iw;col++){const ci=idx[row*iw+col];if(ci===tIndex)continue;
+    const px=((iy+sy)*W+(ix+col))*4;fd[px]=ct[ci*3];fd[px+1]=ct[ci*3+1];fd[px+2]=ct[ci*3+2];fd[px+3]=255;}}
+  cx.putImageData(fi,0,0);
+  frames.push({img:cx.getImageData(0,0,W,H),delay:Math.max(delay*10,50)});
+  if(disposal===2)cx.clearRect(ix,iy,iw,ih);              // disposal=2: arka plana don
+  else if(disposal===3&&prevImg)cx.putImageData(prevImg,0,0);
+  tIndex=-1;disposal=0;delay=10;
+ }
+ return {W,H,frames};
+}
+
+// GIF fallback (Safari/Firefox): gercek JS cozucu -> kare kare animasyon
+async function playGifFallback(file){
+ let buf;try{buf=await file.arrayBuffer();}catch(e){addLog('DBG GIF: okunamadi '+e);return false;}
+ let g;try{g=decodeGif(buf);}catch(e){addLog('DBG GIF: cozme hatasi '+e);return false;}
+ if(!g||!g.frames||g.frames.length<2){addLog('DBG GIF: '+(g&&g.frames?g.frames.length:0)+' kare (animasyon yok)');return false;}
+ addLog('DBG GIF cozuldu: '+g.W+'x'+g.H+' '+g.frames.length+' kare');
+ // her kareyi 80x120'ye olcekle + gonderim buffer'i hazirla (oynatma sirasinda is yok)
+ const tmp=document.createElement('canvas');tmp.width=g.W;tmp.height=g.H;
+ const tc=tmp.getContext('2d',{willReadFrequently:true});
+ const s=Math.max(80/g.W,120/g.H),w=g.W*s,h=g.H*s,ox=(80-w)/2,oy=(120-h)/2,out=[];
+ for(const fr of g.frames){
+  tc.putImageData(fr.img,0,0);
+  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+  ctx.drawImage(tmp,ox,oy,w,h);
+  const dd=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
+  for(let pp=0,j=1;pp<dd.data.length;pp+=4){b[j++]=dd.data[pp];b[j++]=dd.data[pp+1];b[j++]=dd.data[pp+2];}
+  out.push({img:dd,buf:b,delay:fr.delay});
+ }
+ gifStop=false;let i=0;
+ (function step(){
+  if(gifStop)return;
+  const fr=out[i];
+  ctx.putImageData(fr.img,0,0);                            // tarayicida da onizle
+  if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(fr.buf);
+  i=(i+1)%out.length;
+  gifIsRaf=false;gifTimer=setTimeout(step,fr.delay);
+ })();
  return true;
 }
 
@@ -236,13 +305,10 @@ async function loadImg(file){
  if(file.type.startsWith('video/')){await playVideo(file);return;}
  if(!file.type.startsWith('image/'))return;
  if(file.type==='image/gif'){
-  if('ImageDecoder'in window){
-   if(await playGif(file))return;
-   addLog('DBG GIF: playGif false dondu (kare<2 veya decode hatasi)');
-  } else {
-   addLog('DBG GIF: ImageDecoder yok, img fallback kullaniliyor');
-   if(await playGifFallback(file))return;
-  }
+  if('ImageDecoder'in window && await playGif(file))return;   // Chrome/Edge: hizli yol
+  addLog('DBG GIF: JS cozucu deneniyor');                      // Safari/Firefox veya playGif basarisiz
+  if(await playGifFallback(file))return;
+  addLog('DBG GIF: animasyon yok, statik gosteriliyor');
  } const img=new Image();
  img.onload=()=>{const s=Math.max(80/img.width,120/img.height),
   w=img.width*s,h=img.height*s;
