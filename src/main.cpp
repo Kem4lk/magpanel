@@ -8,6 +8,10 @@
      0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
      0x03          : temizle
+     0x0A + 1B     : canli DCLK bolen (flicker tuner)
+     0x0B + 1B[+N] : uygulama sec (0=kapat,1=saat,2=timer[+2B sn],3=hava,4=dunyakupasi,5=spotify)
+     0x0C + 8B[+s] : hava konumu lat(f32 LE),lon(f32 LE),sehir
+     0x0D + s      : Spotify access token (tarayici PKCE)
    Acilista Mona gosterilir; IP seri porta yazilir; http://magpanel.local
    uzerinden gomulu test sayfasi acilir (iOS app ayni protokolu konusur). */
 #include <stdarg.h>
@@ -26,8 +30,10 @@
 #include "gallery.h"
 #include "wifi_config.h"
 #include "web_page.h"
+#include "apps.h"
 
 Matrix matrix;
+Apps   apps;                       // firmware-tarafi uygulamalar (saat/timer/hava/dunya kupasi/spotify)
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
@@ -198,12 +204,14 @@ void handleMessage(const uint8_t *buf, size_t len){
   switch(buf[0]){
     case 0x01:
       if(len==1+FRAME_BYTES){
+        apps.off();                              // gelen kare uygulamayi gecici kapatir
         lastGallery = -1; haveFrame = true;
         memcpy(framebuf, buf+1, FRAME_BYTES);
         renderFrame();
       }
       break;
     case 0x02: {
+      apps.off();
       size_t n=(len-1)/5; const uint8_t *p=buf+1;
       for(size_t i=0;i<n;i++,p+=5)
         if(p[0]<80 && p[1]<PANEL_PHY_RES_Y)
@@ -217,7 +225,7 @@ void handleMessage(const uint8_t *buf, size_t len){
       if(len>=2){ matrix.global_brightness = buf[1]; redrawCurrent(); }
       break;
     case 0x05:                                   // gomulu galeri tablosu sec
-      if(len>=2){ lastGallery = buf[1]; drawGallery(buf[1]); }
+      if(len>=2){ apps.off(); lastGallery = buf[1]; drawGallery(buf[1]); }
       break;
     case 0x06:                                   // kanal kazanclari R,G,B (beyaz nokta)
       if(len>=4){
@@ -251,6 +259,30 @@ void handleMessage(const uint8_t *buf, size_t len){
         prefs.begin("panelcfg", false); prefs.putUInt("dclkdiv", div); prefs.end();  // reboot'ta kalsin
         logf("DCLK: bolen=%lu -> ~%lu kHz (NVS'e kaydedildi)", div, 160000UL/div);
         redrawCurrent();                         // yeni hizda yeniden ciz
+      }
+      break;
+    case 0x0B:                                   // uygulama sec (0=kapat,1=saat,2=timer,3=hava,4=dunyakupasi,5=spotify)
+      if(len>=2){
+        apps.select(buf[1], len>2 ? buf+2 : nullptr, len-2);
+        if(buf[1]==0) redrawCurrent();           // kapatilinca son icerige don
+        logf("Uygulama: %u secildi", buf[1]);
+      }
+      break;
+    case 0x0C:                                   // hava konumu: lat(f32),lon(f32),sehir
+      if(len>=9){
+        float lat, lon; memcpy(&lat, buf+1, 4); memcpy(&lon, buf+5, 4);
+        char city[24]={0}; size_t cl=len-9; if(cl>sizeof(city)-1) cl=sizeof(city)-1;
+        memcpy(city, buf+9, cl);
+        apps.setLocation(lat, lon, city);
+        logf("Konum: %.3f,%.3f (%s)", lat, lon, city);
+      }
+      break;
+    case 0x0D:                                   // Spotify access token (tarayici PKCE'den)
+      if(len>=2){
+        char tok[300]={0}; size_t tl=len-1; if(tl>sizeof(tok)-1) tl=sizeof(tok)-1;
+        memcpy(tok, buf+1, tl);
+        apps.setSpotifyToken(tok);
+        logf("Spotify token alindi (%u bayt)", (unsigned)tl);
       }
       break;
   }
@@ -363,6 +395,9 @@ void setup(){
   if(!wifiOk) runAPProvisioning();   // NVS'e kaydeder, ESP.restart() yapar, geri donmez
   if(wifiOk){
     logf("MagPanel %s (build %d) | IP: %s", FW_VERSION, FW_BUILD, WiFi.localIP().toString().c_str());
+    // NTP saat senkronu (Turkiye UTC+3, DST yok) - Saat uygulamasi icin
+    configTime(3*3600, 0, "pool.ntp.org", "time.google.com", "time.cloudflare.com");
+    apps.begin(&matrix);                       // kayitli "home" uygulamasini geri yukle (varsa)
     if(MDNS.begin(MDNS_HOSTNAME)){
       MDNS.addService("http","tcp",80);
       MDNS.addService("magpanel","tcp",80);      // iOS Bonjour kesfi icin
@@ -517,6 +552,7 @@ void loop(){
       ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap(), WiFi.RSSI());
   }
   if(msgReady){ handleMessage(rxbuf,(size_t)msgLen); msgReady=false; }
+  apps.loop();                  // uygulama aciksa zamani gelince fetch+render (kendi throttle'i var)
   static uint32_t t=0;
   if(millis()-t>2000){ ws.cleanupClients(); t=millis(); }
   // WiFi bekcisi: kopussa yeniden bagla, 60sn duzelmezse temiz baslangic

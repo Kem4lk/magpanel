@@ -73,6 +73,26 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button onclick="art(3)">Gemi Enkazı</button>
 </div></div>
 
+<div class=card><h2>Uygulamalar</h2>
+<div class=grid>
+<button onclick="appSel(1)">Saat</button>
+<button onclick="appTimer()">Timer</button>
+<button onclick="appWeather()">Hava</button>
+<button onclick="appSel(4)">Dünya Kupası</button>
+</div>
+<div class=row>
+<input id=timermin type=number min=0 max=99 value=5 title="Timer dakika"
+ style="flex:0 0 70px;padding:9px;border-radius:10px;border:1px solid var(--line);background:#1c2027;color:var(--txt)">
+<input id=weathercity placeholder="şehir (Hava için)"
+ style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:#1c2027;color:var(--txt)">
+</div>
+<div class=row>
+<button onclick="appSpotify()">Spotify</button>
+<button onclick="appSel(0)">Kapat</button>
+</div>
+<div class=hint>Panelde firmware tarafında çalışır; veriyi panel kendisi çeker, tarayıcı kapanabilir. Hava için şehir yazıp "Hava"ya bas. Son açık uygulama reboot'ta geri gelir.</div>
+</div>
+
 <div class=card><h2>Görsel &amp; Çizim</h2>
 <div class=zone id=zone>
 <canvas id=c width=80 height=120></canvas>
@@ -377,6 +397,70 @@ function setDclk(d,btn){                          // canli DCLK ayari (opcode 0x
  document.querySelectorAll('.dclk button').forEach(b=>b.classList.remove('on'));
  btn.classList.add('on');
  addLog('DCLK: ~'+Math.round(160000/d)+' kHz secildi (bolen '+d+')');}
+
+// ====== Uygulamalar (firmware tarafi render; opcode 0x0B/0x0C/0x0D) ======
+function appSel(id){stopGif();ws.send(new Uint8Array([0x0B,id]));
+ addLog('Uygulama: '+['kapat','saat','timer','hava','dunya kupasi','spotify'][id]);}
+function appTimer(){stopGif();
+ const mn=parseInt(document.getElementById('timermin').value)||0;
+ const sec=Math.max(0,Math.min(5999,mn*60));
+ ws.send(new Uint8Array([0x0B,2,(sec>>8)&255,sec&255]));
+ addLog('Timer: '+mn+' dk baslatildi');}
+async function appWeather(){stopGif();
+ const city=(document.getElementById('weathercity').value||'').trim();
+ if(!city){addLog('Hava: once sehir yaz');return;}
+ try{
+  const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name='+encodeURIComponent(city));
+  const j=await r.json();
+  if(!j.results||!j.results.length){addLog('Hava: "'+city+'" bulunamadi');return;}
+  const o=j.results[0];
+  const nm=new TextEncoder().encode((o.name||city).substring(0,20));
+  const b=new Uint8Array(9+nm.length),dv=new DataView(b.buffer);
+  b[0]=0x0C;dv.setFloat32(1,o.latitude,true);dv.setFloat32(5,o.longitude,true);b.set(nm,9);
+  ws.send(b);                                  // konumu firmware'e yolla (panel kendisi cekecek)
+  ws.send(new Uint8Array([0x0B,3]));           // hava uygulamasini ac
+  addLog('Hava: '+o.name+' ('+o.latitude.toFixed(2)+','+o.longitude.toFixed(2)+')');
+ }catch(e){addLog('Hava hata: '+e);}}
+
+// ---- Spotify (ISKELET) -------------------------------------------------
+// KURULUM: 1) developer.spotify.com -> Create app. 2) Client ID'yi asagidaki
+// SPOTIFY_CLIENT_ID'e yaz. 3) Uygulamanin "Redirect URIs" listesine panelin
+// adresini ekle: bu sayfayi hangi adresle aciyorsan onu (or. http://magpanel.local/
+// veya http://<panel-ip>/). IP DHCP'den degisirse Redirect URI kirilir -> routerda
+// panele sabit IP rezervasyonu onerilir. Akis: PKCE ile tarayicida token alinir,
+// WS 0x0D ile firmware'e yollanir; panel her 5 sn 'currently-playing'i ceker.
+const SPOTIFY_CLIENT_ID='BURAYA_CLIENT_ID';    // <-- DOLDUR
+const SPOTIFY_REDIRECT=location.origin+'/';
+function spTok(t){const e=new TextEncoder().encode(t);const b=new Uint8Array(1+e.length);b[0]=0x0D;b.set(e,1);return b;}
+function spVerifier(){const a=new Uint8Array(48);crypto.getRandomValues(a);
+ return btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
+async function spChallenge(v){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));
+ return btoa(String.fromCharCode(...new Uint8Array(d))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');}
+async function appSpotify(){stopGif();
+ if(SPOTIFY_CLIENT_ID==='BURAYA_CLIENT_ID'){
+  addLog('Spotify: once web_page.h icinde SPOTIFY_CLIENT_ID doldur (yorumdaki kuruluma bak)');return;}
+ const tok=sessionStorage.getItem('sp_token');
+ if(tok){ws.send(spTok(tok));ws.send(new Uint8Array([0x0B,5]));addLog('Spotify: token gonderildi');return;}
+ const v=spVerifier();sessionStorage.setItem('sp_verifier',v);
+ const ch=await spChallenge(v);
+ location.href='https://accounts.spotify.com/authorize?client_id='+SPOTIFY_CLIENT_ID+
+  '&response_type=code&redirect_uri='+encodeURIComponent(SPOTIFY_REDIRECT)+
+  '&scope='+encodeURIComponent('user-read-currently-playing')+
+  '&code_challenge_method=S256&code_challenge='+ch;}
+(async function(){                              // Spotify redirect geri donusu (?code=...)
+ const code=new URLSearchParams(location.search).get('code');
+ if(!code||SPOTIFY_CLIENT_ID==='BURAYA_CLIENT_ID')return;
+ const v=sessionStorage.getItem('sp_verifier');if(!v)return;
+ try{
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',
+   headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:new URLSearchParams({client_id:SPOTIFY_CLIENT_ID,grant_type:'authorization_code',
+    code,redirect_uri:SPOTIFY_REDIRECT,code_verifier:v})});
+  const j=await r.json();
+  if(j.access_token){sessionStorage.setItem('sp_token',j.access_token);
+   history.replaceState({},'',location.pathname);
+   addLog('Spotify: baglandi - "Spotify"ya tekrar bas');}
+ }catch(e){addLog('Spotify token hata: '+e);}})();
 function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
 function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43;
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
