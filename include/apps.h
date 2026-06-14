@@ -161,8 +161,9 @@ class Apps {
   void centerText(const char* s, int y, uint8_t size, CRGB col) {
     int w = (int)strlen(s) * 6 * size;
     int x = (80 - w) / 2; if (x < 0) x = 0;
+    uint16_t c565 = ((uint16_t)(col.r >> 3) << 11) | ((uint16_t)(col.g >> 2) << 5) | (col.b >> 3);
     M->setTextSize(size);
-    M->setTextColor(col);
+    M->setTextColor(c565);
     M->setCursor(x, y);
     M->print(s);
   }
