@@ -110,7 +110,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
  oninput="brv.value=this.value" onchange="ws.send(new Uint8Array([4,this.value]))"><output id=brv>110</output></label>
 <label><span>Kontrast</span><input type=range id=ct min=60 max=200 value=128 oninput="setImg()"><output id=ctv>128</output></label>
 <label><span>Doygunluk</span><input type=range id=sa min=0 max=220 value=128 oninput="setImg()"><output id=sav>128</output></label>
-<label><span>Blur</span><input type=range id=bl min=0 max=3 value=0 oninput="setBlur()"><output id=blv>Kapalı</output></label>
+<label><span>Blur</span><input type=range id=bl min=0 max=4 value=0 oninput="setBlur()"><output id=blv>Kapalı</output></label>
 <label><span>Mozaik</span><input type=range id=mz min=1 max=20 value=1 oninput="setMosaic()"><output id=mzv>1</output></label>
 <label><span>R kazanç</span><input type=range id=gr min=60 max=255 value=255 oninput="setGain()"><output id=grv>255</output></label>
 <label><span>G kazanç</span><input type=range id=gg min=60 max=255 value=255 oninput="setGain()"><output id=ggv>255</output></label>
@@ -449,7 +449,7 @@ function setGain(){grv.value=gr.value;ggv.value=gg.value;gbv.value=gb.value;
 let iT=null;
 function setImg(){ctv.value=ct.value;sav.value=sa.value;
  clearTimeout(iT);iT=setTimeout(()=>ws.send(new Uint8Array([7,ct.value,sa.value])),150);}
-const blurLabels=['Kapalı','3×3','5×5','7×7'];
+const blurLabels=['Kapalı','2×2','3×3','5×5','7×7'];
 let blT=null;
 function setBlur(){const v=parseInt(bl.value);blv.value=blurLabels[v]||v;
  clearTimeout(blT);blT=setTimeout(()=>ws.send(new Uint8Array([0x0E,v])),150);}
