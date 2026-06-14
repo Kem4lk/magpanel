@@ -56,6 +56,11 @@ footer{text-align:center;margin-top:18px;display:flex;justify-content:center;ali
 footer a{color:var(--mut);font-size:12px;text-decoration:none}
 .ghbtn{font-size:12px;padding:6px 14px;border-radius:8px;background:var(--acc);
  border:none;color:#1a1206;font-weight:600;cursor:pointer}
+.dclk{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.dclk button{flex:1 1 auto;min-width:52px;padding:6px 4px;font-size:13px}
+.dclk button.on{background:var(--acc);border-color:var(--acc);color:#1a1206;font-weight:700}
+.tuneh{font-size:13px;color:var(--mut);margin:6px 0 2px}
+.hint2{font-size:11px;color:var(--mut);margin-top:3px;line-height:1.35}
 </style></head><body>
 <header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; 80&times;120</span>
 <span class=dot id=dot></span></header>
@@ -91,6 +96,18 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <label><span>R kazanç</span><input type=range id=gr min=60 max=255 value=255 oninput="setGain()"><output id=grv>255</output></label>
 <label><span>G kazanç</span><input type=range id=gg min=60 max=255 value=255 oninput="setGain()"><output id=ggv>255</output></label>
 <label><span>B kazanç</span><input type=range id=gb min=60 max=255 value=255 oninput="setGain()"><output id=gbv>255</output></label>
+<div class=tuneh>DCLK / flicker — en yüksek MOZAİKSİZ hız</div>
+<div class=dclk>
+<button data-d=80 onclick="setDclk(80,this)">2.0</button>
+<button data-d=64 onclick="setDclk(64,this)">2.5</button>
+<button data-d=53 onclick="setDclk(53,this)">3.0</button>
+<button data-d=46 onclick="setDclk(46,this)">3.5</button>
+<button data-d=40 onclick="setDclk(40,this)">4.0</button>
+<button data-d=36 onclick="setDclk(36,this)">4.5</button>
+<button data-d=32 onclick="setDclk(32,this)">5.0</button>
+<button data-d=27 onclick="setDclk(27,this)">6.0</button>
+</div>
+<div class=hint2>Hızı kademe kademe artır. Panelde 16px mozaik/bozulma görürsen bir alt kademeye in — en yüksek temiz hız flicker'ı en aza indirir. Seçim panele kaydedilir (reboot'ta kalır).</div>
 <div class=row>
 <button onclick="testW()">Beyaz test</button>
 <button onclick="testRamp()">Gri merdiven</button>
@@ -287,14 +304,23 @@ async function playGifFallback(file){
   for(let pp=0,j=1;pp<dd.data.length;pp+=4){b[j++]=dd.data[pp];b[j++]=dd.data[pp+1];b[j++]=dd.data[pp+2];}
   out.push({img:dd,buf:b,delay:fr.delay});
  }
- gifStop=false;let i=0;
+ gifStop=false;
+ // Gercek-zamanli oynatma (video yolu gibi): kumulatif zaman cizelgesi kur,
+ // en fazla ~15fps (66ms) gonder, panel/WS yetisemezse kare DUSUR ki animasyon
+ // YAVASLAMASIN. Eski setTimeout(delay) yolu, hizli GIF'lerde WS buffer'ini
+ // tasirip duzensiz atlamaya yol aciyordu -> "cok yavas/takilarak" oynuyordu.
+ let total=0;for(const fr of out){fr.t=total;total+=fr.delay;}
+ const t0=performance.now();let lastShown=-1,lastSend=0;
  (function step(){
   if(gifStop)return;
-  const fr=out[i];
-  ctx.putImageData(fr.img,0,0);                            // tarayicida da onizle
-  if(ws&&ws.readyState===1&&ws.bufferedAmount<60000)ws.send(fr.buf);
-  i=(i+1)%out.length;
-  gifIsRaf=false;gifTimer=setTimeout(step,fr.delay);
+  const el=(performance.now()-t0)%total;                   // dongusel gecen sure
+  let idx=0;for(let k=0;k<out.length;k++){if(el>=out[k].t)idx=k;else break;}
+  const now=performance.now();
+  if(idx!==lastShown&&now-lastSend>=66&&ws&&ws.readyState===1&&ws.bufferedAmount<40000){
+   ctx.putImageData(out[idx].img,0,0);                     // onizleme + panel ayni karede
+   ws.send(out[idx].buf);lastShown=idx;lastSend=now;
+  }
+  gifIsRaf=true;gifTimer=requestAnimationFrame(step);
  })();
  return true;
 }
@@ -342,6 +368,11 @@ function setImg(){ctv.value=ct.value;sav.value=sa.value;
 let mT=null;
 function setMosaic(){mzv.value=mz.value;
  clearTimeout(mT);mT=setTimeout(()=>ws.send(new Uint8Array([8,parseInt(mz.value)])),150);}
+function setDclk(d,btn){                          // canli DCLK ayari (opcode 0x0A)
+ if(ws&&ws.readyState===1)ws.send(new Uint8Array([10,d]));
+ document.querySelectorAll('.dclk button').forEach(b=>b.classList.remove('on'));
+ btn.classList.add('on');
+ addLog('DCLK: ~'+Math.round(160000/d)+' kHz secildi (bolen '+d+')');}
 function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
 function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43;
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
