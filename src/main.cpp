@@ -4,6 +4,7 @@
      0x05 + 1B     : gomulu galeri tablosu (0..GALLERY_COUNT-1)
      0x06 + 3B     : kanal kazanclari R,G,B (beyaz nokta kalibrasyonu)
      0x07 + 2B     : kontrast, doygunluk (128 = notr)
+     0x0E + 1B     : blur yarıçapı (0=kapalı, 1=3x3, 2=5x5, 3=7x7)
      0x08 + 1B     : mozaik blok boyutu (1=kapali, 2..40)
      0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
@@ -141,17 +142,38 @@ static bool    haveFrame = false;
 static volatile size_t  msgLen   = 0;
 static volatile bool    msgReady = false;
 
+// framebuf'tan (x,y) pikselinin blur uygulanmis rengini dondurur.
+// radius=0 → orijinal piksel, radius=1 → 3x3, 2 → 5x5, 3 → 7x7 box blur.
+static inline void blurredPixel(int x, int y, uint8_t &ro, uint8_t &go, uint8_t &bo){
+  int r = matrix.img_blur;
+  if(r == 0){
+    const uint8_t *p = framebuf + (y*80+x)*3;
+    ro=p[0]; go=p[1]; bo=p[2]; return;
+  }
+  uint32_t sr=0,sg=0,sb=0,cnt=0;
+  for(int dy=-r; dy<=r; dy++){
+    int ny = y+dy; if(ny<0) ny=0; else if(ny>=PANEL_PHY_RES_Y) ny=PANEL_PHY_RES_Y-1;
+    for(int dx=-r; dx<=r; dx++){
+      int nx = x+dx; if(nx<0) nx=0; else if(nx>=80) nx=79;
+      const uint8_t *q = framebuf + (ny*80+nx)*3;
+      sr+=q[0]; sg+=q[1]; sb+=q[2]; cnt++;
+    }
+  }
+  ro=(uint8_t)(sr/cnt); go=(uint8_t)(sg/cnt); bo=(uint8_t)(sb/cnt);
+}
+
 void renderFrame(){
   uint8_t b = mosaicBlock < 1 ? 1 : mosaicBlock;
   if(b == 1){
-    const uint8_t *p=framebuf;
     // Doldurma (drawPixel) saf CPU ve hizli (~1ms). Araya refresh() koymak
     // onceki kareyi parlak gosterip update()'in 30ms'lik dim sweep'iyle KONTRAST
     // yaratiyordu (flicker'i artiriyordu) + kare hizini dusuruyordu. Kaldirildi:
     // sadece doldur, sonra tek update().
     for(int y=0;y<PANEL_PHY_RES_Y;y++)
-      for(int x=0;x<80;x++,p+=3)
-        matrix.drawPixel((uint8_t)x,(uint8_t)y,p[0],p[1],p[2]);
+      for(int x=0;x<80;x++){
+        uint8_t r,g,bl; blurredPixel(x,y,r,g,bl);
+        matrix.drawPixel((uint8_t)x,(uint8_t)y,r,g,bl);
+      }
   } else {
     // NxN bloklara bol, her blogun ortalama rengini tum bloga yaz
     for(int by=0; by<PANEL_PHY_RES_Y; by+=b){
@@ -283,6 +305,13 @@ void handleMessage(const uint8_t *buf, size_t len){
         memcpy(tok, buf+1, tl);
         apps.setSpotifyToken(tok);
         logf("Spotify token alindi (%u bayt)", (unsigned)tl);
+      }
+      break;
+    case 0x0E:                                   // blur yarıçapı (0=kapalı, 1=3x3, 2=5x5, 3=7x7)
+      if(len>=2){
+        matrix.img_blur = buf[1] > 3 ? 3 : buf[1];
+        logf("Blur: r=%u", matrix.img_blur);
+        redrawCurrent();
       }
       break;
   }
