@@ -4,7 +4,7 @@
      0x05 + 1B     : gomulu galeri tablosu (0..GALLERY_COUNT-1)
      0x06 + 3B     : kanal kazanclari R,G,B (beyaz nokta kalibrasyonu)
      0x07 + 2B     : kontrast, doygunluk (128 = notr)
-     0x0E + 1B     : blur kademesi (0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7)
+     0x0E + 1B     : blur kademesi (0=kapalı, 1=2x2, idx≥2 → (2*idx-1) kenarlı box blur, maks 12 = 23x23)
      0x08 + 1B     : mozaik blok boyutu (1=kapali, 2..40)
      0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
@@ -143,8 +143,9 @@ static volatile size_t  msgLen   = 0;
 static volatile bool    msgReady = false;
 
 // framebuf'tan (x,y) pikselinin blur uygulanmis rengini dondurur.
-// img_blur bir kademe indeksidir: 0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7.
-// 2x2 asimetrik (piksel + sağ + alt + sağ-alt), digerleri simetrik box blur.
+// img_blur bir kademe indeksidir: 0=kapalı, 1=2x2, idx≥2 → yarıçap=idx-1
+// simetrik box blur ((2*idx-1) kenarlı). Maks 12 (23x23). 2x2 asimetrik
+// (piksel + sağ + alt + sağ-alt), digerleri simetrik box blur.
 static inline void blurredPixel(int x, int y, uint8_t &ro, uint8_t &go, uint8_t &bo){
   int idx = matrix.img_blur;
   if(idx == 0){
@@ -317,9 +318,9 @@ void handleMessage(const uint8_t *buf, size_t len){
         logf("Spotify token alindi (%u bayt)", (unsigned)tl);
       }
       break;
-    case 0x0E:                                   // blur kademesi (0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7)
+    case 0x0E:                                   // blur kademesi (0=kapalı, 1=2x2, idx≥2 → (2*idx-1) kenarlı box blur, maks 12 = 23x23)
       if(len>=2){
-        matrix.img_blur = buf[1] > 4 ? 4 : buf[1];
+        matrix.img_blur = buf[1] > 12 ? 12 : buf[1];
         logf("Blur: r=%u", matrix.img_blur);
         redrawCurrent();
       }
