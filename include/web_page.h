@@ -185,10 +185,7 @@ async function playVideo(file){
  function step(){
   if(gifStop){vid.pause();vid.src='';URL.revokeObjectURL(url);addLog('DBG VID: durduruldu, toplam kare='+frameCount);return;}
   if(vid.readyState>=2){
-   const s=Math.max(80/vid.videoWidth,120/vid.videoHeight),
-    w=vid.videoWidth*s,h=vid.videoHeight*s;
-   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-   ctx.drawImage(vid,(80-w)/2,(120-h)/2,w,h);                 // her RAF'ta onizleme guncel
+   drawScaled(vid,vid.videoWidth,vid.videoHeight);            // yüksek kaliteli küçültme
    // ~15fps gonderim: panel ve WiFi 60fps'i kaldiramaz; fazlasi heap/banding yapar
    const now=performance.now();
    if(now-lastSend>=66 && ws&&ws.readyState===1&&ws.bufferedAmount<40000){
@@ -318,11 +315,10 @@ async function playGifFallback(file){
  // her kareyi 80x120'ye olcekle + gonderim buffer'i hazirla (oynatma sirasinda is yok)
  const tmp=document.createElement('canvas');tmp.width=g.W;tmp.height=g.H;
  const tc=tmp.getContext('2d',{willReadFrequently:true});
- const s=Math.max(80/g.W,120/g.H),w=g.W*s,h=g.H*s,ox=(80-w)/2,oy=(120-h)/2,out=[];
+ const out=[];
  for(const fr of g.frames){
   tc.putImageData(fr.img,0,0);
-  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-  ctx.drawImage(tmp,ox,oy,w,h);
+  drawScaled(tmp,g.W,g.H);
   const dd=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
   for(let pp=0,j=1;pp<dd.data.length;pp+=4){b[j++]=dd.data[pp];b[j++]=dd.data[pp+1];b[j++]=dd.data[pp+2];}
   out.push({img:dd,buf:b,delay:fr.delay});
@@ -348,6 +344,26 @@ async function playGifFallback(file){
  return true;
 }
 
+// Yüksek kaliteli küçültme: büyük resmi 80x120'ye indirirken çok adımlı yarılama
+// kullanır (her adımda boyut yarıya iner). Tek adımlı drawImage'dan çok daha keskin.
+function hqScale(src, sw, sh){
+ let tmp=document.createElement('canvas'),tc=tmp.getContext('2d');
+ tmp.width=sw;tmp.height=sh;tc.drawImage(src,0,0,sw,sh);
+ while(tmp.width>160||tmp.height>240){
+  const nw=Math.max(Math.floor(tmp.width/2),80),nh=Math.max(Math.floor(tmp.height/2),120);
+  const s2=document.createElement('canvas');s2.width=nw;s2.height=nh;
+  const c2=s2.getContext('2d');c2.imageSmoothingEnabled=true;c2.imageSmoothingQuality='high';
+  c2.drawImage(tmp,0,0,nw,nh);tmp=s2;
+ }
+ return tmp;
+}
+function drawScaled(src,srcW,srcH){
+ const s=Math.max(80/srcW,120/srcH),sw=Math.round(srcW*s),sh=Math.round(srcH*s);
+ const scaled=hqScale(src,sw,sh);
+ ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+ ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+ ctx.drawImage(scaled,Math.round((80-sw)/2),Math.round((120-sh)/2),sw,sh);
+}
 async function loadImg(file){
  if(!file)return;
  stopGif();                                    // onceki animasyonu/videoyu durdur
@@ -359,10 +375,8 @@ async function loadImg(file){
   if(await playGifFallback(file))return;
   addLog('DBG GIF: animasyon yok, statik gosteriliyor');
  } const img=new Image();
- img.onload=()=>{const s=Math.max(80/img.width,120/img.height),
-  w=img.width*s,h=img.height*s;
-  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-  ctx.drawImage(img,(80-w)/2,(120-h)/2,w,h);sendFrame();
+ img.onload=()=>{
+  drawScaled(img,img.naturalWidth,img.naturalHeight);sendFrame();
   URL.revokeObjectURL(img.src);};
  img.src=URL.createObjectURL(file);
 }
