@@ -131,6 +131,10 @@
 
     int get_transfer_count();
 
+    // DCLK bolenini calisma aninda degistir (flicker ayari). Transfer'ler arasinda
+    // (loop context) cagrilmali; bir sonraki send_stuff_once'a etki eder.
+    void set_clock_divider(uint32_t div_num);
+
   protected:
 
     esp_err_t release(void) ;
