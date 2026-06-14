@@ -4,7 +4,7 @@
      0x05 + 1B     : gomulu galeri tablosu (0..GALLERY_COUNT-1)
      0x06 + 3B     : kanal kazanclari R,G,B (beyaz nokta kalibrasyonu)
      0x07 + 2B     : kontrast, doygunluk (128 = notr)
-     0x0E + 1B     : blur yarıçapı (0=kapalı, 1=3x3, 2=5x5, 3=7x7)
+     0x0E + 1B     : blur kademesi (0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7)
      0x08 + 1B     : mozaik blok boyutu (1=kapali, 2..40)
      0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
@@ -143,19 +143,29 @@ static volatile size_t  msgLen   = 0;
 static volatile bool    msgReady = false;
 
 // framebuf'tan (x,y) pikselinin blur uygulanmis rengini dondurur.
-// radius=0 → orijinal piksel, radius=1 → 3x3, 2 → 5x5, 3 → 7x7 box blur.
+// img_blur bir kademe indeksidir: 0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7.
+// 2x2 asimetrik (piksel + sağ + alt + sağ-alt), digerleri simetrik box blur.
 static inline void blurredPixel(int x, int y, uint8_t &ro, uint8_t &go, uint8_t &bo){
-  int r = matrix.img_blur;
-  if(r == 0){
+  int idx = matrix.img_blur;
+  if(idx == 0){
     const uint8_t *p = framebuf + (y*80+x)*3;
     ro=p[0]; go=p[1]; bo=p[2]; return;
   }
+  int x0,x1,y0,y1;
+  if(idx == 1){                 // 2x2: piksel + sağ + alt + sağ-alt
+    x0 = x;     x1 = x+1;
+    y0 = y;     y1 = y+1;
+  } else {                      // simetrik box blur, yarıçap = idx-1
+    int r = idx - 1;
+    x0 = x-r;   x1 = x+r;
+    y0 = y-r;   y1 = y+r;
+  }
   uint32_t sr=0,sg=0,sb=0,cnt=0;
-  for(int dy=-r; dy<=r; dy++){
-    int ny = y+dy; if(ny<0) ny=0; else if(ny>=PANEL_PHY_RES_Y) ny=PANEL_PHY_RES_Y-1;
-    for(int dx=-r; dx<=r; dx++){
-      int nx = x+dx; if(nx<0) nx=0; else if(nx>=80) nx=79;
-      const uint8_t *q = framebuf + (ny*80+nx)*3;
+  for(int ny=y0; ny<=y1; ny++){
+    int cy = ny<0 ? 0 : (ny>=PANEL_PHY_RES_Y ? PANEL_PHY_RES_Y-1 : ny);
+    for(int nx=x0; nx<=x1; nx++){
+      int cx = nx<0 ? 0 : (nx>=80 ? 79 : nx);
+      const uint8_t *q = framebuf + (cy*80+cx)*3;
       sr+=q[0]; sg+=q[1]; sb+=q[2]; cnt++;
     }
   }
@@ -307,9 +317,9 @@ void handleMessage(const uint8_t *buf, size_t len){
         logf("Spotify token alindi (%u bayt)", (unsigned)tl);
       }
       break;
-    case 0x0E:                                   // blur yarıçapı (0=kapalı, 1=3x3, 2=5x5, 3=7x7)
+    case 0x0E:                                   // blur kademesi (0=kapalı, 1=2x2, 2=3x3, 3=5x5, 4=7x7)
       if(len>=2){
-        matrix.img_blur = buf[1] > 3 ? 3 : buf[1];
+        matrix.img_blur = buf[1] > 4 ? 4 : buf[1];
         logf("Blur: r=%u", matrix.img_blur);
         redrawCurrent();
       }
