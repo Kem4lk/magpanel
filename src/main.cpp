@@ -436,6 +436,20 @@ void setup(){
     server.addHandler(&ws);
     server.on("/", HTTP_GET, handleIndex);   // PROGMEM'den akitilir (truncation'a karşi sağlam)
 
+    // /api/gallery — galeri tablo isimlerini JSON olarak döndürür
+    server.on("/api/gallery", HTTP_GET, [](AsyncWebServerRequest *r){
+      String j = "[";
+      for(int i=0; i<GALLERY_COUNT; i++){
+        if(i) j += ",";
+        j += "\"";
+        // GALLERY_NAMES PROGMEM degil, dogrudan erisim
+        j += GALLERY_NAMES[i];
+        j += "\"";
+      }
+      j += "]";
+      r->send(200, "application/json", j);
+    });
+
     // ---- Tarayicidan OTA: http://magpanel.local/update (kullanici: admin) ----
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest *r){
       if(!r->authenticate("admin", OTA_PASSWORD)) return r->requestAuthentication();
