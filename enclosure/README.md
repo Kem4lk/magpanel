@@ -1,3 +1,7 @@
+> **Görüntü/yazı paneli mi yapıyorsun?** Bu dosya kaba egg-crate **dekoratif glow**
+> kasasıdır. Her piksele kare göz veren GÜNCEL **piksel-ızgara** sürümü için
+> → [`README_pixel.md`](README_pixel.md) + `stl_pixel/` + `generate_pixel_case.py`.
+
 # MagPanel Difüzör Kasası — 320×480 mm (P4 / 80×120 px)
 
 `case20mm.stl` (162×162×32 mm, **kare**, ince kabuk difüzör + egg-crate takviye)
