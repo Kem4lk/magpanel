@@ -135,6 +135,16 @@
     // (loop context) cagrilmali; bir sonraki send_stuff_once'a etki eder.
     void set_clock_divider(uint32_t div_num);
 
+    // Surekli (circular) DMA: 'data'yi sonsuz dongude panele akitir. Bloklamaz,
+    // hemen doner. Son DMA descriptor'i basa baglanir -> motor CPU'suz, sabit
+    // hizda akar -> kesintisiz GCLK -> flicker'siz panel. Tipik kullanim:
+    // scan-only buffer'i surekli dongude tut, icerik degisince stop_dma() ->
+    // grayscale push -> VSYNC -> start_circular ile devam.
+    void start_circular(void *data, size_t size_in_bytes);
+    // Calisan circular DMA'yi durdur (one-shot grayscale push'tan ONCE cagrilir).
+    void stop_dma();
+    bool dma_is_running() const { return _running; }
+
   protected:
 
     esp_err_t release(void) ;
@@ -156,6 +166,11 @@
 
     esp_lcd_i80_bus_handle_t _i80_bus;
 
+    // Circular (surekli) refresh icin AYRI descriptor blogu + durum bayragi.
+    // send_stuff_once'in _dmadesc_a'sini ezmemesi icin ayri tutulur.
+    HUB75_DMA_DESCRIPTOR_T* _dmadesc_circ = nullptr;
+    uint32_t _dmadesc_circ_count = 0;
+    volatile bool _running = false;
 
   };
 

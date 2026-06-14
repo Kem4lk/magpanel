@@ -170,28 +170,35 @@ class Matrix : public GFX {
 
   void update() {
     assert(initialized);
-    // LAutour (ICN2053/FM6353) order: shadow-SRAM DATA first, THEN the vsync
-    // command group, then immediate scanning so the buffer swap executes.
+    // SUREKLI DMA modeli: scan-only buffer normalde sonsuz dongude akar
+    // (flicker'siz). Yeni kareyi yuklemek icin: dongu yu durdur, grayscale
+    // veriyi shadow-SRAM'e bas, VSYNC ile display-SRAM'e takas et, sonra
+    // surekli scan'i geri baslat. Tek DMA kanali oldugundan sirayla yapilir.
+    // Statik karede update() cagrilmaz -> scan hic durmaz -> flicker yok.
+    // Video'da push sirasinda grayscale buffer'in KENDI GCLK/adres'i ekrani
+    // (eski kareyi) yanik tutar, sonra start_circular yeni kareyi tarar ->
+    // kararma/sweep en aza iner (yuksek DCLK ile push kisaldikca daha da iyi).
+    dma_bus.stop_dma();
     dma_bus.send_stuff_once(dma_grey_gpio_data, dma_grey_buffer_size, true);
     fm_pre_active_dma();
     fm_en_op_dma();
     fm_v_sync_dma();
     fm_pre_active_dma();
-    // Post-VSYNC GCLKs: two scan cycles so the swap is clocked through even if
-    // the caller delays before the next refresh().
-    dma_bus.send_stuff_once(dma_scan_buffer, dma_scan_buffer_size, true);
-    dma_bus.send_stuff_once(dma_scan_buffer, dma_scan_buffer_size, true);
+    dma_bus.start_circular(dma_scan_buffer, dma_scan_buffer_size);
   }
 
   // DCLK bolenini calisma aninda degistir (flicker tuner). div sadece kaydirma
   // hizini degistirir; 1/20 scan yapisi (20 satir,74 GCLK) sabit kalir.
   void setClockDiv(uint32_t div) { dma_bus.set_clock_divider(div); }
 
-  // Keep the panel scanning/lit: call this continuously from loop().
-  // Sends ONE scan cycle (GCLK + addresses, no data latches) per call.
+  // Keep the panel scanning/lit. Eskiden her cagri bir scan cycle GONDERIRDI
+  // (bursty GCLK -> flicker). Artik surekli circular DMA paneli kendisi yanik
+  // tutuyor; bu sadece donginin CALISTIGINDAN emin olur (calisirken no-op).
+  // loop()/OTA donguleri guvenle cagirmaya devam edebilir.
   void refresh() {
     assert(initialized);
-    dma_bus.send_stuff_once(dma_scan_buffer, dma_scan_buffer_size, true);
+    if (!dma_bus.dma_is_running())
+      dma_bus.start_circular(dma_scan_buffer, dma_scan_buffer_size);
   }
 
   // Clear only RGB data bits; the GCLK/ADDR/LAT template stays intact.

@@ -293,11 +293,73 @@ esp_err_t Bus_Parallel16::dma_transfer_start() {
   while (LCD_CAM.lcd_user.lcd_start);
 
   // WAIT UNTIL SENT!
-  while (buffer_sent == false); 
+  while (buffer_sent == false);
 
   return ret;
 
 }  // end
+
+
+// ----- Surekli (circular) refresh DMA ---------------------------------------
+// Eski tek-atislik send_stuff_once modeli paneli CPU guduml u, bursty GCLK ile
+// suruyordu (her loop() turunda bir scan, aralarda WiFi/yield boslugu). Bu
+// bosluklarda GCLK durunca FM6363C'nin S-PWM sayaci donuyor -> goz flicker'i.
+// Cozum: scan-only buffer'i son descriptor basa baglanarak SONSUZ dongude akit;
+// GDMA motoru CPU'suz, sabit hizda (~780Hz @2.5MHz) panele GCLK+adres besler ->
+// statik goruntude flicker tamamen biter. Icerik degisince Matrix::update()
+// once stop_dma() cagirir, grayscale push + VSYNC yapar, sonra tekrar
+// start_circular ile devam eder (tek DMA kanali oldugundan sirayla).
+
+void Bus_Parallel16::stop_dma() {
+  if (!_running) return;
+  LCD_CAM.lcd_user.lcd_start = 0;   // LCD cikisini durdur
+  esp_rom_delay_us(2);
+  gdma_stop(dma_chan);
+  gdma_reset(dma_chan);             // bir sonraki gdma_start temiz baslasin
+  _running = false;
+}
+
+void Bus_Parallel16::start_circular(void *data, size_t size_in_bytes) {
+  int needed = lldesc_get_required_num(size_in_bytes);
+
+  // Circular icin AYRI descriptor blogu: send_stuff_once'in _dmadesc_a'sini
+  // ezmesin (update() arasinda grayscale push o blogu yeniden yaziyor).
+  if (_dmadesc_circ == nullptr || (uint32_t)needed > _dmadesc_circ_count) {
+    if (_dmadesc_circ) { heap_caps_free(_dmadesc_circ); }
+    _dmadesc_circ = (HUB75_DMA_DESCRIPTOR_T *)heap_caps_malloc(
+        sizeof(HUB75_DMA_DESCRIPTOR_T) * needed, MALLOC_CAP_DMA);
+    if (_dmadesc_circ == nullptr) {
+      ESP_LOGE(TAG, "ERROR: circular DMA descriptor malloc failed.");
+      return;
+    }
+    _dmadesc_circ_count = needed;
+  }
+
+  int len = (int)size_in_bytes;
+  uint8_t *p = (uint8_t *)data;
+  int n = 0;
+  while (len) {
+    int chunk = (len > LLDESC_MAX_NUM_PER_DESC) ? LLDESC_MAX_NUM_PER_DESC : len;
+    _dmadesc_circ[n].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    _dmadesc_circ[n].dw0.suc_eof = 0;       // dongude EOF yok
+    _dmadesc_circ[n].dw0.size = _dmadesc_circ[n].dw0.length = chunk;
+    _dmadesc_circ[n].buffer = p;
+    _dmadesc_circ[n].next = (dma_descriptor_t *)&_dmadesc_circ[n + 1];
+    len -= chunk;
+    p += chunk;
+    n++;
+  }
+  _dmadesc_circ[n - 1].next = (dma_descriptor_t *)&_dmadesc_circ[0];   // <-- SON->BAS: sonsuz dongu
+
+  gdma_reset(dma_chan);
+  gdma_start(dma_chan, (intptr_t)&_dmadesc_circ[0]);
+  esp_rom_delay_us(10);
+  LCD_CAM.lcd_user.lcd_dout = 1;            // veri cikisini etkinlestir
+  LCD_CAM.lcd_user.lcd_update = 1;          // register guncelle
+  LCD_CAM.lcd_misc.lcd_afifo_reset = 1;     // TX FIFO temizle
+  LCD_CAM.lcd_user.lcd_start = 1;           // baslat; BUSY-WAIT YOK -> surekli akar
+  _running = true;
+}
 
 
 
