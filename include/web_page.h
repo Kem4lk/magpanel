@@ -66,12 +66,10 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <span class=dot id=dot></span></header>
 
 <div class=card><h2>Galeri</h2>
-<div class=grid>
-<button onclick="art(0)">Mona Lisa</button>
-<button onclick="art(1)">Yıldızlı Gece</button>
-<button onclick="art(2)">Çığlık</button>
-<button onclick="art(3)">Gemi Enkazı</button>
-</div></div>
+<div class=grid id=galGrid><span style="color:var(--hint);font-size:12px">Yükleniyor…</span></div></div>
+
+<div class=card id=recentCard style="display:none"><h2>Son Gönderilenler</h2>
+<div id=recentGrid style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
 
 <div class=card><h2>Uygulamalar</h2>
 <div class=grid>
@@ -379,10 +377,57 @@ window.onpaste=e=>{for(const it of e.clipboardData.items)
 function sendFrame(){const d=ctx.getImageData(0,0,80,120).data,
  b=new Uint8Array(1+28800);b[0]=1;
  for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
- ws.send(b);}
+ ws.send(b);
+ saveRecent(d);}
 function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
  ws.send(new Uint8Array([3]));}
 function art(i){stopGif();ws.send(new Uint8Array([5,i]));}
+
+// ---- Galeri butonlarini sunucudan çek (GALLERY_COUNT degisirse otomatik guncellenir) ----
+fetch('/api/gallery').then(r=>r.json()).then(names=>{
+ const g=document.getElementById('galGrid');g.innerHTML='';
+ names.forEach((n,i)=>{const b=document.createElement('button');
+  b.textContent=n;b.onclick=()=>art(i);g.appendChild(b);});
+}).catch(()=>{});
+
+// ---- Son Gönderilenler (localStorage) ----
+const RECENT_KEY='mpRecent',RECENT_MAX=8;
+function saveRecent(imgData){
+ const tmp=document.createElement('canvas');tmp.width=80;tmp.height=120;
+ tmp.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(imgData),80,120),0,0);
+ const url=tmp.toDataURL('image/png');
+ let lst=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');
+ lst.unshift(url);if(lst.length>RECENT_MAX)lst=lst.slice(0,RECENT_MAX);
+ try{localStorage.setItem(RECENT_KEY,JSON.stringify(lst));}catch(e){}
+ renderRecent(lst);}
+function renderRecent(lst){
+ const card=document.getElementById('recentCard');
+ const grid=document.getElementById('recentGrid');
+ if(!lst||!lst.length){card.style.display='none';return;}
+ card.style.display='';grid.innerHTML='';
+ lst.forEach((url,idx)=>{
+  const wrap=document.createElement('div');wrap.style.cssText='position:relative;display:inline-block;';
+  const img=document.createElement('img');
+  img.src=url;img.style.cssText='width:40px;height:60px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid var(--line);';
+  img.title='Panele gönder';
+  img.onclick=()=>{stopGif();
+   const tmp=document.createElement('canvas');tmp.width=80;tmp.height=120;
+   const ti=tmp.getContext('2d');const image=new Image();
+   image.onload=()=>{ti.drawImage(image,0,0);
+    const d2=ti.getImageData(0,0,80,120).data;
+    const b=new Uint8Array(1+28800);b[0]=1;
+    for(let i=0,j=1;i<d2.length;i+=4){b[j++]=d2[i];b[j++]=d2[i+1];b[j++]=d2[i+2];}
+    ws.send(b);};image.src=url;};
+  const del=document.createElement('span');
+  del.textContent='×';del.title='Sil';
+  del.style.cssText='position:absolute;top:1px;right:1px;background:#e53;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;line-height:14px;';
+  del.onclick=(e)=>{e.stopPropagation();
+   let lst2=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');
+   lst2.splice(idx,1);localStorage.setItem(RECENT_KEY,JSON.stringify(lst2));
+   renderRecent(lst2);};
+  wrap.appendChild(img);wrap.appendChild(del);grid.appendChild(wrap);});
+}
+renderRecent(JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'));
 
 let gT=null;
 function setGain(){grv.value=gr.value;ggv.value=gg.value;gbv.value=gb.value;
