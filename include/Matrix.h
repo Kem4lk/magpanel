@@ -183,6 +183,10 @@ class Matrix : public GFX {
     dma_bus.send_stuff_once(dma_scan_buffer, dma_scan_buffer_size, true);
   }
 
+  // DCLK bolenini calisma aninda degistir (flicker tuner). div sadece kaydirma
+  // hizini degistirir; 1/20 scan yapisi (20 satir,74 GCLK) sabit kalir.
+  void setClockDiv(uint32_t div) { dma_bus.set_clock_divider(div); }
+
   // Keep the panel scanning/lit: call this continuously from loop().
   // Sends ONE scan cycle (GCLK + addresses, no data latches) per call.
   void refresh() {

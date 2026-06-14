@@ -79,6 +79,16 @@ int Bus_Parallel16::get_transfer_count() {
   return trans_done_count;
 }
 
+// DCLK = 160MHz / div_num. Calisma aninda yazilabilir; LCD modulu bir sonraki
+// transfer'de yeni boleni kullanir. Sadece kaydirma hizi degisir; tarama yapisi
+// (adres/GCLK/LAT desenleri) DMA buffer'da oldugu icin etkilenmez.
+// Clamp: 160/16=10MHz mutlak tavan, 160/200=0.8MHz taban (guvenlik agi).
+void Bus_Parallel16::set_clock_divider(uint32_t div_num) {
+  if (div_num < 16)  div_num = 16;
+  if (div_num > 200) div_num = 200;
+  LCD_CAM.lcd_clock.lcd_clkm_div_num = div_num;
+}
+
 // ------------------------------------------------------------------------------
 void Bus_Parallel16::config(const config_t &cfg) {
   _cfg = cfg;
@@ -121,7 +131,11 @@ esp_err_t Bus_Parallel16::setup_lcd_dma_periph(void) {
   //LCD_CAM.lcd_clock.lcd_clk_equ_sysclk = 0; // PCLK = CLK / (CLKCNT_N+1)
   LCD_CAM.lcd_clock.lcd_clk_equ_sysclk = 1;  // PCLK = CLK / 1 (... so 160Mhz still)
 
-  LCD_CAM.lcd_clock.lcd_clkm_div_num = 64;  // 2.5MHz: update() ~61ms->~30ms, video/OTA flicker'i yariya iner. (128=1.25MHz ultra-safe.) 30-chip jumper bus 7MHz'de ring->16px mozaik; 2.5MHz onceden calisan validation speed. Mozaik donerse 128'e geri al.
+  // Acilis varsayilani: 2.5MHz (div 64) - bilinen-guvenli. Gercek "donanima en uygun"
+  // hiz jumper-kablo bus'ina ozgu; web UI'daki DCLK tuner ile canli bulunup NVS'e
+  // kaydedilir (boot'ta set_clock_divider ile uygulanir). div sadece kaydirma hizini
+  // degistirir; 1/20 scan yapisi (20 satir,74 GCLK,deadtime3) DMA buffer'da sabit kalir.
+  LCD_CAM.lcd_clock.lcd_clkm_div_num = 64;  // 2.5MHz. (40=4MHz,32=5MHz,27=6MHz,128=1.25MHz.) 7MHz'de jumper bus ring->mozaik.
 
   LCD_CAM.lcd_clock.lcd_clkm_div_b = 0;  // fractal clock divider numerator
   LCD_CAM.lcd_clock.lcd_clkm_div_a = 1;  // denominator

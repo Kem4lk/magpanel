@@ -244,6 +244,15 @@ void handleMessage(const uint8_t *buf, size_t len){
       otaNowRequested = true;
       logf("GitHub OTA: manuel kontrol istendi...");
       break;
+    case 0x0A:                                   // canli DCLK bolen ayari (flicker tuner)
+      if(len>=2){
+        uint32_t div = buf[1]; if(div<16) div=16; if(div>200) div=200;
+        matrix.setClockDiv(div);                 // hemen uygula (loop context, transferler arasi)
+        prefs.begin("panelcfg", false); prefs.putUInt("dclkdiv", div); prefs.end();  // reboot'ta kalsin
+        logf("DCLK: bolen=%lu -> ~%lu kHz (NVS'e kaydedildi)", div, 160000UL/div);
+        redrawCurrent();                         // yeni hizda yeniden ciz
+      }
+      break;
   }
 }
 
@@ -322,6 +331,12 @@ void setup(){
   }
   esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
   matrix.initMatrix(); delay(10);
+  // Web UI'daki DCLK tuner ile bulunan flicker ayari NVS'te ise uygula
+  // (donanima ozgu en yuksek mozaiksiz hiz). Yoksa derlenmis varsayilan (2.5MHz).
+  prefs.begin("panelcfg", true);
+  uint32_t nvsDiv = prefs.getUInt("dclkdiv", 0);
+  prefs.end();
+  if(nvsDiv >= 16 && nvsDiv <= 200){ matrix.setClockDiv(nvsDiv); logf("DCLK NVS ayari: bolen=%lu (~%lu kHz)", nvsDiv, 160000UL/nvsDiv); }
   drawGallery(0);                                // acilis ekrani (Mona Lisa)
 
   WiFi.mode(WIFI_STA);
