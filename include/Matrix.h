@@ -45,24 +45,28 @@
 
 static const char *TAG = "Matrix.h";
 
-// CIE - Lookup table for converting between perceived LED brightness and PWM
-const uint16_t CIE[256] = {
-    0,    0,    0,    0,    0,    1,    1,    1,    1,    1,    1,    1,    1,    1,    2,    2,
-    2,    2,    2,    2,    2,    2,    2,    3,    3,    3,    3,    3,    3,    3,    3,    4,
-    4,    4,    4,    4,    4,    5,    5,    5,    5,    5,    6,    6,    6,    6,    6,    7,
-    7,    7,    7,    8,    8,    8,    8,    9,    9,    9,   10,   10,   10,   10,   11,   11,
-   11,   12,   12,   12,   13,   13,   13,   14,   14,   15,   15,   15,   16,   16,   17,   17,
-   17,   18,   18,   19,   19,   20,   20,   21,   21,   22,   22,   23,   23,   24,   24,   25,
-   25,   26,   26,   27,   28,   28,   29,   29,   30,   31,   31,   32,   32,   33,   34,   34,
-   35,   36,   37,   37,   38,   39,   39,   40,   41,   42,   43,   43,   44,   45,   46,   47,
-   47,   48,   49,   50,   51,   52,   53,   54,   54,   55,   56,   57,   58,   59,   60,   61,
-   62,   63,   64,   65,   66,   67,   68,   70,   71,   72,   73,   74,   75,   76,   77,   79,
-   80,   81,   82,   83,   85,   86,   87,   88,   90,   91,   92,   94,   95,   96,   98,   99,
-  100,  102,  103,  105,  106,  108,  109,  110,  112,  113,  115,  116,  118,  120,  121,  123,
-  124,  126,  128,  129,  131,  132,  134,  136,  138,  139,  141,  143,  145,  146,  148,  150,
-  152,  154,  155,  157,  159,  161,  163,  165,  167,  169,  171,  173,  175,  177,  179,  181,
-  183,  185,  187,  189,  191,  193,  196,  198,  200,  202,  204,  207,  209,  211,  214,  216,
-  218,  220,  223,  225,  228,  230,  232,  235,  237,  240,  242,  245,  247,  250,  252,  255,
+// GAMMA16 - sRGB 8-bit girişi → 16-bit lineer PWM çıkışı
+// Dönüşüm: PWM = round(65535 * (i/255)^2.2)
+// sRGB fotoğraflardaki gamma-2.2'yi açar ve doğrusal ışık olarak
+// FM6363C 16-bit S-PWM register'ına yazar.
+// Eski CIE tablosu (0→255) yerine; artık döngü de 16-bit çalışır.
+const uint16_t GAMMA16[256] = {
+      0,     0,     2,     4,     7,    11,    17,    24,    32,    42,    53,    65,    79,    94,   111,   129,
+    148,   169,   192,   216,   242,   270,   299,   330,   362,   396,   432,   469,   508,   549,   591,   635,
+    681,   729,   779,   830,   883,   938,   995,  1053,  1113,  1175,  1239,  1305,  1373,  1443,  1514,  1587,
+   1663,  1740,  1819,  1900,  1983,  2068,  2155,  2243,  2334,  2427,  2521,  2618,  2717,  2817,  2920,  3024,
+   3131,  3240,  3350,  3463,  3578,  3694,  3813,  3934,  4057,  4182,  4309,  4438,  4570,  4703,  4838,  4976,
+   5115,  5257,  5401,  5547,  5695,  5845,  5998,  6152,  6309,  6468,  6629,  6792,  6957,  7124,  7294,  7466,
+   7640,  7816,  7994,  8175,  8358,  8543,  8730,  8919,  9111,  9305,  9501,  9699,  9900, 10102, 10307, 10515,
+  10724, 10936, 11150, 11366, 11585, 11806, 12029, 12254, 12482, 12712, 12944, 13179, 13416, 13655, 13896, 14140,
+  14386, 14635, 14885, 15138, 15394, 15652, 15912, 16174, 16439, 16706, 16975, 17247, 17521, 17798, 18077, 18358,
+  18642, 18928, 19216, 19507, 19800, 20095, 20393, 20694, 20996, 21301, 21609, 21919, 22231, 22546, 22863, 23182,
+  23504, 23829, 24156, 24485, 24817, 25151, 25487, 25826, 26168, 26512, 26858, 27207, 27558, 27912, 28268, 28627,
+  28988, 29351, 29717, 30086, 30457, 30830, 31206, 31585, 31966, 32349, 32735, 33124, 33514, 33908, 34304, 34702,
+  35103, 35507, 35913, 36321, 36732, 37146, 37562, 37981, 38402, 38825, 39252, 39680, 40112, 40546, 40982, 41421,
+  41862, 42306, 42753, 43202, 43654, 44108, 44565, 45025, 45487, 45951, 46418, 46888, 47360, 47835, 48313, 48793,
+  49275, 49761, 50249, 50739, 51232, 51728, 52226, 52727, 53230, 53736, 54245, 54756, 55270, 55787, 56306, 56828,
+  57352, 57879, 58409, 58941, 59476, 60014, 60554, 61097, 61642, 62190, 62741, 63295, 63851, 64410, 64971, 65535,
 };
 
 class Matrix : public GFX {
@@ -408,11 +412,6 @@ class Matrix : public GFX {
       return;
     }
 
-    // CIE perceptual->PWM mapping. For already-gamma'd photo content this can
-    // double-apply and wash out highlights; set FM_APPLY_CIE 0 to send raw.
-#ifndef FM_APPLY_CIE
-#define FM_APPLY_CIE 1
-#endif
     // Doygunluk: griye olan mesafeyi olcekle (BT.601 agirliklari)
     if(img_saturation != 128){
       int gray = (_r_data*77 + _g_data*150 + _b_data*29) >> 8;
@@ -432,20 +431,15 @@ class Matrix : public GFX {
       _g_data = (uint8_t)(cg<0?0:(cg>255?255:cg));
       _b_data = (uint8_t)(cb<0?0:(cb>255?255:cb));
     }
-    // Kanal kazanci (beyaz nokta) + parlaklik olcekleme (CIE oncesi)
+    // Kanal kazanci (beyaz nokta) + parlaklik olcekleme
     uint16_t _bs = (uint16_t)global_brightness + 1;
     _r_data = (uint8_t)((((uint16_t)_r_data * (gain_r+1)) >> 8) * _bs >> 8);
     _g_data = (uint8_t)((((uint16_t)_g_data * (gain_g+1)) >> 8) * _bs >> 8);
     _b_data = (uint8_t)((((uint16_t)_b_data * (gain_b+1)) >> 8) * _bs >> 8);
-#if FM_APPLY_CIE
-    uint8_t r_data = CIE[_r_data];
-    uint8_t g_data = CIE[_g_data];
-    uint8_t b_data = CIE[_b_data];
-#else
-    uint8_t r_data = _r_data;
-    uint8_t g_data = _g_data;
-    uint8_t b_data = _b_data;
-#endif
+    // sRGB → 16-bit lineer PWM: gamma-2.2 açılır, FM6363C S-PWM register'ına tam 16-bit yazılır
+    uint16_t r_data = GAMMA16[_r_data];
+    uint16_t g_data = GAMMA16[_g_data];
+    uint16_t b_data = GAMMA16[_b_data];
 
     // ===== PANEL MAPPING (v15: dikey istif + zincir) =====
     // Fiziksel (x: 0..79, y: 0..PANEL_PHY_RES_Y-1) -> panel + panel-ici yerel koordinat.
@@ -513,16 +507,17 @@ class Matrix : public GFX {
     const int CHAN_WORDS = PANEL_MBI_CHAIN_LEN * 16;
     int bit_start_pos = (ROW_WORDS * y_normalised) + (chan * CHAN_WORDS) + (ic * 16);
 
-    // 8-bit colour placed in the high bits of the 16-bit greyscale word.
-    // FM6363 expects 16-bit data per channel (S-PWM, dual-edge GCLK).
-    int subpixel_colour_bit = 8;
-    uint8_t mask;
+    // 16-bit S-PWM: GAMMA16 tablosundan gelen 16-bit değerin tüm bitleri yazılır.
+    // FM6363C register'ı 16-bit wide; önceki 8-bit yaklaşım (yüksek byte only)
+    // 256/65536 = 1/256 hassasiyete yol açıyordu. Artık tam 16-bit kullanılıyor.
+    int subpixel_colour_bit = 16;
+    uint16_t mask;
     while (subpixel_colour_bit > 0)
     {
       subpixel_colour_bit--;
       dma_grey_gpio_data[bit_start_pos] &= _colourbitsclear;
 
-      mask = 1 << subpixel_colour_bit;
+      mask = (uint16_t)1 << subpixel_colour_bit;
 
       if (g_data & mask) {
         dma_grey_gpio_data[bit_start_pos] |= g_gpio_bitmask;
