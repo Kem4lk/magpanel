@@ -106,6 +106,10 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button data-d=36 onclick="setDclk(36,this)">4.5</button>
 <button data-d=32 onclick="setDclk(32,this)">5.0</button>
 <button data-d=27 onclick="setDclk(27,this)">6.0</button>
+<button data-d=23 onclick="setDclk(23,this)">7.0</button>
+<button data-d=20 onclick="setDclk(20,this)">8.0</button>
+<button data-d=18 onclick="setDclk(18,this)">8.9</button>
+<button data-d=16 onclick="setDclk(16,this)">10.0</button>
 </div>
 <div class=hint2>Hızı kademe kademe artır. Panelde 16px mozaik/bozulma görürsen bir alt kademeye in — en yüksek temiz hız flicker'ı en aza indirir. Seçim panele kaydedilir (reboot'ta kalır).</div>
 <div class=row>
