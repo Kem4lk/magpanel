@@ -139,14 +139,13 @@ void renderFrame(){
   uint8_t b = mosaicBlock < 1 ? 1 : mosaicBlock;
   if(b == 1){
     const uint8_t *p=framebuf;
-    for(int y=0;y<PANEL_PHY_RES_Y;y++){
+    // Doldurma (drawPixel) saf CPU ve hizli (~1ms). Araya refresh() koymak
+    // onceki kareyi parlak gosterip update()'in 30ms'lik dim sweep'iyle KONTRAST
+    // yaratiyordu (flicker'i artiriyordu) + kare hizini dusuruyordu. Kaldirildi:
+    // sadece doldur, sonra tek update().
+    for(int y=0;y<PANEL_PHY_RES_Y;y++)
       for(int x=0;x<80;x++,p+=3)
         matrix.drawPixel((uint8_t)x,(uint8_t)y,p[0],p[1],p[2]);
-      // Agir render sirasinda paneli yanik tut: scan-only refresh() onceki kareyi
-      // gosterir (veri latch'lemez), bu yuzden update()'e kadar titreme/tearing
-      // olmaz. Video oynarken refresh acliktan olmesin diye her 8 satirda bir cagrilir.
-      if((y & 7) == 7) matrix.refresh();
-    }
   } else {
     // NxN bloklara bol, her blogun ortalama rengini tum bloga yaz
     for(int by=0; by<PANEL_PHY_RES_Y; by+=b){
@@ -162,10 +161,9 @@ void renderFrame(){
           for(int dx=0; dx<b && bx+dx<80; dx++)
             matrix.drawPixel((uint8_t)(bx+dx),(uint8_t)(by+dy),r,g,bl);
       }
-      matrix.refresh();                                  // blok satiri basina paneli yanik tut
     }
   }
-  matrix.update();
+  matrix.update();                                     // tek latch: dim sweep'i bir kez yap
 }
 // Parlaklik/kazanc/kontrast degisince panel kendi icerigini yeniden cizer -
 // istemcinin (bos olabilecek) kanvasini yeniden gondermesine gerek kalmaz.

@@ -121,7 +121,7 @@ esp_err_t Bus_Parallel16::setup_lcd_dma_periph(void) {
   //LCD_CAM.lcd_clock.lcd_clk_equ_sysclk = 0; // PCLK = CLK / (CLKCNT_N+1)
   LCD_CAM.lcd_clock.lcd_clk_equ_sysclk = 1;  // PCLK = CLK / 1 (... so 160Mhz still)
 
-  LCD_CAM.lcd_clock.lcd_clkm_div_num = 128;  // 1.25MHz ultra-safe validation speed  // 2.5MHz validation speed: jumper wires + 30-chip shared DCLK bus ring badly at 7MHz, causing per-chip double-clocking (the static 16px mosaic)
+  LCD_CAM.lcd_clock.lcd_clkm_div_num = 64;  // 2.5MHz: update() ~61ms->~30ms, video/OTA flicker'i yariya iner. (128=1.25MHz ultra-safe.) 30-chip jumper bus 7MHz'de ring->16px mozaik; 2.5MHz onceden calisan validation speed. Mozaik donerse 128'e geri al.
 
   LCD_CAM.lcd_clock.lcd_clkm_div_b = 0;  // fractal clock divider numerator
   LCD_CAM.lcd_clock.lcd_clkm_div_a = 1;  // denominator
