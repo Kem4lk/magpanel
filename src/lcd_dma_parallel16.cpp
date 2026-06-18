@@ -82,9 +82,10 @@ int Bus_Parallel16::get_transfer_count() {
 // DCLK = 160MHz / div_num. Calisma aninda yazilabilir; LCD modulu bir sonraki
 // transfer'de yeni boleni kullanir. Sadece kaydirma hizi degisir; tarama yapisi
 // (adres/GCLK/LAT desenleri) DMA buffer'da oldugu icin etkilenmez.
-// Clamp: 160/16=10MHz mutlak tavan, 160/200=0.8MHz taban (guvenlik agi).
+// Clamp: 160/8=20MHz mutlak tavan (deneysel; >10MHz'de bus ring->mozaik olabilir),
+// 160/200=0.8MHz taban (guvenlik agi).
 void Bus_Parallel16::set_clock_divider(uint32_t div_num) {
-  if (div_num < 16)  div_num = 16;
+  if (div_num < 8)   div_num = 8;
   if (div_num > 200) div_num = 200;
   LCD_CAM.lcd_clock.lcd_clkm_div_num = div_num;
 }
