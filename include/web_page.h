@@ -134,7 +134,12 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=row>
 <button onclick="testW()">Beyaz test</button>
 <button onclick="testRamp()">Gri merdiven</button>
-</div></details></div>
+</div>
+<div class=row>
+<button id=ftbtn onclick="ftToggle()">Flicker testi (panele)</button>
+</div>
+<div class=hint2>Flicker testi: panelde 29 fazlik otomatik desen dizisi calisir (~77sn) — duz renkler, gri kademeleri, cizgiler ve DCLK sweep (80&rarr;16). Paneli videoya cek; sol-ust kosedeki "Pxx" etiketi hangi fazda oldugunu gosterir. Tekrar bas = durdur.</div>
+</details></div>
 
 <div class=card><div class=loghdr><span>LOG</span>
 <button id=logbtn class=logbtn onclick="toggleLog()">Durdur</button></div>
@@ -529,6 +534,15 @@ async function appSpotify(){stopGif();
 function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
 function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43;
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
+// Flicker self-test (firmware tarafi, opcode 0x0F) baslat/durdur
+let ftOn=false;
+function ftToggle(){
+ if(!ws||ws.readyState!==1){addLog('Flicker testi: WS bagli degil');return;}
+ stopGif();ws.send(new Uint8Array([15]));ftOn=!ftOn;
+ const b=document.getElementById('ftbtn');
+ if(b){b.textContent=ftOn?'Flicker testini DURDUR':'Flicker testi (panele)';b.classList.toggle('acc',ftOn);}
+ addLog(ftOn?'Flicker testi BASLATILDI — paneli videoya cek (sol-ust Pxx etiketi). ~77sn, tekrar bas=durdur.':'Flicker testi durduruldu');
+}
 
 let drawing=false;
 function px(e){const r=c.getBoundingClientRect(),

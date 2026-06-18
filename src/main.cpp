@@ -13,6 +13,7 @@
      0x0B + 1B[+N] : uygulama sec (0=kapat,1=saat,2=timer[+2B sn],3=hava,4=dunyakupasi,5=spotify)
      0x0C + 8B[+s] : hava konumu lat(f32 LE),lon(f32 LE),sehir
      0x0D + s      : Spotify access token (tarayici PKCE)
+     0x0F          : flicker self-test baslat/durdur (panelde otomatik desen dizisi)
    Acilista Mona gosterilir; IP seri porta yazilir; http://magpanel.local
    uzerinden gomulu test sayfasi acilir (iOS app ayni protokolu konusur). */
 #include <stdarg.h>
@@ -218,6 +219,180 @@ void drawGallery(uint8_t idx){
   logf("Galeri: %s", GALLERY_NAMES[idx]);
 }
 
+// ===================== FLICKER SELF-TEST (opcode 0x0F) =====================
+// Panelin flicker karakterini bir VIDEO ile teshis/kalibre etmek icin otomatik
+// desen dizisi. Her faz panelin SOL-UST kosesine "Pxx kod" etiketi cizer (videoda
+// hangi fazda oldugumuzu okuruz) ve web LOG'a faz adini yazar.
+//   * STATIK fazlar TEK kare cizilir: surekli circular-DMA paneli flicker'siz
+//     tutar -> goz/kamera SADECE saf refresh / PWM (dusuk-duty) flicker'ini ve
+//     guc cokmesini gorur (update() basina olusan dim-sweep KARISMAZ).
+//   * HAREKETLI fazlar her tik (~25fps) yeniden cizilir -> her update()'in
+//     dim-sweep'i, yani ANIMASYON flicker'i gorunur.
+//   * DCLK-SWEEP fazlari boleni 80..16 gezer (UI tuner kademeleri). Videodan
+//     en az flicker + henuz mozaik/bozulma BASLAMAMIS kademe secilir = kalibrasyon.
+// Test sirasinda goruntu hatti notr'e cekilir (kontrast/doygunluk/kazanc/mozaik/
+// blur sifirlanir) ki sonuc kalintı ayarlardan etkilenmesin; bitince hepsi +
+// DCLK boleni geri yuklenir.
+enum { FT_SOLID, FT_HGRAD, FT_VGRAD, FT_HALVES, FT_HLINES, FT_VLINES,
+       FT_CHECKER, FT_DIAG, FT_BLINK, FT_SCROLL, FT_PULSE };
+struct FtPhase { uint16_t dur; uint8_t kind; uint8_t bright; uint8_t div;
+                 uint8_t a, b, c; const char *code; };
+// dur(ms), kind, bright(0=baz 160), div(0=baz/NVS), a,b,c(renk/param), etiket
+static const FtPhase FT_SEQ[] = {
+  {4000, FT_BLINK,   0,   0, 255,255,255, "BLINK2Hz"},  // zaman referansi (videodaki fps dogrulama)
+  {2500, FT_SOLID,   0,   0, 255,255,255, "WHT"},       // saf beyaz (refresh + guc)
+  {2500, FT_SOLID,   0,   0, 255,  0,  0, "RED"},
+  {2500, FT_SOLID,   0,   0,   0,255,  0, "GRN"},
+  {2500, FT_SOLID,   0,   0,   0,  0,255, "BLU"},
+  {2500, FT_SOLID,   0,   0, 128,128,128, "GRY128"},
+  {2500, FT_SOLID,   0,   0,  48, 48, 48, "GRY48"},     // dusuk-duty PWM flicker
+  {2500, FT_SOLID,   0,   0,  16, 16, 16, "GRY16"},     // cok dusuk-duty (en zor)
+  {2500, FT_SOLID, 255,   0, 255,255,255, "WHT-MAX"},   // tam guc -> brownout/sag testi
+  {2500, FT_HGRAD,   0,   0,   0,  0,  0, "HGRAD"},      // yatay gradyan -> kolon/DCLK bant
+  {2500, FT_VGRAD,   0,   0,   0,  0,  0, "VGRAD"},      // dikey gradyan -> satir bant
+  {2500, FT_HALVES,  0,   0,   0,  0,  0, "HALVES"},     // ust/alt yari (iki-tarama siniri)
+  {2500, FT_HLINES,  0,   0,   1,  0,  0, "HLINES"},     // 1px yatay cizgi -> satir flicker yukseltici
+  {2500, FT_VLINES,  0,   0,   1,  0,  0, "VLINES"},     // 1px dikey cizgi -> DCLK yukseltici
+  {2500, FT_CHECKER, 0,   0,   2,  0,  0, "CHECK2"},
+  {2500, FT_DIAG,    0,  80,   0,  0,  0, "d80"},        // ---- DCLK sweep: ~2.0 MHz
+  {2500, FT_DIAG,    0,  64,   0,  0,  0, "d64"},        //      ~2.5 MHz (varsayilan)
+  {2500, FT_DIAG,    0,  53,   0,  0,  0, "d53"},        //      ~3.0
+  {2500, FT_DIAG,    0,  46,   0,  0,  0, "d46"},        //      ~3.5
+  {2500, FT_DIAG,    0,  40,   0,  0,  0, "d40"},        //      ~4.0
+  {2500, FT_DIAG,    0,  36,   0,  0,  0, "d36"},        //      ~4.5
+  {2500, FT_DIAG,    0,  32,   0,  0,  0, "d32"},        //      ~5.0
+  {2500, FT_DIAG,    0,  27,   0,  0,  0, "d27"},        //      ~6.0
+  {2500, FT_DIAG,    0,  23,   0,  0,  0, "d23"},        //      ~7.0
+  {2500, FT_DIAG,    0,  20,   0,  0,  0, "d20"},        //      ~8.0
+  {2500, FT_DIAG,    0,  18,   0,  0,  0, "d18"},        //      ~8.9
+  {2500, FT_DIAG,    0,  16,   0,  0,  0, "d16"},        //      ~10.0 MHz (mozaik beklenir)
+  {4000, FT_SCROLL,  0,   0,   0,  0,  0, "SCROLL"},     // ---- hareket: kayan cubuk
+  {4000, FT_PULSE,   0,   0,   0,  0,  0, "PULSE"},      //      ekran nabzi (update dim-sweep)
+};
+static const int     FT_COUNT       = sizeof(FT_SEQ)/sizeof(FT_SEQ[0]);
+static const uint8_t FT_BASE_BRIGHT = 160;             // sweep/desenler icin sabit parlaklik
+
+static bool     ftActive     = false;
+static int      ftPhase      = 0;
+static uint32_t ftPhaseStart = 0;
+static bool     ftDrawn      = false;                  // mevcut faz cizildi mi (statik = bir kez)
+static uint32_t ftLastTick   = 0;                      // hareketli faz son cizim ms
+static uint32_t ftBlinkSub   = 0;                      // BLINK 500ms alt-faz sayaci
+// bitince geri yuklenecek anlik ayarlar
+static uint8_t  ftSvBr, ftSvGr, ftSvGg, ftSvGb, ftSvCon, ftSvSat, ftSvBlur, ftSvMz;
+static uint32_t ftSvDiv = 64;
+
+static void ftLabel(int idx){
+  char lab[16]; snprintf(lab, sizeof(lab), "P%02d %s", idx, FT_SEQ[idx].code);
+  int w = (int)strlen(lab)*6 + 2; if(w > 80) w = 80;
+  for(int y=0;y<9;y++) for(int x=0;x<w;x++) matrix.drawPixel((uint8_t)x,(uint8_t)y,0,0,0); // okunur kalsin diye siyah kutu
+  matrix.setTextSize(1);
+  matrix.setTextColor(0xFFFF);                         // beyaz (565)
+  matrix.setCursor(1,1);
+  matrix.print(lab);
+}
+
+static void ftDraw(int idx, uint32_t elapsed){
+  const FtPhase &ph = FT_SEQ[idx];
+  const int H = PANEL_PHY_RES_Y;                       // 120
+  switch(ph.kind){
+    case FT_SOLID:
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,ph.a,ph.b,ph.c);
+      break;
+    case FT_HGRAD:
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(uint8_t)(x*255/79); matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_VGRAD:
+      for(int y=0;y<H;y++){ uint8_t v=(uint8_t)(y*255/(H-1)); for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_HALVES:
+      for(int y=0;y<H;y++){ uint8_t v=(y<H/2)?255:0; for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_HLINES:
+      for(int y=0;y<H;y++){ uint8_t v=(y&1)?0:255; for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_VLINES:
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(x&1)?0:255; matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_CHECKER:{ int s=ph.a<1?1:ph.a;
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(((x/s)+(y/s))&1)?255:0; matrix.drawPixel(x,y,v,v,v); }
+      break; }
+    case FT_DIAG:                                      // kosegen gradyan: hem satir hem kolon degiskeni
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++){       // -> mozaik (16px blok) ANINDA gorunur, ortalama parlak -> flicker da gorunur
+        uint8_t v=(uint8_t)(((x*255/79)+(y*255/(H-1)))/2); matrix.drawPixel(x,y,v,v,v); }
+      break;
+    case FT_BLINK:{ bool on=((elapsed/500)&1)==0;
+      uint8_t r=on?ph.a:0,g=on?ph.b:0,b=on?ph.c:0;
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,r,g,b);
+      break; }
+    case FT_SCROLL:{ int bar=(int)((elapsed/40)%H);    // 8px parlak cubuk asagi kayar
+      for(int y=0;y<H;y++){ int d=y-bar; if(d<0)d+=H; uint8_t v=(d<8)?255:8;
+        for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      break; }
+    case FT_PULSE:{ uint32_t t=elapsed%2000;           // 2sn ucgen nabiz 20..250 (float yok)
+      int tri = t<1000 ? (int)(t*230/1000) : (int)((2000-t)*230/1000);
+      uint8_t v=(uint8_t)(20+tri);
+      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v);
+      break; }
+  }
+  ftLabel(idx);
+  matrix.update();
+}
+
+static void ftStop(){
+  if(!ftActive) return;
+  ftActive = false;
+  matrix.global_brightness = ftSvBr;                   // anlik ayarlari geri yukle
+  matrix.gain_r = ftSvGr; matrix.gain_g = ftSvGg; matrix.gain_b = ftSvGb;
+  matrix.img_contrast = ftSvCon; matrix.img_saturation = ftSvSat; matrix.img_blur = ftSvBlur;
+  mosaicBlock = ftSvMz;
+  matrix.setClockDiv(ftSvDiv);                         // DCLK boleni geri (sweep'ten cikis)
+  logf("FLICKER-TEST bitti (DCLK bolen=%lu geri yuklendi)", (unsigned long)ftSvDiv);
+  redrawCurrent();                                     // test oncesi icerige don
+}
+
+static void ftStart(){
+  apps.off();                                          // uygulama testi ezmesin
+  ftSvBr=matrix.global_brightness;
+  ftSvGr=matrix.gain_r; ftSvGg=matrix.gain_g; ftSvGb=matrix.gain_b;
+  ftSvCon=matrix.img_contrast; ftSvSat=matrix.img_saturation; ftSvBlur=matrix.img_blur;
+  ftSvMz=mosaicBlock;
+  prefs.begin("panelcfg", true); ftSvDiv = prefs.getUInt("dclkdiv", 64); prefs.end();
+  if(ftSvDiv<16 || ftSvDiv>200) ftSvDiv=64;
+  // goruntu hattini notr'e cek (kalinti ayarlar testi bozmasin)
+  matrix.img_contrast=128; matrix.img_saturation=128; matrix.img_blur=0; mosaicBlock=1;
+  matrix.gain_r=255; matrix.gain_g=255; matrix.gain_b=255;
+  matrix.global_brightness=FT_BASE_BRIGHT;
+  ftActive=true; ftPhase=0; ftPhaseStart=millis(); ftDrawn=false; ftLastTick=0; ftBlinkSub=0;
+  logf("FLICKER-TEST basladi: %d faz, ~77sn. Paneli videoya cek; sol-ust 'Pxx' etiketi fazi soyler.", FT_COUNT);
+  logf("FT P00 %s", FT_SEQ[0].code);
+}
+
+// loop()'tan cagrilir; aktifse fazlari millis() ile ilerletir.
+static void ftLoop(){
+  if(!ftActive) return;
+  const FtPhase &ph = FT_SEQ[ftPhase];
+  uint32_t now = millis();
+  uint32_t elapsed = now - ftPhaseStart;
+  if(!ftDrawn){                                        // faz girisi: override'lari uygula + ciz
+    matrix.global_brightness = ph.bright ? ph.bright : FT_BASE_BRIGHT;
+    matrix.setClockDiv(ph.div ? ph.div : ftSvDiv);
+    ftDraw(ftPhase, elapsed);
+    ftDrawn=true; ftLastTick=now; ftBlinkSub=elapsed/500;
+  } else if(ph.kind==FT_SCROLL || ph.kind==FT_PULSE){  // hareket: ~25fps yeniden ciz (update dim-sweep gorunsun)
+    if(now-ftLastTick >= 40){ ftDraw(ftPhase, elapsed); ftLastTick=now; }
+  } else if(ph.kind==FT_BLINK){                        // sadece 500ms gecisinde yeniden ciz (temiz blink)
+    uint32_t sub=elapsed/500;
+    if(sub != ftBlinkSub){ ftBlinkSub=sub; ftDraw(ftPhase, elapsed); }
+  }
+  if(elapsed >= ph.dur){                               // sonraki faz
+    ftPhase++;
+    if(ftPhase >= FT_COUNT){ logf("FT dizi tamam"); ftStop(); return; }
+    ftPhaseStart=now; ftDrawn=false;
+    logf("FT P%02d %s", ftPhase, FT_SEQ[ftPhase].code);
+  }
+}
+
 void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
                void *arg, uint8_t *data, size_t len){
   if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendLogHistory(client); return; }
@@ -234,6 +409,7 @@ void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
 
 void handleMessage(const uint8_t *buf, size_t len){
   if(len<1) return;
+  if(ftActive && buf[0]!=0x0F) ftStop();   // flicker testi aktifken baska komut gelirse testi durdur
   switch(buf[0]){
     case 0x01:
       if(len==1+FRAME_BYTES){
@@ -324,6 +500,9 @@ void handleMessage(const uint8_t *buf, size_t len){
         logf("Blur: r=%u", matrix.img_blur);
         redrawCurrent();
       }
+      break;
+    case 0x0F:                                   // flicker self-test baslat/durdur
+      if(ftActive) ftStop(); else ftStart();
       break;
   }
 }
@@ -606,7 +785,8 @@ void loop(){
       ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap(), WiFi.RSSI());
   }
   if(msgReady){ handleMessage(rxbuf,(size_t)msgLen); msgReady=false; }
-  apps.loop();                  // uygulama aciksa zamani gelince fetch+render (kendi throttle'i var)
+  if(ftActive) ftLoop();        // flicker self-test aktifse fazlari ilerlet (apps yerine)
+  else apps.loop();             // uygulama aciksa zamani gelince fetch+render (kendi throttle'i var)
   static uint32_t t=0;
   if(millis()-t>2000){ ws.cleanupClients(); t=millis(); }
   // WiFi bekcisi: kopussa yeniden bagla, 60sn duzelmezse temiz baslangic
