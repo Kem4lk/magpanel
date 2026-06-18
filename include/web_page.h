@@ -71,6 +71,9 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=card id=recentCard style="display:none"><h2>Son Gönderilenler</h2>
 <div id=recentGrid style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
 
+<div class=card id=savedCard style="display:none"><h2>Kayıtlı (görüntü ayarlarıyla)</h2>
+<div id=savedGrid style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
+
 <div class=card><h2>Uygulamalar</h2>
 <div class=grid>
 <button onclick="appSel(1)">Saat</button>
@@ -101,7 +104,8 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button onclick="f.click()">Dosya seç</button>
 <button class=acc onclick="sendFrame()">Panele gönder</button>
 </div>
-<div class=row><button onclick="clr()">Paneli temizle</button></div>
+<div class=row><button onclick="saveCurrent()">&#9733; Kaydet</button><button onclick="clr()">Paneli temizle</button></div>
+<div class=hint>Kaydet: panelde gösterilen görseli (yüklediğin ya da galeriden seçtiğin) o anki görüntü ayarlarıyla saklar; "Kayıtlı"dan tek dokunuşla ayarlarıyla geri gelir.</div>
 <input type=file id=f accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v" hidden>
 </div>
 
@@ -150,6 +154,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 </footer>
 <script>
 let ws,otaPending=false;
+let curSrc={type:'img'},galNames=[];   // "Kaydet" icin: panelde su an gosterilen kaynak
 function connect(){
  ws=new WebSocket(`ws://${location.host}/ws`);ws.binaryType='arraybuffer';
  ws.onopen=()=>{
@@ -161,7 +166,9 @@ function connect(){
   if(otaPending)setGhBtn(true,'Güncelleniyor...');
   setTimeout(connect,2000);
  };
- ws.onmessage=e=>{if(typeof e.data==='string'&&e.data.startsWith('L:'))addLog(e.data.slice(2));};
+ ws.onmessage=e=>{if(typeof e.data!=='string')return;
+  if(e.data.startsWith('L:'))addLog(e.data.slice(2));
+  else if(e.data.startsWith('G:')){try{buildGallery(JSON.parse(e.data.slice(2)));}catch(_){}}};
 }
 connect();
 function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
@@ -372,6 +379,7 @@ function drawScaled(src,srcW,srcH){
 async function loadImg(file){
  if(!file)return;
  stopGif();                                    // onceki animasyonu/videoyu durdur
+ curSrc={type:'img'};                          // yeni medya: kaynak artik canvas (galeri degil)
  if(file.type.startsWith('video/')){await playVideo(file);return;}
  if(!file.type.startsWith('image/'))return;
  if(file.type==='image/gif'){
@@ -396,18 +404,21 @@ window.onpaste=e=>{for(const it of e.clipboardData.items)
 function sendFrame(){const d=ctx.getImageData(0,0,80,120).data,
  b=new Uint8Array(1+28800);b[0]=1;
  for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
- ws.send(b);
+ ws.send(b);curSrc={type:'img'};
  saveRecent(d);}
 function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
- ws.send(new Uint8Array([3]));}
-function art(i){stopGif();ws.send(new Uint8Array([5,i]));}
+ curSrc={type:'img'};ws.send(new Uint8Array([3]));}
+function art(i){stopGif();curSrc={type:'gal',idx:i,name:galNames[i]||('Galeri '+(i+1))};ws.send(new Uint8Array([5,i]));}
 
-// ---- Galeri butonlarini sunucudan çek (GALLERY_COUNT degisirse otomatik guncellenir) ----
-fetch('/api/gallery').then(r=>r.json()).then(names=>{
+// ---- Galeri butonlari: isimler WS 'G:' frame'i ile gelir (ws.onmessage -> buildGallery).
+// Ayri /api/gallery HTTP istegi yok: dusuk heap'te yeni TCP soketi ERR_TIMED_OUT
+// ile takiliyordu; acik WebSocket uzerinden tasimak daha saglam. ----
+function buildGallery(names){
+ galNames=names;                               // "Kaydet" galeri ismini bilsin
  const g=document.getElementById('galGrid');g.innerHTML='';
  names.forEach((n,i)=>{const b=document.createElement('button');
   b.textContent=n;b.onclick=()=>art(i);g.appendChild(b);});
-}).catch(()=>{});
+}
 
 // ---- Son Gönderilenler (localStorage) ----
 const RECENT_KEY='mpRecent',RECENT_MAX=8;
@@ -447,6 +458,69 @@ function renderRecent(lst){
   wrap.appendChild(img);wrap.appendChild(del);grid.appendChild(wrap);});
 }
 renderRecent(JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'));
+
+// ---- Kayıtlı: görsel (yüklenen ya da galeri) + görüntü ayarları (localStorage) ----
+const SAVED_KEY='mpSaved',SAVED_MAX=12;
+function loadSaved(){try{return JSON.parse(localStorage.getItem(SAVED_KEY)||'[]');}catch(e){return[];}}
+function storeSaved(l){try{localStorage.setItem(SAVED_KEY,JSON.stringify(l));}catch(e){addLog('Kayit alani dolu - eski kayitlari sil');}}
+// Sliderlardaki anlik gorüntü ayarlarini tek nesneye al
+function snapSettings(){return{br:+br.value,gr:+gr.value,gg:+gg.value,gb:+gb.value,
+ ct:+ct.value,sa:+sa.value,mz:+mz.value,bl:+bl.value};}
+// Ayarlari sliderlara yansit + panele yollanacak opcode mesajlarini dondur
+function applySettings(s){
+ if(!s)return[];
+ br.value=s.br;brv.value=s.br;
+ ct.value=s.ct;ctv.value=s.ct;sa.value=s.sa;sav.value=s.sa;
+ mz.value=s.mz;mzv.value=s.mz;bl.value=s.bl;blv.value=blurLabel(s.bl);
+ gr.value=s.gr;grv.value=s.gr;gg.value=s.gg;ggv.value=s.gg;gb.value=s.gb;gbv.value=s.gb;
+ return[new Uint8Array([4,s.br]),new Uint8Array([6,s.gr,s.gg,s.gb]),
+  new Uint8Array([7,s.ct,s.sa]),new Uint8Array([8,s.mz]),new Uint8Array([0x0E,s.bl])];
+}
+// Firmware bir loop turunda tek WS mesaji isler, arka arkaya geleni DUSURUR
+// (onWsEvent: if(msgReady)return) -> mesajlari ~aralikli sirala ki hepsi islensin.
+function sendSeq(msgs,gap){let i=0;(function nx(){
+ if(i>=msgs.length)return;
+ if(ws&&ws.readyState===1)ws.send(msgs[i]);
+ i++;setTimeout(nx,gap||110);})();}
+function saveCurrent(){
+ const s=snapSettings();let entry;
+ if(curSrc&&curSrc.type==='gal')entry={t:'gal',idx:curSrc.idx,name:curSrc.name,s};
+ else entry={t:'img',url:c.toDataURL('image/png'),s};
+ const l=loadSaved();l.unshift(entry);if(l.length>SAVED_MAX)l.length=SAVED_MAX;
+ storeSaved(l);renderSaved(l);
+ addLog('Kaydedildi'+(entry.t==='gal'?': '+entry.name:' (yuklenen gorsel)'));
+}
+function recallSaved(entry){
+ stopGif();const sm=applySettings(entry.s);
+ if(entry.t==='gal'){curSrc={type:'gal',idx:entry.idx,name:entry.name};
+  sendSeq([new Uint8Array([5,entry.idx]),...sm],110);
+ }else{const image=new Image();image.onload=()=>{
+   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);ctx.drawImage(image,0,0);
+   const d=ctx.getImageData(0,0,80,120).data,b=new Uint8Array(1+28800);b[0]=1;
+   for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
+   curSrc={type:'img'};sendSeq([b,...sm],130);};
+  image.src=entry.url;}
+}
+function renderSaved(lst){
+ const card=document.getElementById('savedCard'),grid=document.getElementById('savedGrid');
+ if(!lst||!lst.length){card.style.display='none';return;}
+ card.style.display='';grid.innerHTML='';
+ lst.forEach((entry,idx)=>{
+  const wrap=document.createElement('div');wrap.style.cssText='position:relative;display:inline-block';
+  let thumb;
+  if(entry.t==='gal'){thumb=document.createElement('div');
+   thumb.textContent=entry.name||('Galeri '+(entry.idx+1));
+   thumb.style.cssText='width:40px;height:60px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8px;line-height:1.15;padding:2px;border-radius:4px;cursor:pointer;border:2px solid var(--acc);background:#1c2027;color:var(--txt);overflow:hidden';
+  }else{thumb=document.createElement('img');thumb.src=entry.url;
+   thumb.style.cssText='width:40px;height:60px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid var(--acc);display:block';}
+  thumb.title='Panele görüntü ayarlarıyla gönder';
+  thumb.onclick=()=>recallSaved(entry);
+  const del=document.createElement('span');del.textContent='×';del.title='Sil';
+  del.style.cssText='position:absolute;top:1px;right:1px;background:#e53;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;line-height:14px';
+  del.onclick=(e)=>{e.stopPropagation();const l=loadSaved();l.splice(idx,1);storeSaved(l);renderSaved(l);};
+  wrap.appendChild(thumb);wrap.appendChild(del);grid.appendChild(wrap);});
+}
+renderSaved(loadSaved());
 
 let gT=null;
 function setGain(){grv.value=gr.value;ggv.value=gg.value;gbv.value=gb.value;
@@ -556,7 +630,7 @@ function px(e){const r=c.getBoundingClientRect(),
  for(const[dx,dy]of[[0,0],[1,0],[0,1],[1,1]]){
   m[k++]=Math.min(x+dx,79);m[k++]=Math.min(y+dy,119);m[k++]=rr;m[k++]=g;m[k++]=bb;}
  ws.send(m);}
-c.onpointerdown=e=>{stopGif();drawing=true;c.setPointerCapture(e.pointerId);px(e);};
+c.onpointerdown=e=>{stopGif();curSrc={type:'img'};drawing=true;c.setPointerCapture(e.pointerId);px(e);};
 c.onpointermove=e=>{if(drawing)px(e);};
 c.onpointerup=c.onpointercancel=()=>drawing=false;
 let logPaused=false;
