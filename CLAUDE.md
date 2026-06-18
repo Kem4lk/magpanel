@@ -96,6 +96,21 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 
 ## main.cpp WS protokolü (ilk bayt = opcode)
 0x01+28800B tam kare RGB888 · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
-· 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok.
+· 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok
+· 0x09 GitHub OTA · 0x0A canlı DCLK bölen · 0x0B uygulama seç · 0x0C hava konumu
+· 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test başlat/durdur**.
 GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 (firmware durum tutmaz; `if(msgReady)return;` ile hızlı kareler düşürülür).
+
+## Flicker self-test (0x0F) — teşhis/kalibrasyon
+Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
+firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).
+29 faz, ~77 sn; her faz panelin sol-üstüne `Pxx kod` etiketi çizer (videoda fazı
+okumak için) ve web LOG'a `FT Pxx ...` yazar. Statik fazlar TEK kare çizilir
+(sürekli DMA → saf refresh/PWM flicker'i + güç çökmesi görünür); hareketli fazlar
+(`SCROLL`/`PULSE`) ~25fps yeniden çizilir (update() dim-sweep = animasyon flicker'i);
+`d80..d16` fazları DCLK bölenini gezer (kalibrasyon: videodan en az flicker +
+mozaiksiz kademeyi seç → UI'daki DCLK butonuyla kalıcı yap). Test sırasında görüntü
+hattı nötr'e çekilir, bitince tüm ayarlar + DCLK böleni geri yüklenir. Test'i
+herhangi başka bir WS komutu da durdurur. Reboot'ta uygulama NVS'ten geri gelmez —
+test bittikten sonra istenen uygulama yeniden seçilmeli.
