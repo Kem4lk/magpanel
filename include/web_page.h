@@ -156,7 +156,9 @@ function connect(){
   if(otaPending)setGhBtn(true,'Güncelleniyor...');
   setTimeout(connect,2000);
  };
- ws.onmessage=e=>{if(typeof e.data==='string'&&e.data.startsWith('L:'))addLog(e.data.slice(2));};
+ ws.onmessage=e=>{if(typeof e.data!=='string')return;
+  if(e.data.startsWith('L:'))addLog(e.data.slice(2));
+  else if(e.data.startsWith('G:')){try{buildGallery(JSON.parse(e.data.slice(2)));}catch(_){}}};
 }
 connect();
 function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
@@ -397,12 +399,14 @@ function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
  ws.send(new Uint8Array([3]));}
 function art(i){stopGif();ws.send(new Uint8Array([5,i]));}
 
-// ---- Galeri butonlarini sunucudan çek (GALLERY_COUNT degisirse otomatik guncellenir) ----
-fetch('/api/gallery').then(r=>r.json()).then(names=>{
+// ---- Galeri butonlari: isimler WS 'G:' frame'i ile gelir (ws.onmessage -> buildGallery).
+// Ayri /api/gallery HTTP istegi yok: dusuk heap'te yeni TCP soketi ERR_TIMED_OUT
+// ile takiliyordu; acik WebSocket uzerinden tasimak daha saglam. ----
+function buildGallery(names){
  const g=document.getElementById('galGrid');g.innerHTML='';
  names.forEach((n,i)=>{const b=document.createElement('button');
   b.textContent=n;b.onclick=()=>art(i);g.appendChild(b);});
-}).catch(()=>{});
+}
 
 // ---- Son Gönderilenler (localStorage) ----
 const RECENT_KEY='mpRecent',RECENT_MAX=8;

@@ -123,6 +123,19 @@ static void sendLogHistory(AsyncWebSocketClient *c){
     idx = (idx+1) % LOG_LINES;
   }
 }
+// Galeri isimlerini WS metin frame'i olarak gonder ("G:" onekli JSON dizi).
+// Boylece tarayici ayri bir /api/gallery HTTP baglantisi acmaz (dusuk heap'te
+// yeni TCP soketi ayrilamayip ERR_TIMED_OUT olmasini onler); zaten acik olan
+// WebSocket uzerinden gelir.
+static void sendGallery(AsyncWebSocketClient *c){
+  String j = "G:[";
+  for(int i=0; i<GALLERY_COUNT; i++){
+    if(i) j += ",";
+    j += "\""; j += GALLERY_NAMES[i]; j += "\"";
+  }
+  j += "]";
+  c->text(j);
+}
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
 static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
@@ -220,7 +233,7 @@ void drawGallery(uint8_t idx){
 
 void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
                void *arg, uint8_t *data, size_t len){
-  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendLogHistory(client); return; }
+  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendLogHistory(client); sendGallery(client); return; }
   if(type==WS_EVT_DISCONNECT){ Serial.printf("WS istemci #%u ayrildi\n", client->id()); return; }
   if(type!=WS_EVT_DATA) return;
   AwsFrameInfo *info=(AwsFrameInfo*)arg;
