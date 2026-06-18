@@ -278,7 +278,11 @@ static const FtPhase FT_SEQ[] = {
   {2500, FT_DIAG,    0,  23,   0,  0,  0, "d23"},        //      ~7.0
   {2500, FT_DIAG,    0,  20,   0,  0,  0, "d20"},        //      ~8.0
   {2500, FT_DIAG,    0,  18,   0,  0,  0, "d18"},        //      ~8.9
-  {2500, FT_DIAG,    0,  16,   0,  0,  0, "d16"},        //      ~10.0 MHz (mozaik beklenir)
+  {2500, FT_DIAG,    0,  16,   0,  0,  0, "d16"},        //      ~10.0 MHz (videoda temiz cikti)
+  {2500, FT_DIAG,    0,  14,   0,  0,  0, "d14"},        //      ~11.4 (deneysel >10MHz)
+  {2500, FT_DIAG,    0,  12,   0,  0,  0, "d12"},        //      ~13.3
+  {2500, FT_DIAG,    0,  10,   0,  0,  0, "d10"},        //      ~16.0
+  {2500, FT_DIAG,    0,   8,   0,  0,  0, "d8"},         //      ~20.0 MHz (mozaik beklenir = ust sinir)
   {4000, FT_SCROLL,  0,   0,   0,  0,  0, "SCROLL"},     // ---- hareket: kayan cubuk
   {4000, FT_PULSE,   0,   0,   0,  0,  0, "PULSE"},      //      ekran nabzi (update dim-sweep)
 };
@@ -371,13 +375,13 @@ static void ftStart(){
   ftSvCon=matrix.img_contrast; ftSvSat=matrix.img_saturation; ftSvBlur=matrix.img_blur;
   ftSvMz=mosaicBlock;
   prefs.begin("panelcfg", true); ftSvDiv = prefs.getUInt("dclkdiv", 64); prefs.end();
-  if(ftSvDiv<16 || ftSvDiv>200) ftSvDiv=64;
+  if(ftSvDiv<8 || ftSvDiv>200) ftSvDiv=64;
   // goruntu hattini notr'e cek (kalinti ayarlar testi bozmasin)
   matrix.img_contrast=128; matrix.img_saturation=128; matrix.img_blur=0; mosaicBlock=1;
   matrix.gain_r=255; matrix.gain_g=255; matrix.gain_b=255;
   matrix.global_brightness=FT_BASE_BRIGHT;
   ftActive=true; ftPhase=0; ftPhaseStart=millis(); ftDrawn=false; ftLastTick=0; ftBlinkSub=0;
-  logf("FLICKER-TEST basladi: %d faz, ~77sn. Paneli videoya cek; sol-ust 'Pxx' etiketi fazi soyler.", FT_COUNT);
+  logf("FLICKER-TEST basladi: %d faz, ~87sn. Paneli videoya cek; sol-ust 'Pxx' etiketi fazi soyler.", FT_COUNT);
   logf("FT P00 %s", FT_SEQ[0].code);
 }
 
@@ -476,7 +480,7 @@ void handleMessage(const uint8_t *buf, size_t len){
       break;
     case 0x0A:                                   // canli DCLK bolen ayari (flicker tuner)
       if(len>=2){
-        uint32_t div = buf[1]; if(div<16) div=16; if(div>200) div=200;
+        uint32_t div = buf[1]; if(div<8) div=8; if(div>200) div=200;
         matrix.setClockDiv(div);                 // hemen uygula (loop context, transferler arasi)
         prefs.begin("panelcfg", false); prefs.putUInt("dclkdiv", div); prefs.end();  // reboot'ta kalsin
         logf("DCLK: bolen=%lu -> ~%lu kHz (NVS'e kaydedildi)", div, 160000UL/div);
@@ -600,7 +604,7 @@ void setup(){
   prefs.begin("panelcfg", true);
   uint32_t nvsDiv = prefs.getUInt("dclkdiv", 0);
   prefs.end();
-  if(nvsDiv >= 16 && nvsDiv <= 200){ matrix.setClockDiv(nvsDiv); logf("DCLK NVS ayari: bolen=%lu (~%lu kHz)", nvsDiv, 160000UL/nvsDiv); }
+  if(nvsDiv >= 8 && nvsDiv <= 200){ matrix.setClockDiv(nvsDiv); logf("DCLK NVS ayari: bolen=%lu (~%lu kHz)", nvsDiv, 160000UL/nvsDiv); }
   drawGallery(0);                                // acilis ekrani (Mona Lisa)
 
   WiFi.mode(WIFI_STA);

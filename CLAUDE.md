@@ -105,12 +105,14 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
 firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).
-29 faz, ~77 sn; her faz panelin sol-üstüne `Pxx kod` etiketi çizer (videoda fazı
+33 faz, ~87 sn; her faz panelin sol-üstüne `Pxx kod` etiketi çizer (videoda fazı
 okumak için) ve web LOG'a `FT Pxx ...` yazar. Statik fazlar TEK kare çizilir
 (sürekli DMA → saf refresh/PWM flicker'i + güç çökmesi görünür); hareketli fazlar
 (`SCROLL`/`PULSE`) ~25fps yeniden çizilir (update() dim-sweep = animasyon flicker'i);
-`d80..d16` fazları DCLK bölenini gezer (kalibrasyon: videodan en az flicker +
-mozaiksiz kademeyi seç → UI'daki DCLK butonuyla kalıcı yap). Test sırasında görüntü
+`d80..d8` fazları DCLK bölenini gezer (2→20 MHz; kalibrasyon: videodan en az flicker +
+mozaiksiz kademeyi seç → UI'daki DCLK butonuyla kalıcı yap). DCLK clamp `set_clock_divider`/
+0x0A/NVS-boot'ta **8..200** (160/8=20MHz tavan; >10MHz deneysel, jumper bus ring→mozaik
+olabilir). İlk videoda d16=10MHz temiz çıktı, d18→d16'da flicker genliği ~%30 düştü. Test sırasında görüntü
 hattı nötr'e çekilir, bitince tüm ayarlar + DCLK böleni geri yüklenir. Test'i
 herhangi başka bir WS komutu da durdurur. Reboot'ta uygulama NVS'ten geri gelmez —
 test bittikten sonra istenen uygulama yeniden seçilmeli.
