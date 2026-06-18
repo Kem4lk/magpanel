@@ -61,6 +61,19 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 .dclk button.on{background:var(--acc);border-color:var(--acc);color:#1a1206;font-weight:700}
 .tuneh{font-size:13px;color:var(--mut);margin:6px 0 2px}
 .hint2{font-size:11px;color:var(--mut);margin-top:3px;line-height:1.35}
+.srow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:none}
+.sthumb{width:34px;height:51px;image-rendering:pixelated;border-radius:5px;
+ border:1px solid var(--line);cursor:pointer;flex:0 0 auto;display:block}
+.sgal{width:34px;height:51px;display:flex;align-items:center;justify-content:center;
+ text-align:center;font-size:7px;line-height:1.1;padding:2px;border-radius:5px;
+ border:1px solid var(--acc);background:#1c2027;color:var(--txt);cursor:pointer;flex:0 0 auto;overflow:hidden}
+.sinfo{flex:1;min-width:0}
+.sname{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{font-size:10px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sact{display:flex;gap:4px;flex:0 0 auto}
+.sact button{padding:7px 9px;font-size:12px}
+.sact .sdel{color:var(--err);font-weight:700}
 </style></head><body>
 <header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; 80&times;120</span>
 <span class=dot id=dot></span></header>
@@ -72,7 +85,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div id=recentGrid style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
 
 <div class=card id=savedCard style="display:none"><h2>Kayıtlı (görüntü ayarlarıyla)</h2>
-<div id=savedGrid style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
+<div id=savedList></div></div>
 
 <div class=card><h2>Uygulamalar</h2>
 <div class=grid>
@@ -478,42 +491,61 @@ function sendSeq(msgs,gap){let i=0;(function nx(){
  if(ws&&ws.readyState===1)ws.send(msgs[i]);
  i++;setTimeout(nx,gap||110);})();}
 function saveCurrent(){
- const s=snapSettings();let entry;
- if(curSrc&&curSrc.type==='gal')entry={t:'gal',idx:curSrc.idx,name:curSrc.name,s};
- else entry={t:'img',url:c.toDataURL('image/png'),s};
- const l=loadSaved();l.unshift(entry);if(l.length>SAVED_MAX)l.length=SAVED_MAX;
+ const s=snapSettings();const l=loadSaved();let entry;
+ if(curSrc&&curSrc.type==='gal')entry={t:'gal',idx:curSrc.idx,name:curSrc.name||('Galeri '+(curSrc.idx+1)),s,ts:Date.now()};
+ else entry={t:'img',url:c.toDataURL('image/png'),name:'Görsel '+(l.length+1),s,ts:Date.now()};
+ l.unshift(entry);if(l.length>SAVED_MAX)l.length=SAVED_MAX;
  storeSaved(l);renderSaved(l);
- addLog('Kaydedildi'+(entry.t==='gal'?': '+entry.name:' (yuklenen gorsel)'));
+ addLog('Kaydedildi: '+entry.name);
 }
 function recallSaved(entry){
- stopGif();const sm=applySettings(entry.s);
+ stopGif();const sm=applySettings(entry.s);   // sm: 5 ayar mesaji (parlaklik,kazanc,kontrast/doygunluk,mozaik,blur)
+ // ONCE ayarlar (global firmware durumu), SONRA gorsel: kare zaten dogru ayarlarla
+ // cizilir; ayrica buyuk 28KB kareyi EN SONA koyunca arkasinda ayar mesajlari
+ // birikip firmware'de (msgReady) DUSMEZ -> "ayarlar uygulanmadi" hatasi cozulur.
  if(entry.t==='gal'){curSrc={type:'gal',idx:entry.idx,name:entry.name};
-  sendSeq([new Uint8Array([5,entry.idx]),...sm],110);
+  sendSeq([...sm,new Uint8Array([5,entry.idx])],110);
  }else{const image=new Image();image.onload=()=>{
    ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);ctx.drawImage(image,0,0);
    const d=ctx.getImageData(0,0,80,120).data,b=new Uint8Array(1+28800);b[0]=1;
    for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
-   curSrc={type:'img'};sendSeq([b,...sm],130);};
+   curSrc={type:'img'};sendSeq([...sm,b],120);};
   image.src=entry.url;}
 }
+// Kaydedilen ayarlarin kompakt ozeti (listede gosterilir -> ne kaydedildigi gorunur)
+function settingsSummary(s){
+ if(!s)return'ayar yok';
+ return 'P:'+s.br+' K:'+s.ct+' D:'+s.sa+' Blur:'+blurLabel(s.bl)+' Mz:'+s.mz+' RGB:'+s.gr+','+s.gg+','+s.gb;
+}
+function renameSaved(idx){
+ const l=loadSaved();if(!l[idx])return;
+ const v=prompt('Yeni ad:',l[idx].name||'');
+ if(v===null)return;const t=v.trim();if(!t)return;
+ l[idx].name=t;storeSaved(l);renderSaved(l);
+}
+function delSaved(idx){const l=loadSaved();l.splice(idx,1);storeSaved(l);renderSaved(l);}
 function renderSaved(lst){
- const card=document.getElementById('savedCard'),grid=document.getElementById('savedGrid');
+ const card=document.getElementById('savedCard'),box=document.getElementById('savedList');
  if(!lst||!lst.length){card.style.display='none';return;}
- card.style.display='';grid.innerHTML='';
+ card.style.display='';box.innerHTML='';
  lst.forEach((entry,idx)=>{
-  const wrap=document.createElement('div');wrap.style.cssText='position:relative;display:inline-block';
+  const row=document.createElement('div');row.className='srow';
   let thumb;
-  if(entry.t==='gal'){thumb=document.createElement('div');
-   thumb.textContent=entry.name||('Galeri '+(entry.idx+1));
-   thumb.style.cssText='width:40px;height:60px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8px;line-height:1.15;padding:2px;border-radius:4px;cursor:pointer;border:2px solid var(--acc);background:#1c2027;color:var(--txt);overflow:hidden';
-  }else{thumb=document.createElement('img');thumb.src=entry.url;
-   thumb.style.cssText='width:40px;height:60px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid var(--acc);display:block';}
-  thumb.title='Panele görüntü ayarlarıyla gönder';
-  thumb.onclick=()=>recallSaved(entry);
-  const del=document.createElement('span');del.textContent='×';del.title='Sil';
-  del.style.cssText='position:absolute;top:1px;right:1px;background:#e53;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;line-height:14px';
-  del.onclick=(e)=>{e.stopPropagation();const l=loadSaved();l.splice(idx,1);storeSaved(l);renderSaved(l);};
-  wrap.appendChild(thumb);wrap.appendChild(del);grid.appendChild(wrap);});
+  if(entry.t==='gal'){thumb=document.createElement('div');thumb.className='sgal';
+   thumb.textContent=entry.name||('Galeri '+(entry.idx+1));}
+  else{thumb=document.createElement('img');thumb.className='sthumb';thumb.src=entry.url;}
+  thumb.title='Panele görüntü ayarlarıyla gönder';thumb.onclick=()=>recallSaved(entry);
+  const info=document.createElement('div');info.className='sinfo';
+  const nm=document.createElement('div');nm.className='sname';nm.textContent=entry.name||('Kayıt '+(idx+1));
+  const meta=document.createElement('div');meta.className='smeta';
+  meta.textContent=(entry.t==='gal'?'Galeri':'Yüklenen')+' · '+settingsSummary(entry.s);
+  info.appendChild(nm);info.appendChild(meta);
+  const act=document.createElement('div');act.className='sact';
+  const send=document.createElement('button');send.textContent='Gönder';send.title='Panele ayarlarıyla gönder';send.onclick=()=>recallSaved(entry);
+  const ren=document.createElement('button');ren.innerHTML='&#9998;';ren.title='Adı değiştir';ren.onclick=()=>renameSaved(idx);
+  const del=document.createElement('button');del.textContent='×';del.title='Sil';del.className='sdel';del.onclick=()=>delSaved(idx);
+  act.appendChild(send);act.appendChild(ren);act.appendChild(del);
+  row.appendChild(thumb);row.appendChild(info);row.appendChild(act);box.appendChild(row);});
 }
 renderSaved(loadSaved());
 
