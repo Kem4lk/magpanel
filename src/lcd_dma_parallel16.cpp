@@ -28,6 +28,14 @@ static const char *const TAG = "lcd_dma_parallel16";
 #include "lcd_dma_parallel16.hpp"
 #include "esp_attr.h"
 #include <soc/lldesc.h>  // for lldesc_get_required_num and LLDESC_MAX_NUM_PER_DESC
+#include <esp_memory_utils.h>  // esp_ptr_external_ram
+
+// PSRAM'deki tamponlarda GDMA, descriptor tampon adresinin ve boyutunun harici
+// bellek blok boyutuna (64 B, psram_trans_align) hizali olmasini ister; 4095'lik
+// parca bunu bozar. Dahili RAM'de eski davranis (4095) aynen korunur.
+static inline int dma_chunk_for(const void *p) {
+  return esp_ptr_external_ram(p) ? 4032 : LLDESC_MAX_NUM_PER_DESC;
+}
 
 
 // End-of-DMA-transfer callback
@@ -370,7 +378,8 @@ esp_err_t Bus_Parallel16::send_stuff_once(void *data, size_t size_in_bytes, bool
 
   int len = size_in_bytes;
 
-  int dma_lldesc_required = lldesc_get_required_num(size_in_bytes);
+  const int chunk_max = dma_chunk_for(data);
+  int dma_lldesc_required = (len + chunk_max - 1) / chunk_max;
   ESP_LOGV(TAG, "Number of DMA descriptors required for LCD payload is: %d.", dma_lldesc_required);
 
   // Allocate descriptor block of memory if it hasn't already been allocated
@@ -380,8 +389,8 @@ esp_err_t Bus_Parallel16::send_stuff_once(void *data, size_t size_in_bytes, bool
   int n = 0;
   while (len) {
     int dmachunklen = len;
-    if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
-      dmachunklen = LLDESC_MAX_NUM_PER_DESC;
+    if (dmachunklen > chunk_max) {
+      dmachunklen = chunk_max;
     }
 
     _dmadesc_a[n].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
