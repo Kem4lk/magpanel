@@ -118,7 +118,9 @@ struct Options {
   uint8_t gs_bits     = 13;     // gri ton MSB konumu (12..16)
   bool    mirror_x    = false;  // cip + kanal sirasi ters
   bool    chan_rev    = false;  // sadece cip-ici kanal sirasi ters
-  uint8_t x_offset    = 0;      // 172 piksel 176 kanala oturur: bos kanal sayisi (0..4) basta
+  uint8_t col_layout  = 1;      // 0 = dogrusal (x_offset ile), 1 = P1.86-Y52: 172 piksel 176 kanala,
+                                //     cip 0,1,9,10'un 0. kanali BOS (15+15+7x16+15+15). Izgara fotografiyla olculdu.
+  uint8_t x_offset    = 0;      // sadece col_layout=0: bastaki bos kanal sayisi (0..4)
   bool    swap_halves = false;  // ust yari <- R2 grubu
   bool    flip_y      = false;  // yari-ici satir sirasi ters
   uint8_t row_offset  = 0;      // veri satiri <-> fiziksel satir kaymasi (0..42)
@@ -222,8 +224,12 @@ class PanelSM16380 : public GFX {
     int lane = ((half == 0) != opt.swap_halves) ? 0 : 3;   // 0 = R1G1B1, 3 = R2G2B2
 
     int xx = opt.mirror_x ? (W - 1 - x) : x;
-    xx += opt.x_offset;
-    if (xx >= CHIPS * 16) return;
+    if (opt.col_layout == 1) {
+      xx = colLut(xx);
+    } else {
+      xx += opt.x_offset;
+      if (xx >= CHIPS * 16) return;
+    }
     int chip = xx / 16;
     int ch   = xx % 16;
     if (opt.chan_rev) ch = 15 - ch;
@@ -261,6 +267,22 @@ class PanelSM16380 : public GFX {
   void drawPixel(int16_t x, int16_t y, CRGB c) { setPixel(x, y, c.red, c.green, c.blue); }
 
   size_t streamBytes() const { return stream_bytes_; }
+
+  // P1.86-Y52 sutun duzeni: fiziksel sutun -> zincir konumu. Bos konumlar (hic LED'e
+  // gitmeyen kanallar): 0, 16, 144, 160 = cip 0/1/9/10'un 0. kanali.
+  static int colLut(int px) {
+    static uint8_t lut[sm16380::W];
+    static bool built = false;
+    if (!built) {
+      int n = 0;
+      for (int p = 0; p < sm16380::CHIPS * 16 && n < sm16380::W; p++) {
+        if (p == 0 || p == 16 || p == 144 || p == 160) continue;
+        lut[n++] = (uint8_t)p;
+      }
+      built = true;
+    }
+    return lut[px];
+  }
   const char *profileName() const { return sm16380::REG_PROFILES[opt.reg_profile % sm16380::REG_PROFILE_COUNT].name; }
 
  private:
