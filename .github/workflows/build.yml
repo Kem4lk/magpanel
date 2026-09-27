@@ -29,11 +29,16 @@ jobs:
           #define GITHUB_OTA_BASE "https://github.com/${{ github.repository }}/releases/latest/download"
           #define GITHUB_AUTO_OTA 1
           CFG
-      - name: Derle
+      - name: Derle (P4 80x120)
         run: pio run -e esp32-s3-devkitc-1
+      - name: Derle (P1.86 172x86)
+        run: pio run -e p186
       - name: Cikti hazirla
+        # Her panel tipi kendi ikilisini ceker (include/panel.h OTA_FW_FILE);
+        # version.txt ortak (ayni run_number).
         run: |
           cp .pio/build/esp32-s3-devkitc-1/firmware.bin firmware.bin
+          cp .pio/build/p186/firmware.bin firmware-p186.bin
           echo "${{ github.run_number }}" > version.txt
       - name: "'latest' etiketini bu commit'e sabitle"
         # action-gh-release mevcut etiketi tasimaz; etiketi her derlemede
@@ -49,4 +54,5 @@ jobs:
           name: "MagPanel build ${{ github.run_number }}"
           files: |
             firmware.bin
+            firmware-p186.bin
             version.txt
