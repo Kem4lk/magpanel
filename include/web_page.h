@@ -75,7 +75,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 .sact button{padding:7px 9px;font-size:12px}
 .sact .sdel{color:var(--err);font-weight:700}
 </style></head><body>
-<header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; 80&times;120</span>
+<header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; {{PN}} {{PW}}&times;{{PH}}</span>
 <span class=dot id=dot></span></header>
 
 <div class=card><h2>Galeri</h2>
@@ -109,7 +109,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 
 <div class=card><h2>Görsel &amp; Çizim</h2>
 <div class=zone id=zone>
-<canvas id=c width=80 height=120></canvas>
+<canvas id=c width={{PW}} height={{PH}}></canvas>
 <div class=hint>Görsel veya video sürükle, yapıştır (&#8984;V) ya da dosya seç &middot; parmağınla/fareyle çiz</div>
 </div>
 <div class=row>
@@ -170,6 +170,16 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button class=ghbtn onclick="otaCheck()">&#8593; GitHub'dan Güncelle</button>
 </footer>
 <script>
+// Panel boyutu firmware tarafindan sayfaya yazilir (P4 80x120, P1.86 172x86)
+const PW={{PW}},PH={{PH}},FB=PW*PH*3,WIDE=PW>PH;
+// Kanvas + kucuk resimler panel en-boy oranini izlesin (P4: 200x300 onizleme)
+(function(){const cw=WIDE?Math.min(344,innerWidth-80):Math.round(300*PW/PH),ch=Math.round(cw*PH/PW);
+ c.style.width=cw+'px';c.style.height=ch+'px';
+ const tw=WIDE?68:34,th=Math.round(tw*PH/PW),st=document.createElement('style');
+ st.textContent='.sthumb,.sgal{width:'+tw+'px;height:'+th+'px}';document.head.appendChild(st);})();
+// Kare mesaji: [0x01, RGB...]. ImageData (RGBA) -> RGB888
+function frameMsg(d){const b=new Uint8Array(1+FB);b[0]=1;
+ for(let p=0,j=1;p<d.length;p+=4){b[j++]=d[p];b[j++]=d[p+1];b[j++]=d[p+2];}return b;}
 let ws,otaPending=false;
 let curSrc={type:'img'},galNames=[];   // "Kaydet" icin: panelde su an gosterilen kaynak
 function connect(){
@@ -185,12 +195,14 @@ function connect(){
  };
  ws.onmessage=e=>{if(typeof e.data!=='string')return;
   if(e.data.startsWith('L:'))addLog(e.data.slice(2));
-  else if(e.data.startsWith('G:')){try{buildGallery(JSON.parse(e.data.slice(2)));}catch(_){}}};
+  else if(e.data.startsWith('G:')){try{buildGallery(JSON.parse(e.data.slice(2)));}catch(_){}}
+  else if(e.data.startsWith('D:')){const m=/^D:(\d+)x(\d+)/.exec(e.data);   // panel boyutu (iOS app de kullanir)
+   if(m&&(+m[1]!==PW||+m[2]!==PH))location.reload();}};
 }
 connect();
 function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
 const ctx=c.getContext('2d',{willReadFrequently:true});
-ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+ctx.fillStyle='#000';ctx.fillRect(0,0,PW,PH);
 
 let gifStop=false,gifTimer=null,gifIsRaf=false;
 function stopGif(){
@@ -218,9 +230,7 @@ async function playVideo(file){
    // ~15fps gonderim: panel ve WiFi 60fps'i kaldiramaz; fazlasi heap/banding yapar
    const now=performance.now();
    if(now-lastSend>=66 && ws&&ws.readyState===1&&ws.bufferedAmount<40000){
-    const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-    for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
-    ws.send(b);lastSend=now;frameCount++;
+    ws.send(frameMsg(ctx.getImageData(0,0,PW,PH).data));lastSend=now;frameCount++;
     if(frameCount===1||frameCount===30)addLog('DBG VID: kare gonderildi #'+frameCount+' bufAmt='+ws.bufferedAmount);
    }
   } else if(frameCount===0){addLog('DBG VID: readyState='+vid.readyState+' (bekleniyor)');}
@@ -230,7 +240,7 @@ async function playVideo(file){
  return true;
 }
 
-// GIF: kareleri ImageDecoder ile ayristir, 80x120'ye olcekle, sirayla panele
+// GIF: kareleri ImageDecoder ile ayristir, panel boyutuna olcekle, sirayla panele
 // gonder (gercek animasyon). Tek kareli/desteksiz ise false doner -> statik yol.
 async function playGif(file){
  let buf,dec;
@@ -246,13 +256,12 @@ async function playGif(file){
  for(let i=0;i<n;i++){
   let r;try{r=await dec.decode({frameIndex:i});}catch(e){break;}
   const im=r.image;
-  ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
-  const s=Math.max(80/im.displayWidth,120/im.displayHeight),
+  ctx.fillStyle='#000';ctx.fillRect(0,0,PW,PH);
+  const s=Math.max(PW/im.displayWidth,PH/im.displayHeight),
    w=im.displayWidth*s,h=im.displayHeight*s;
-  ctx.drawImage(im,(80-w)/2,(120-h)/2,w,h);
-  const d=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-  for(let p=0,j=1;p<d.data.length;p+=4){b[j++]=d.data[p];b[j++]=d.data[p+1];b[j++]=d.data[p+2];}
-  frames.push({img:d,buf:b,delay:Math.max((im.duration||100000)/1000,50)});
+  ctx.drawImage(im,(PW-w)/2,(PH-h)/2,w,h);
+  const d=ctx.getImageData(0,0,PW,PH);
+  frames.push({img:d,buf:frameMsg(d.data),delay:Math.max((im.duration||100000)/1000,50)});
   im.close();
  }
  dec.close();
@@ -341,16 +350,15 @@ async function playGifFallback(file){
  let g;try{g=decodeGif(buf);}catch(e){addLog('DBG GIF: cozme hatasi '+e);return false;}
  if(!g||!g.frames||g.frames.length<2){addLog('DBG GIF: '+(g&&g.frames?g.frames.length:0)+' kare (animasyon yok)');return false;}
  addLog('DBG GIF cozuldu: '+g.W+'x'+g.H+' '+g.frames.length+' kare');
- // her kareyi 80x120'ye olcekle + gonderim buffer'i hazirla (oynatma sirasinda is yok)
+ // her kareyi panel boyutuna olcekle + gonderim buffer'i hazirla (oynatma sirasinda is yok)
  const tmp=document.createElement('canvas');tmp.width=g.W;tmp.height=g.H;
  const tc=tmp.getContext('2d',{willReadFrequently:true});
  const out=[];
  for(const fr of g.frames){
   tc.putImageData(fr.img,0,0);
   drawScaled(tmp,g.W,g.H);
-  const dd=ctx.getImageData(0,0,80,120),b=new Uint8Array(1+28800);b[0]=1;
-  for(let pp=0,j=1;pp<dd.data.length;pp+=4){b[j++]=dd.data[pp];b[j++]=dd.data[pp+1];b[j++]=dd.data[pp+2];}
-  out.push({img:dd,buf:b,delay:fr.delay});
+  const dd=ctx.getImageData(0,0,PW,PH);
+  out.push({img:dd,buf:frameMsg(dd.data),delay:fr.delay});
  }
  gifStop=false;
  // Gercek-zamanli oynatma (video yolu gibi): kumulatif zaman cizelgesi kur,
@@ -373,13 +381,13 @@ async function playGifFallback(file){
  return true;
 }
 
-// Yüksek kaliteli küçültme: büyük resmi 80x120'ye indirirken çok adımlı yarılama
+// Yüksek kaliteli küçültme: büyük resmi panel boyutuna indirirken çok adımlı yarılama
 // kullanır (her adımda boyut yarıya iner). Tek adımlı drawImage'dan çok daha keskin.
 function hqScale(src, sw, sh){
  let tmp=document.createElement('canvas'),tc=tmp.getContext('2d');
  tmp.width=sw;tmp.height=sh;tc.drawImage(src,0,0,sw,sh);
- while(tmp.width>160||tmp.height>240){
-  const nw=Math.max(Math.floor(tmp.width/2),80),nh=Math.max(Math.floor(tmp.height/2),120);
+ while(tmp.width>2*PW||tmp.height>2*PH){
+  const nw=Math.max(Math.floor(tmp.width/2),PW),nh=Math.max(Math.floor(tmp.height/2),PH);
   const s2=document.createElement('canvas');s2.width=nw;s2.height=nh;
   const c2=s2.getContext('2d');c2.imageSmoothingEnabled=true;c2.imageSmoothingQuality='high';
   c2.drawImage(tmp,0,0,nw,nh);tmp=s2;
@@ -387,11 +395,11 @@ function hqScale(src, sw, sh){
  return tmp;
 }
 function drawScaled(src,srcW,srcH){
- const s=Math.max(80/srcW,120/srcH),sw=Math.round(srcW*s),sh=Math.round(srcH*s);
+ const s=Math.max(PW/srcW,PH/srcH),sw=Math.round(srcW*s),sh=Math.round(srcH*s);
  const scaled=hqScale(src,sw,sh);
- ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+ ctx.fillStyle='#000';ctx.fillRect(0,0,PW,PH);
  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
- ctx.drawImage(scaled,Math.round((80-sw)/2),Math.round((120-sh)/2),sw,sh);
+ ctx.drawImage(scaled,Math.round((PW-sw)/2),Math.round((PH-sh)/2),sw,sh);
 }
 async function loadImg(file){
  if(!file)return;
@@ -418,12 +426,10 @@ zone.ondrop=e=>{e.preventDefault();zone.classList.remove('over');
 window.onpaste=e=>{for(const it of e.clipboardData.items)
  if(it.type.startsWith('image/')){loadImg(it.getAsFile());break;}};
 
-function sendFrame(){const d=ctx.getImageData(0,0,80,120).data,
- b=new Uint8Array(1+28800);b[0]=1;
- for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
- ws.send(b);curSrc={type:'img'};
+function sendFrame(){const d=ctx.getImageData(0,0,PW,PH).data;
+ ws.send(frameMsg(d));curSrc={type:'img'};
  saveRecent(d);}
-function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);
+function clr(){stopGif();ctx.fillStyle='#000';ctx.fillRect(0,0,PW,PH);
  curSrc={type:'img'};ws.send(new Uint8Array([3]));}
 function art(i){stopGif();curSrc={type:'gal',idx:i,name:galNames[i]||('Galeri '+(i+1))};ws.send(new Uint8Array([5,i]));}
 
@@ -438,10 +444,13 @@ function buildGallery(names){
 }
 
 // ---- Son Gönderilenler (localStorage) ----
-const RECENT_KEY='mpRecent',RECENT_MAX=8;
+// Kayit anahtarlari panel boyutuna ozel (P4 80x120 eski anahtarlari aynen korur):
+// ayni tarayicida farkli boyutlu panelin gorselleri birbirine karismaz.
+const DIMKEY=(PW===80&&PH===120)?'':('_'+PW+'x'+PH);
+const RECENT_KEY='mpRecent'+DIMKEY,RECENT_MAX=8;
 function saveRecent(imgData){
- const tmp=document.createElement('canvas');tmp.width=80;tmp.height=120;
- tmp.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(imgData),80,120),0,0);
+ const tmp=document.createElement('canvas');tmp.width=PW;tmp.height=PH;
+ tmp.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(imgData),PW,PH),0,0);
  const url=tmp.toDataURL('image/png');
  let lst=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');
  lst.unshift(url);if(lst.length>RECENT_MAX)lst=lst.slice(0,RECENT_MAX);
@@ -455,16 +464,14 @@ function renderRecent(lst){
  lst.forEach((url,idx)=>{
   const wrap=document.createElement('div');wrap.style.cssText='position:relative;display:inline-block;';
   const img=document.createElement('img');
-  img.src=url;img.style.cssText='width:40px;height:60px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid var(--line);';
+  const rw=WIDE?80:40,rh=Math.round(rw*PH/PW);
+  img.src=url;img.style.cssText='width:'+rw+'px;height:'+rh+'px;image-rendering:pixelated;border-radius:4px;cursor:pointer;border:2px solid var(--line);';
   img.title='Panele gönder';
   img.onclick=()=>{stopGif();
-   const tmp=document.createElement('canvas');tmp.width=80;tmp.height=120;
+   const tmp=document.createElement('canvas');tmp.width=PW;tmp.height=PH;
    const ti=tmp.getContext('2d');const image=new Image();
    image.onload=()=>{ti.drawImage(image,0,0);
-    const d2=ti.getImageData(0,0,80,120).data;
-    const b=new Uint8Array(1+28800);b[0]=1;
-    for(let i=0,j=1;i<d2.length;i+=4){b[j++]=d2[i];b[j++]=d2[i+1];b[j++]=d2[i+2];}
-    ws.send(b);};image.src=url;};
+    ws.send(frameMsg(ti.getImageData(0,0,PW,PH).data));};image.src=url;};
   const del=document.createElement('span');
   del.textContent='×';del.title='Sil';
   del.style.cssText='position:absolute;top:1px;right:1px;background:#e53;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;line-height:14px;';
@@ -477,7 +484,7 @@ function renderRecent(lst){
 renderRecent(JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'));
 
 // ---- Kayıtlı: görsel (yüklenen ya da galeri) + görüntü ayarları (localStorage) ----
-const SAVED_KEY='mpSaved',SAVED_MAX=12;
+const SAVED_KEY='mpSaved'+DIMKEY,SAVED_MAX=12;
 function loadSaved(){try{return JSON.parse(localStorage.getItem(SAVED_KEY)||'[]');}catch(e){return[];}}
 function storeSaved(l){try{localStorage.setItem(SAVED_KEY,JSON.stringify(l));}catch(e){addLog('Kayit alani dolu - eski kayitlari sil');}}
 // Sliderlardaki anlik gorüntü ayarlarini tek nesneye al
@@ -515,9 +522,8 @@ function recallSaved(entry){
  if(entry.t==='gal'){curSrc={type:'gal',idx:entry.idx,name:entry.name};
   sendSeq([...sm,new Uint8Array([5,entry.idx])],110);
  }else{const image=new Image();image.onload=()=>{
-   ctx.fillStyle='#000';ctx.fillRect(0,0,80,120);ctx.drawImage(image,0,0);
-   const d=ctx.getImageData(0,0,80,120).data,b=new Uint8Array(1+28800);b[0]=1;
-   for(let i=0,j=1;i<d.length;i+=4){b[j++]=d[i];b[j++]=d[i+1];b[j++]=d[i+2];}
+   ctx.fillStyle='#000';ctx.fillRect(0,0,PW,PH);ctx.drawImage(image,0,0);
+   const b=frameMsg(ctx.getImageData(0,0,PW,PH).data);
    curSrc={type:'img'};sendSeq([...sm,b],120);};
   image.src=entry.url;}
 }
@@ -641,9 +647,9 @@ async function appSpotify(){stopGif();
    history.replaceState({},'',location.pathname);
    addLog('Spotify: baglandi - "Spotify"ya tekrar bas');}
  }catch(e){addLog('Spotify token hata: '+e);}})();
-function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,80,120);sendFrame();}
-function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43;
- ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,i*20,80,20);}sendFrame();}
+function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);sendFrame();}
+function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43,y0=Math.round(i*PH/6),y1=Math.round((i+1)*PH/6);
+ ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,y0,PW,y1-y0);}sendFrame();}
 // Flicker self-test (firmware tarafi, opcode 0x0F) baslat/durdur
 let ftOn=false;
 function ftToggle(){
@@ -656,15 +662,15 @@ function ftToggle(){
 
 let drawing=false;
 function px(e){const r=c.getBoundingClientRect(),
- x=Math.floor((e.clientX-r.left)/r.width*80),
- y=Math.floor((e.clientY-r.top)/r.height*120);
- if(x<0||x>79||y<0||y>119)return;
+ x=Math.floor((e.clientX-r.left)/r.width*PW),
+ y=Math.floor((e.clientY-r.top)/r.height*PH);
+ if(x<0||x>PW-1||y<0||y>PH-1)return;
  const cv=col.value,rr=parseInt(cv.substr(1,2),16),
  g=parseInt(cv.substr(3,2),16),bb=parseInt(cv.substr(5,2),16);
  ctx.fillStyle=cv;ctx.fillRect(x,y,2,2);
  const m=new Uint8Array(1+4*5);m[0]=2;let k=1;
  for(const[dx,dy]of[[0,0],[1,0],[0,1],[1,1]]){
-  m[k++]=Math.min(x+dx,79);m[k++]=Math.min(y+dy,119);m[k++]=rr;m[k++]=g;m[k++]=bb;}
+  m[k++]=Math.min(x+dx,PW-1);m[k++]=Math.min(y+dy,PH-1);m[k++]=rr;m[k++]=g;m[k++]=bb;}
  ws.send(m);}
 c.onpointerdown=e=>{stopGif();curSrc={type:'img'};drawing=true;c.setPointerCapture(e.pointerId);px(e);};
 c.onpointermove=e=>{if(drawing)px(e);};

@@ -1,4 +1,6 @@
-/* FM6363C 80x120 v17 - WiFi + WebSocket sunucu
+/* MagPanel - WiFi + WebSocket sunucu. Panel derleme zamaninda secilir (include/panel.h):
+   P4 FM6363C 80x120 (varsayilan env'ler) ya da P1.86 SM16380SH 172x86 (-DPANEL_P186).
+   Kare boyutu = PANEL_W x PANEL_H; web sayfasi/istemci bunu "D:WxH" WS mesajiyla ogrenir.
    Protokol (binary WS, ilk bayt opcode):
      0x04 + 1B     : global parlaklik (0-255)
      0x05 + 1B     : gomulu galeri tablosu (0..GALLERY_COUNT-1)
@@ -6,7 +8,7 @@
      0x07 + 2B     : kontrast, doygunluk (128 = notr)
      0x0E + 1B     : blur kademesi (0=kapalı, 1=2x2, idx≥2 → (2*idx-1) kenarlı box blur, maks 12 = 23x23)
      0x08 + 1B     : mozaik blok boyutu (1=kapali, 2..40)
-     0x01 + 28800B : tam kare RGB888 (satir-major, y0:x0..79)
+     0x01 + W*H*3B : tam kare RGB888 (satir-major, y0:x0..W-1); P4 28800B, P1.86 44376B
      0x02 + N*5B   : piksel paketi (x,y,r,g,b)
      0x03          : temizle
      0x0A + 1B     : canli DCLK bolen (flicker tuner)
@@ -26,15 +28,16 @@
 #include <WiFiClientSecure.h>
 #include "esp_wifi.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include <Update.h>
 #include <Preferences.h>
-#include <Matrix.h>
+#include "panel.h"
 #include "gallery.h"
 #include "wifi_config.h"
 #include "web_page.h"
 #include "apps.h"
 
-Matrix matrix;
+Panel  matrix;                     // P4: Matrix, P1.86: PanelSM16380 (include/panel.h)
 Apps   apps;                       // firmware-tarafi uygulamalar (saat/timer/hava/dunya kupasi/spotify)
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -60,7 +63,7 @@ static const char PROV_HTML[] =
 
 static void runAPProvisioning(){
   Serial.println("WiFi yok - AP modu: 'MagPanel-Setup' agina baglanip http://192.168.4.1 acin");
-  for(int y=0;y<PANEL_PHY_RES_Y;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,0,0,60);
+  for(int y=0;y<PANEL_H;y++) for(int x=0;x<PANEL_W;x++) matrix.drawPixel(x,y,0,0,60);
   matrix.update();
 
   WiFi.mode(WIFI_AP);
@@ -137,6 +140,11 @@ static void sendGallery(AsyncWebSocketClient *c){
   j += "]";
   c->text(j);
 }
+// Panel boyutu + tipi ("D:172x86:P1.86"): istemci kanvasi ve kare boyutunu buna gore kurar
+static void sendDims(AsyncWebSocketClient *c){
+  char d[32]; snprintf(d, sizeof(d), "D:%dx%d:%s", PANEL_W, PANEL_H, PANEL_NAME);
+  c->text(d);
+}
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
 static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
@@ -149,9 +157,16 @@ void drawGallery(uint8_t idx);
 void renderFrame();
 void redrawCurrent();
 
-static const size_t FRAME_BYTES = (size_t)PANEL_PHY_RES_X * PANEL_PHY_RES_Y * 3;  // 28800
-static uint8_t rxbuf[1 + FRAME_BYTES];
+static const size_t FRAME_BYTES = (size_t)PANEL_W * PANEL_H * 3;  // P4 28800, P1.86 44376
+static const size_t RXBUF_BYTES = 1 + FRAME_BYTES;
+#if defined(PANEL_P186)
+// P1.86: 2 x ~44 KB tampon PSRAM'de (setup'ta ayrilir); dahili RAM WiFi/async icin kalsin
+static uint8_t *rxbuf    = nullptr;
+static uint8_t *framebuf = nullptr;              // son gosterilen kare (ayar degisiminde yeniden cizim)
+#else
+static uint8_t rxbuf[RXBUF_BYTES];
 static uint8_t framebuf[FRAME_BYTES];           // son gosterilen kare (ayar degisiminde yeniden cizim)
+#endif
 static bool    haveFrame = false;
 static volatile size_t  msgLen   = 0;
 static volatile bool    msgReady = false;
@@ -163,7 +178,7 @@ static volatile bool    msgReady = false;
 static inline void blurredPixel(int x, int y, uint8_t &ro, uint8_t &go, uint8_t &bo){
   int idx = matrix.img_blur;
   if(idx == 0){
-    const uint8_t *p = framebuf + (y*80+x)*3;
+    const uint8_t *p = framebuf + (y*PANEL_W+x)*3;
     ro=p[0]; go=p[1]; bo=p[2]; return;
   }
   int x0,x1,y0,y1;
@@ -177,10 +192,10 @@ static inline void blurredPixel(int x, int y, uint8_t &ro, uint8_t &go, uint8_t 
   }
   uint32_t sr=0,sg=0,sb=0,cnt=0;
   for(int ny=y0; ny<=y1; ny++){
-    int cy = ny<0 ? 0 : (ny>=PANEL_PHY_RES_Y ? PANEL_PHY_RES_Y-1 : ny);
+    int cy = ny<0 ? 0 : (ny>=PANEL_H ? PANEL_H-1 : ny);
     for(int nx=x0; nx<=x1; nx++){
-      int cx = nx<0 ? 0 : (nx>=80 ? 79 : nx);
-      const uint8_t *q = framebuf + (cy*80+cx)*3;
+      int cx = nx<0 ? 0 : (nx>=PANEL_W ? PANEL_W-1 : nx);
+      const uint8_t *q = framebuf + (cy*PANEL_W+cx)*3;
       sr+=q[0]; sg+=q[1]; sb+=q[2]; cnt++;
     }
   }
@@ -194,24 +209,24 @@ void renderFrame(){
     // onceki kareyi parlak gosterip update()'in 30ms'lik dim sweep'iyle KONTRAST
     // yaratiyordu (flicker'i artiriyordu) + kare hizini dusuruyordu. Kaldirildi:
     // sadece doldur, sonra tek update().
-    for(int y=0;y<PANEL_PHY_RES_Y;y++)
-      for(int x=0;x<80;x++){
+    for(int y=0;y<PANEL_H;y++)
+      for(int x=0;x<PANEL_W;x++){
         uint8_t r,g,bl; blurredPixel(x,y,r,g,bl);
         matrix.drawPixel((uint8_t)x,(uint8_t)y,r,g,bl);
       }
   } else {
     // NxN bloklara bol, her blogun ortalama rengini tum bloga yaz
-    for(int by=0; by<PANEL_PHY_RES_Y; by+=b){
-      for(int bx=0; bx<80; bx+=b){
+    for(int by=0; by<PANEL_H; by+=b){
+      for(int bx=0; bx<PANEL_W; bx+=b){
         uint32_t sr=0,sg=0,sb=0,cnt=0;
-        for(int dy=0; dy<b && by+dy<PANEL_PHY_RES_Y; dy++)
-          for(int dx=0; dx<b && bx+dx<80; dx++){
-            const uint8_t *q = framebuf + ((by+dy)*80 + (bx+dx))*3;
+        for(int dy=0; dy<b && by+dy<PANEL_H; dy++)
+          for(int dx=0; dx<b && bx+dx<PANEL_W; dx++){
+            const uint8_t *q = framebuf + ((by+dy)*PANEL_W + (bx+dx))*3;
             sr+=q[0]; sg+=q[1]; sb+=q[2]; cnt++;
           }
         uint8_t r=sr/cnt, g=sg/cnt, bl=sb/cnt;
-        for(int dy=0; dy<b && by+dy<PANEL_PHY_RES_Y; dy++)
-          for(int dx=0; dx<b && bx+dx<80; dx++)
+        for(int dy=0; dy<b && by+dy<PANEL_H; dy++)
+          for(int dx=0; dx<b && bx+dx<PANEL_W; dx++)
             matrix.drawPixel((uint8_t)(bx+dx),(uint8_t)(by+dy),r,g,bl);
       }
     }
@@ -224,9 +239,36 @@ void redrawCurrent(){
   if(lastGallery>=0) drawGallery((uint8_t)lastGallery);
   else if(haveFrame) renderFrame();
 }
+// Galeri tablolari 80x120 (dikey) saklanir. Panel farkli boyuttaysa (P1.86 172x86)
+// en-boy korunarak sigdirilir (bilinear), kenarlar siyah.
+static const int GAL_W = 80, GAL_H = 120;
+static void loadGalleryFrame(const uint8_t *src){
+  if(PANEL_W == GAL_W && PANEL_H == GAL_H){ memcpy(framebuf, src, FRAME_BYTES); return; }
+  memset(framebuf, 0, FRAME_BYTES);
+  // olcek = min(PW/GW, PH/GH): sinirlayan kenar tam dolar, digeri yuvarlanir
+  int dw, dh;
+  if(PANEL_W * GAL_H <= PANEL_H * GAL_W){ dw = PANEL_W; dh = (GAL_H * PANEL_W + GAL_W/2) / GAL_W; }
+  else                                  { dh = PANEL_H; dw = (GAL_W * PANEL_H + GAL_H/2) / GAL_H; }
+  int ox = (PANEL_W - dw) / 2, oy = (PANEL_H - dh) / 2;
+  for(int y=0; y<dh; y++){
+    uint32_t fy = (uint32_t)(((uint64_t)y << 16) * (GAL_H - 1) / (dh > 1 ? dh - 1 : 1));
+    int y0 = fy >> 16, y1 = y0 + 1 < GAL_H ? y0 + 1 : y0; uint32_t wy = (fy >> 8) & 0xff;
+    for(int x=0; x<dw; x++){
+      uint32_t fx = (uint32_t)(((uint64_t)x << 16) * (GAL_W - 1) / (dw > 1 ? dw - 1 : 1));
+      int x0 = fx >> 16, x1 = x0 + 1 < GAL_W ? x0 + 1 : x0; uint32_t wx = (fx >> 8) & 0xff;
+      uint8_t *d = framebuf + ((oy + y) * PANEL_W + (ox + x)) * 3;
+      for(int c=0; c<3; c++){
+        uint32_t a = pgm_read_byte(src + (y0*GAL_W + x0)*3 + c), b = pgm_read_byte(src + (y0*GAL_W + x1)*3 + c);
+        uint32_t e = pgm_read_byte(src + (y1*GAL_W + x0)*3 + c), f = pgm_read_byte(src + (y1*GAL_W + x1)*3 + c);
+        uint32_t top = a*(256-wx) + b*wx, bot = e*(256-wx) + f*wx;
+        d[c] = (uint8_t)((top*(256-wy) + bot*wy) >> 16);
+      }
+    }
+  }
+}
 void drawGallery(uint8_t idx){
   if(idx>=GALLERY_COUNT) return;
-  memcpy(framebuf, GALLERY_DATA[idx], FRAME_BYTES);  // galeriyi framebuf'a al
+  loadGalleryFrame(GALLERY_DATA[idx]);               // galeriyi framebuf'a al (gerekirse olcekle)
   haveFrame = true;
   renderFrame();                                     // mozaik dahil ortak render
   logf("Galeri: %s", GALLERY_NAMES[idx]);
@@ -297,11 +339,11 @@ static uint32_t ftLastTick   = 0;                      // hareketli faz son cizi
 static uint32_t ftBlinkSub   = 0;                      // BLINK 500ms alt-faz sayaci
 // bitince geri yuklenecek anlik ayarlar
 static uint8_t  ftSvBr, ftSvGr, ftSvGg, ftSvGb, ftSvCon, ftSvSat, ftSvBlur, ftSvMz;
-static uint32_t ftSvDiv = 64;
+static uint32_t ftSvDiv = PANEL_DEFAULT_DIV;
 
 static void ftLabel(int idx){
   char lab[16]; snprintf(lab, sizeof(lab), "P%02d %s", idx, FT_SEQ[idx].code);
-  int w = (int)strlen(lab)*6 + 2; if(w > 80) w = 80;
+  int w = (int)strlen(lab)*6 + 2; if(w > PANEL_W) w = PANEL_W;
   for(int y=0;y<9;y++) for(int x=0;x<w;x++) matrix.drawPixel((uint8_t)x,(uint8_t)y,0,0,0); // okunur kalsin diye siyah kutu
   matrix.setTextSize(1);
   matrix.setTextColor(0xFFFF);                         // beyaz (565)
@@ -311,45 +353,45 @@ static void ftLabel(int idx){
 
 static void ftDraw(int idx, uint32_t elapsed){
   const FtPhase &ph = FT_SEQ[idx];
-  const int H = PANEL_PHY_RES_Y;                       // 120
+  const int H = PANEL_H, W = PANEL_W;                  // P4 80x120, P1.86 172x86
   switch(ph.kind){
     case FT_SOLID:
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,ph.a,ph.b,ph.c);
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++) matrix.drawPixel(x,y,ph.a,ph.b,ph.c);
       break;
     case FT_HGRAD:
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(uint8_t)(x*255/79); matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++){ uint8_t v=(uint8_t)(x*255/(W-1)); matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_VGRAD:
-      for(int y=0;y<H;y++){ uint8_t v=(uint8_t)(y*255/(H-1)); for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++){ uint8_t v=(uint8_t)(y*255/(H-1)); for(int x=0;x<W;x++) matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_HALVES:
-      for(int y=0;y<H;y++){ uint8_t v=(y<H/2)?255:0; for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++){ uint8_t v=(y<H/2)?255:0; for(int x=0;x<W;x++) matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_HLINES:
-      for(int y=0;y<H;y++){ uint8_t v=(y&1)?0:255; for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++){ uint8_t v=(y&1)?0:255; for(int x=0;x<W;x++) matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_VLINES:
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(x&1)?0:255; matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++){ uint8_t v=(x&1)?0:255; matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_CHECKER:{ int s=ph.a<1?1:ph.a;
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++){ uint8_t v=(((x/s)+(y/s))&1)?255:0; matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++){ uint8_t v=(((x/s)+(y/s))&1)?255:0; matrix.drawPixel(x,y,v,v,v); }
       break; }
     case FT_DIAG:                                      // kosegen gradyan: hem satir hem kolon degiskeni
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++){       // -> mozaik (16px blok) ANINDA gorunur, ortalama parlak -> flicker da gorunur
-        uint8_t v=(uint8_t)(((x*255/79)+(y*255/(H-1)))/2); matrix.drawPixel(x,y,v,v,v); }
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++){       // -> mozaik (16px blok) ANINDA gorunur, ortalama parlak -> flicker da gorunur
+        uint8_t v=(uint8_t)(((x*255/(W-1))+(y*255/(H-1)))/2); matrix.drawPixel(x,y,v,v,v); }
       break;
     case FT_BLINK:{ bool on=((elapsed/500)&1)==0;
       uint8_t r=on?ph.a:0,g=on?ph.b:0,b=on?ph.c:0;
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,r,g,b);
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++) matrix.drawPixel(x,y,r,g,b);
       break; }
     case FT_SCROLL:{ int bar=(int)((elapsed/40)%H);    // 8px parlak cubuk asagi kayar
       for(int y=0;y<H;y++){ int d=y-bar; if(d<0)d+=H; uint8_t v=(d<8)?255:8;
-        for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v); }
+        for(int x=0;x<W;x++) matrix.drawPixel(x,y,v,v,v); }
       break; }
     case FT_PULSE:{ uint32_t t=elapsed%2000;           // 2sn ucgen nabiz 20..250 (float yok)
       int tri = t<1000 ? (int)(t*230/1000) : (int)((2000-t)*230/1000);
       uint8_t v=(uint8_t)(20+tri);
-      for(int y=0;y<H;y++) for(int x=0;x<80;x++) matrix.drawPixel(x,y,v,v,v);
+      for(int y=0;y<H;y++) for(int x=0;x<W;x++) matrix.drawPixel(x,y,v,v,v);
       break; }
   }
   ftLabel(idx);
@@ -374,8 +416,8 @@ static void ftStart(){
   ftSvGr=matrix.gain_r; ftSvGg=matrix.gain_g; ftSvGb=matrix.gain_b;
   ftSvCon=matrix.img_contrast; ftSvSat=matrix.img_saturation; ftSvBlur=matrix.img_blur;
   ftSvMz=mosaicBlock;
-  prefs.begin("panelcfg", true); ftSvDiv = prefs.getUInt("dclkdiv", 64); prefs.end();
-  if(ftSvDiv<8 || ftSvDiv>200) ftSvDiv=64;
+  prefs.begin(PANEL_CFG_NS, true); ftSvDiv = prefs.getUInt("dclkdiv", PANEL_DEFAULT_DIV); prefs.end();
+  if(ftSvDiv<8 || ftSvDiv>200) ftSvDiv=PANEL_DEFAULT_DIV;
   // goruntu hattini notr'e cek (kalinti ayarlar testi bozmasin)
   matrix.img_contrast=128; matrix.img_saturation=128; matrix.img_blur=0; mosaicBlock=1;
   matrix.gain_r=255; matrix.gain_g=255; matrix.gain_b=255;
@@ -412,7 +454,7 @@ static void ftLoop(){
 
 void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
                void *arg, uint8_t *data, size_t len){
-  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendLogHistory(client); sendGallery(client); return; }
+  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendDims(client); sendLogHistory(client); sendGallery(client); return; }
   if(type==WS_EVT_DISCONNECT){ Serial.printf("WS istemci #%u ayrildi\n", client->id()); return; }
   if(type!=WS_EVT_DATA) return;
   AwsFrameInfo *info=(AwsFrameInfo*)arg;
@@ -420,7 +462,7 @@ void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
   if(msgReady) return;                          // onceki mesaj islenmeden geleni dusur (akis kontrolu)
   static size_t acc=0;
   if(info->index==0 && info->num==0) acc=0;     // yeni mesaj basliyor
-  if(acc+len <= sizeof(rxbuf)){ memcpy(rxbuf+acc, data, len); acc+=len; }
+  if(rxbuf && acc+len <= RXBUF_BYTES){ memcpy(rxbuf+acc, data, len); acc+=len; }
   if(info->final && (info->index+len)==info->len){ msgLen=acc; msgReady=true; }
 }
 
@@ -440,7 +482,7 @@ void handleMessage(const uint8_t *buf, size_t len){
       apps.off();
       size_t n=(len-1)/5; const uint8_t *p=buf+1;
       for(size_t i=0;i<n;i++,p+=5)
-        if(p[0]<80 && p[1]<PANEL_PHY_RES_Y)
+        if(p[0]<PANEL_W && p[1]<PANEL_H)
           matrix.drawPixel(p[0],p[1],p[2],p[3],p[4]);
       matrix.update();
       break; }
@@ -482,7 +524,7 @@ void handleMessage(const uint8_t *buf, size_t len){
       if(len>=2){
         uint32_t div = buf[1]; if(div<8) div=8; if(div>200) div=200;
         matrix.setClockDiv(div);                 // hemen uygula (loop context, transferler arasi)
-        prefs.begin("panelcfg", false); prefs.putUInt("dclkdiv", div); prefs.end();  // reboot'ta kalsin
+        prefs.begin(PANEL_CFG_NS, false); prefs.putUInt("dclkdiv", div); prefs.end();  // reboot'ta kalsin
         logf("DCLK: bolen=%lu -> ~%lu kHz (NVS'e kaydedildi)", div, 160000UL/div);
         redrawCurrent();                         // yeni hizda yeniden ciz
       }
@@ -531,7 +573,7 @@ void handleMessage(const uint8_t *buf, size_t len){
 //   pct 0..100 : dolu turuncu (alt), beyaz ilerleme cizgisi, koyu bos (ust)
 static void drawOtaLoading(uint8_t pct){
   if(pct > 100) pct = 100;
-  const int W = PANEL_PHY_RES_X, H = PANEL_PHY_RES_Y;   // 80 x 120
+  const int W = PANEL_W, H = PANEL_H;                   // P4 80x120, P1.86 172x86
   const int fill  = (H * (int)pct) / 100;               // alttan dolu satir sayisi
   const int edgeY = H - fill - 1;                        // ilerleme kenari (parlak)
   for(int y = 0; y < H; y++){
@@ -551,37 +593,53 @@ static void drawOtaLoading(uint8_t pct){
 // ama sondaki <script> bloğu kesiliyor -> JS parse hatasi -> hiçbir global tanimlanmiyor
 // -> "art is not defined", "ws is not defined" gibi inline handler hatalari.
 // Burada sayfa dogrudan flash'tan, Content-Length ile, küçük tamponlar halinde
-// akitilir (büyük heap ayrimi yok); {{VER}} yer tutucusu uçuşta degistirilir.
-static void handleIndex(AsyncWebServerRequest *r){
+// akitilir (büyük heap ayrimi yok). Yer tutucular uçuşta degistirilir:
+//   {{VER}} = FW_VERSION, {{PW}}/{{PH}} = panel boyutu, {{PN}} = panel adi.
+// Parca listesi (flash araligi / RAM metni) acilista bir kez kurulur.
+struct IdxSeg { const char *src; size_t len; bool flash; };
+static IdxSeg   idxSegs[24];
+static int      idxSegCount = 0;
+static size_t   idxTotalLen = 0;
+static char     idxPW[6], idxPH[6];
+static void buildIndexSegments(){
+  snprintf(idxPW, sizeof(idxPW), "%d", PANEL_W);
+  snprintf(idxPH, sizeof(idxPH), "%d", PANEL_H);
+  static const struct { const char *tag; const char *val; } PH[] = {
+    {"{{VER}}", FW_VERSION}, {"{{PW}}", idxPW}, {"{{PH}}", idxPH}, {"{{PN}}", PANEL_NAME} };
   const size_t htmlLen = strlen_P(INDEX_HTML);
-  size_t phPos = htmlLen;                          // {{VER}} ofseti (bulunamazsa = htmlLen)
-  for(size_t i=0; i+7<=htmlLen; i++){
-    if(pgm_read_byte(INDEX_HTML+i)  =='{' && pgm_read_byte(INDEX_HTML+i+1)=='{' &&
-       pgm_read_byte(INDEX_HTML+i+2)=='V' && pgm_read_byte(INDEX_HTML+i+3)=='E' &&
-       pgm_read_byte(INDEX_HTML+i+4)=='R' && pgm_read_byte(INDEX_HTML+i+5)=='}' &&
-       pgm_read_byte(INDEX_HTML+i+6)=='}'){ phPos=i; break; }
+  size_t start = 0;
+  idxSegCount = 0; idxTotalLen = 0;
+  for(size_t i=0; i+1<htmlLen && idxSegCount < 22; i++){
+    if(pgm_read_byte(INDEX_HTML+i)!='{' || pgm_read_byte(INDEX_HTML+i+1)!='{') continue;
+    for(auto &ph : PH){
+      size_t tl = strlen(ph.tag);
+      if(i+tl > htmlLen) continue;
+      bool m = true;
+      for(size_t k=0; k<tl && m; k++) m = (pgm_read_byte(INDEX_HTML+i+k) == (uint8_t)ph.tag[k]);
+      if(!m) continue;
+      idxSegs[idxSegCount++] = { INDEX_HTML + start, i - start, true };   // oncesi (flash)
+      idxSegs[idxSegCount++] = { ph.val, strlen(ph.val), false };         // deger (RAM)
+      start = i + tl; i = start - 1;
+      break;
+    }
   }
-  const bool   found    = (phPos < htmlLen);
-  const size_t verLen   = found ? strlen(FW_VERSION) : 0;         // yer tutucu yoksa ekleme yapma
-  const size_t headLen  = phPos;                                  // {{VER}} öncesi
-  const size_t tailSrc  = found ? phPos+7 : htmlLen;             // {{VER}} sonrasi kaynak
-  const size_t tailLen  = htmlLen - tailSrc;
-  const size_t totalLen = headLen + verLen + tailLen;
-
-  AsyncWebServerResponse *res = r->beginResponse("text/html; charset=utf-8", totalLen,
-    [headLen,verLen,tailSrc,tailLen,totalLen](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
-      if(index >= totalLen) return 0;
-      if(index < headLen){                                        // bölge 1: head (flash)
-        size_t n = headLen - index; if(n>maxLen) n=maxLen;
-        memcpy_P(buf, INDEX_HTML + index, n); return n;
+  idxSegs[idxSegCount++] = { INDEX_HTML + start, htmlLen - start, true }; // kalan (flash)
+  for(int k=0; k<idxSegCount; k++) idxTotalLen += idxSegs[k].len;
+}
+static void handleIndex(AsyncWebServerRequest *r){
+  AsyncWebServerResponse *res = r->beginResponse("text/html; charset=utf-8", idxTotalLen,
+    [](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+      size_t off = 0;
+      for(int k=0; k<idxSegCount; k++){
+        const IdxSeg &sg = idxSegs[k];
+        if(index < off + sg.len){
+          size_t o = index - off, n = sg.len - o; if(n > maxLen) n = maxLen;
+          if(sg.flash) memcpy_P(buf, sg.src + o, n); else memcpy(buf, sg.src + o, n);
+          return n;
+        }
+        off += sg.len;
       }
-      if(index < headLen + verLen){                              // bölge 2: versiyon (RAM)
-        size_t off = index - headLen, n = verLen - off; if(n>maxLen) n=maxLen;
-        memcpy(buf, FW_VERSION + off, n); return n;
-      }
-      size_t off = index - headLen - verLen, n = tailLen - off;  // bölge 3: tail (flash)
-      if(n>maxLen) n=maxLen;
-      memcpy_P(buf, INDEX_HTML + tailSrc + off, n); return n;
+      return 0;
     });
   res->addHeader("Cache-Control", "no-store");
   r->send(res);
@@ -598,10 +656,22 @@ void setup(){
     logf("UYARI: PSRAM bulunamadi!");
   }
   esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
+#if defined(PANEL_P186)
+  rxbuf    = (uint8_t*)heap_caps_malloc(RXBUF_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  framebuf = (uint8_t*)heap_caps_malloc(FRAME_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  if(!rxbuf || !framebuf){ logf("HATA: kare tamponlari ayrilamadi (PSRAM)"); delay(2000); ESP.restart(); }
+  memset(framebuf, 0, FRAME_BYTES);
+  if(!matrix.initMatrix()){ logf("HATA: P1.86 surucusu baslatilamadi"); delay(2000); ESP.restart(); }
+  matrix.global_brightness = 110;                // web UI varsayilani ile ayni (P4 Matrix varsayilani)
+  delay(10);
+#else
   matrix.initMatrix(); delay(10);
+#endif
+  logf("Panel: %s %dx%d", PANEL_NAME, PANEL_W, PANEL_H);
+  buildIndexSegments();
   // Web UI'daki DCLK tuner ile bulunan flicker ayari NVS'te ise uygula
   // (donanima ozgu en yuksek mozaiksiz hiz). Yoksa derlenmis varsayilan (2.5MHz).
-  prefs.begin("panelcfg", true);
+  prefs.begin(PANEL_CFG_NS, true);
   uint32_t nvsDiv = prefs.getUInt("dclkdiv", 0);
   prefs.end();
   if(nvsDiv >= 8 && nvsDiv <= 200){ matrix.setClockDiv(nvsDiv); logf("DCLK NVS ayari: bolen=%lu (~%lu kHz)", nvsDiv, 160000UL/nvsDiv); }
@@ -662,7 +732,7 @@ void setup(){
       if(!r->authenticate("admin", OTA_PASSWORD)) return r->requestAuthentication();
       r->send(200,"text/html",
         "<form method=POST enctype=multipart/form-data>"
-        "<h3>MagPanel firmware guncelle - mevcut: " FW_VERSION "</h3>"
+        "<h3>MagPanel firmware guncelle - mevcut: " FW_VERSION " (" PANEL_NAME " panel)</h3>"
         "<input type=file name=fw accept=.bin> <input type=submit value=Yukle></form>");
     });
     server.on("/update", HTTP_POST,
@@ -739,7 +809,7 @@ void checkGithubOTA(){
   http.end();
   if(remote <= FW_BUILD){ logf("GitHub OTA: guncel (build %d)", FW_BUILD); return; }
 
-  logf("GitHub OTA: build %d -> %d, indiriliyor...", FW_BUILD, remote);
+  logf("GitHub OTA: build %d -> %d, indiriliyor (%s)...", FW_BUILD, remote, OTA_FW_FILE);
   otaActive = true;            // panel taramasi ve sunucu durur (espota ile ayni disiplin)
   ws.closeAll(); ws.enable(false); server.end();
 
@@ -747,7 +817,7 @@ void checkGithubOTA(){
   HTTPClient h2; h2.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   h2.setConnectTimeout(8000);
   bool ok=false;
-  if(h2.begin(c2, String(GITHUB_OTA_BASE) + "/firmware.bin") && h2.GET()==200){
+  if(h2.begin(c2, String(GITHUB_OTA_BASE) + "/" OTA_FW_FILE) && h2.GET()==200){  // panel tipine ozel ikili
     int total = h2.getSize();
     if(Update.begin(total>0 ? (size_t)total : UPDATE_SIZE_UNKNOWN)){
       // Akarken yaz: her parcada ilerleme cubugunu guncelle, arada refresh() ile

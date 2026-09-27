@@ -132,9 +132,13 @@ class PanelSM16380 : public GFX {
  public:
   PanelSM16380() : GFX(sm16380::W, sm16380::H) {}
 
-  // Matrix.h ile ayni imaj isleme alanlari (ileride ana uygulamaya takilabilsin)
-  uint8_t global_brightness = 40;   // TEST varsayilani DUSUK: guc/isi guvenligi
+  // Matrix.h ile ayni imaj isleme alanlari (ana MagPanel firmware'i ikisini ayni sekilde surer).
+  // Islem sirasi Matrix::fm_set_pixel ile ayni: doygunluk -> kontrast -> kazanc -> parlaklik -> gamma
+  uint8_t global_brightness = 40;   // DUSUK varsayilan: guc/isi guvenligi (uygulama kendi degerini yazar)
   uint8_t gain_r = 255, gain_g = 255, gain_b = 255;
+  uint8_t img_contrast   = 128;     // 128 = notr
+  uint8_t img_saturation = 128;     // 128 = notr
+  uint8_t img_blur       = 0;       // main.cpp framebuf'ta uygular (surucu kullanmaz)
   sm16380::Options opt;
 
   bool initMatrix() {
@@ -249,8 +253,19 @@ class PanelSM16380 : public GFX {
     }
   }
 
-  // sRGB 8-bit piksel: kanal kazanci + parlaklik + gamma 2.2
+  // sRGB 8-bit piksel: doygunluk + kontrast + kanal kazanci + parlaklik + gamma 2.2
   void setPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+    if (img_saturation != 128) {
+      int gray = (r * 77 + g * 150 + b * 29) >> 8;
+      r = clamp8(gray + (((int)r - gray) * img_saturation >> 7));
+      g = clamp8(gray + (((int)g - gray) * img_saturation >> 7));
+      b = clamp8(gray + (((int)b - gray) * img_saturation >> 7));
+    }
+    if (img_contrast != 128) {
+      r = clamp8(128 + (((int)r - 128) * img_contrast >> 7));
+      g = clamp8(128 + (((int)g - 128) * img_contrast >> 7));
+      b = clamp8(128 + (((int)b - 128) * img_contrast >> 7));
+    }
     uint16_t bs = (uint16_t)global_brightness + 1;
     r = (uint8_t)((((uint16_t)r * (gain_r + 1)) >> 8) * bs >> 8);
     g = (uint8_t)((((uint16_t)g * (gain_g + 1)) >> 8) * bs >> 8);
@@ -265,6 +280,8 @@ class PanelSM16380 : public GFX {
     setPixel(x, y, r, g, b);
   }
   void drawPixel(int16_t x, int16_t y, CRGB c) { setPixel(x, y, c.red, c.green, c.blue); }
+  // Matrix::drawPixel(x,y,r,g,b) ile ayni imza (main.cpp ortak kod)
+  void drawPixel(int16_t x, int16_t y, uint8_t r, uint8_t g, uint8_t b) { setPixel(x, y, r, g, b); }
 
   size_t streamBytes() const { return stream_bytes_; }
 
@@ -302,6 +319,7 @@ class PanelSM16380 : public GFX {
   uint16_t bkPulse() const { return opt.bk_mode == 2 ? 0 : sm16380::B_B; }
   uint16_t idle() const { return oeIdle() | bkBase(); }
 
+  static uint8_t clamp8(int v) { return (uint8_t)(v < 0 ? 0 : (v > 255 ? 255 : v)); }
   static uint16_t binAddr(int row) { return (uint16_t)((row & 0x1F) << 8); }
 
   // Bir tarama slotunun k. kelimesi (RGB/LAT haric): satir gecisi + OE

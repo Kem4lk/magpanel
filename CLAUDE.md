@@ -94,6 +94,24 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 - Ayırt etmek istersen wifi_config.h'da FW_VERSION'ı her anlamlı değişimde elle
   bump et (örn. `v25-gif`).
 
+## Panel seçimi — ana firmware P4 VE P1.86'yı sürer (derleme zamanı)
+- `include/panel.h`: `-DPANEL_P186` yoksa `Panel = Matrix` (P4 80×120), varsa `Panel = PanelSM16380`
+  (P1.86 172×86). `main.cpp`/`apps.h` sadece `Panel`, `PANEL_W/H`, `PANEL_NAME`, `PANEL_CFG_NS`,
+  `PANEL_DEFAULT_DIV`, `OTA_FW_FILE` kullanır. İki sürücü aynı ikilide YOK (P4 dahili RAM'i dolduruyor).
+- Env'ler: P4 = `esp32-s3-devkitc-1` / `esp32-s3-ota` (değişmedi). P1.86 = `p186` / `p186-ota`
+  (aynı main.cpp). Test/kalibrasyon firmware'i ayrıca `p186-test` olarak duruyor.
+- CI iki ikiliyi de derler: `firmware.bin` (P4) + `firmware-p186.bin`; `version.txt` ortak. Cihaz
+  GitHub OTA'da kendi `OTA_FW_FILE`'ını çeker → P4 cihazına asla P1.86 ikilisi gelmez.
+- P1.86'da `rxbuf`/`framebuf` (~44 KB ×2) PSRAM'de; dahili RAM kullanımı ~%18 (P4 ~%36).
+  DCLK NVS'i ayrı namespace: `panelcfg186` (varsayılan bölen 16 = 10 MHz). Açılış parlaklığı 110.
+- Web sayfası boyutu `{{PW}}`/`{{PH}}`/`{{PN}}` yer tutucularıyla alır (handleIndex parça listesi);
+  kanvas/kare/önizleme/kayıtlar buna göre. localStorage anahtarları P4'te aynı, diğer boyutta `_WxH` ekli.
+  WS bağlanınca firmware `D:172x86:P1.86` metin mesajı yollar (iOS app kare boyutunu buradan almalı).
+- Galeri 80×120 saklanır; P1.86'da en-boy korunarak 57×86'ya ölçeklenir, ortada, kenarlar siyah.
+  Uygulamalar (saat/timer/hava/…) yatay panelde `L(p4, genis)` ile ayrı yerleşim + büyük font.
+- Açık: iOS app hâlâ sabit 28800 B kare yolluyor (P1.86'da 44376 B gerekir → `D:` mesajını kullanmalı);
+  güç sınırlayıcı (ABL) yok — P1.86 tam beyaz/parlaklık 255 ≈ 31 W/modül.
+
 ## P1.86 172×86 panel (SM16380SH + SM5368) — TEST firmware (P4 korunuyor)
 - Modül: YI YI STAR `P1.86-INDOOR-Y52`, etiket/QR `16380SH-5368`, 1/43 tarama,
   tek HUB75 **giriş** (OUT yok → zincir yok; çoklu panel = ortak hat + panel başına ayrı LAT planı).
@@ -130,7 +148,7 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
   Ticari ürün öncesi hukuki kontrol önerilir.
 
 ## main.cpp WS protokolü (ilk bayt = opcode)
-0x01+28800B tam kare RGB888 · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
+0x01+W·H·3 B tam kare RGB888 (P4 28800, P1.86 44376) · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
 · 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok
 · 0x09 GitHub OTA · 0x0A canlı DCLK bölen · 0x0B uygulama seç · 0x0C hava konumu
 · 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test başlat/durdur**.

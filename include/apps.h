@@ -13,8 +13,9 @@
 //  panel KISA SURE kararir. Bu yuzden fetch'ler seyrektir (hava 10 dk, skor
 //  5 dk). Surekli-DMA dali merge edilince bu blackout tamamen kalkar.
 //
-//  Cizim: Matrix : public GFX (GFX_Lite) -> setCursor/setTextColor(CRGB)/
-//  setTextSize/print + clear_pixels()/update() kullaniriz.
+//  Cizim: Panel (Matrix ya da PanelSM16380) : public GFX (GFX_Lite) ->
+//  setCursor/setTextColor/setTextSize/print + clear_pixels()/update().
+//  Yerlesim: P4 80x120 dikey; P1.86 172x86 yatay -> L(p4, genis) ile secilir.
 // ============================================================================
 #include <Arduino.h>
 #include <time.h>
@@ -23,7 +24,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
-#include <Matrix.h>
+#include "panel.h"
 
 // Dunya Kupasi icin TheSportsDB lig ID'si (server-side fetch, CORS sorunu yok).
 // "4429" = FIFA World Cup (TheSportsDB). Veri gelmezse web LOG'da uyari cikar;
@@ -47,7 +48,7 @@ enum AppMode : uint8_t {
 
 class Apps {
  public:
-  void begin(Matrix* m) {
+  void begin(Panel* m) {
     M = m;
     // Kayitli konum + son uygulamayi geri yukle (tarayicisiz standalone calisma)
     cfg.begin("appcfg", true);
@@ -128,7 +129,7 @@ class Apps {
   }
 
  private:
-  Matrix*     M = nullptr;
+  Panel*      M = nullptr;
   AppMode     _app = APP_NONE;
   Preferences cfg;
   uint32_t    _lastRender = 0;
@@ -157,10 +158,13 @@ class Apps {
   // ----------------------------------------------------------------- render
   void clear() { M->clear_pixels(); }
 
+  // Yerlesim secici: dikey P4 (80x120) degeri ya da yatay panel (172x86) degeri
+  static constexpr int L(int p4, int wide) { return PANEL_WIDE ? wide : p4; }
+
   // Varsayilan GFX font: 6px (5+1) genis, 8px yuksek; size ile carpilir.
   void centerText(const char* s, int y, uint8_t size, CRGB col) {
     int w = (int)strlen(s) * 6 * size;
-    int x = (80 - w) / 2; if (x < 0) x = 0;
+    int x = (PANEL_W - w) / 2; if (x < 0) x = 0;
     uint16_t c565 = ((uint16_t)(col.r >> 3) << 11) | ((uint16_t)(col.g >> 2) << 5) | (col.b >> 3);
     M->setTextSize(size);
     M->setTextColor(c565);
@@ -172,8 +176,8 @@ class Apps {
     struct tm t;
     clear();
     if (!getLocalTime(&t, 30)) {
-      centerText("SAAT", 30, 1, CRGB(150, 150, 150));
-      centerText("senkron", 70, 1, CRGB(255, 180, 80));
+      centerText("SAAT", L(30, 26), 1, CRGB(150, 150, 150));
+      centerText("senkron", L(70, 46), 1, CRGB(255, 180, 80));
       M->update();
       return;
     }
@@ -181,10 +185,15 @@ class Apps {
     char ss[4];  snprintf(ss, sizeof(ss), "%02d", t.tm_sec);
     char dt[8];  snprintf(dt, sizeof(dt), "%02d.%02d", t.tm_mday, t.tm_mon + 1);
     static const char* days[7] = {"Pazar","Pzt","Sali","Cars","Pers","Cuma","Cmt"};
-    centerText(hm, 30, 2, CRGB(255, 180, 80));   // buyuk saat HH:MM
-    centerText(ss, 54, 1, CRGB(160, 160, 160));  // saniye
-    centerText(dt, 74, 1, CRGB(120, 170, 255));  // gun.ay
-    centerText(days[t.tm_wday % 7], 88, 1, CRGB(120, 170, 255));
+    centerText(hm, L(30, 10), L(2, 4), CRGB(255, 180, 80));   // buyuk saat HH:MM
+    centerText(ss, L(54, 48), 1, CRGB(160, 160, 160));        // saniye
+    if (PANEL_WIDE) {                                         // yatay: gun.ay + gun tek satir
+      char dl[16]; snprintf(dl, sizeof(dl), "%s %s", dt, days[t.tm_wday % 7]);
+      centerText(dl, 66, 1, CRGB(120, 170, 255));
+    } else {
+      centerText(dt, 74, 1, CRGB(120, 170, 255));             // gun.ay
+      centerText(days[t.tm_wday % 7], 88, 1, CRGB(120, 170, 255));
+    }
     M->update();
   }
 
@@ -195,11 +204,11 @@ class Apps {
     if (rem < 0) rem = 0;
     int s = rem / 1000;
     char buf[8]; snprintf(buf, sizeof(buf), "%02d:%02d", s / 60, s % 60);
-    centerText("TIMER", 26, 1, CRGB(150, 150, 150));
+    centerText("TIMER", L(26, 8), 1, CRGB(150, 150, 150));
     CRGB col = (_timerRunning && rem <= 10000) ? CRGB(255, 80, 80) : CRGB(120, 255, 140);
-    centerText(buf, 50, 2, col);
+    centerText(buf, L(50, 24), L(2, 4), col);
     if (_timerRunning && rem == 0) {
-      centerText("BITTI", 82, 1, CRGB(255, 80, 80));
+      centerText("BITTI", L(82, 66), 1, CRGB(255, 80, 80));
       _timerRunning = false;
     }
     M->update();
@@ -207,48 +216,51 @@ class Apps {
 
   void renderWeather() {
     clear();
-    centerText("HAVA", 16, 1, CRGB(150, 150, 150));
+    centerText("HAVA", L(16, 6), 1, CRGB(150, 150, 150));
     if (isnan(_lat)) {
-      centerText("konum", 46, 1, CRGB(255, 180, 80));
-      centerText("gerekli", 60, 1, CRGB(255, 180, 80));
+      centerText("konum", L(46, 32), 1, CRGB(255, 180, 80));
+      centerText("gerekli", L(60, 46), 1, CRGB(255, 180, 80));
       M->update();
       return;
     }
     if (!_wxOk || isnan(_temp)) {
-      centerText("...", 50, 2, CRGB(160, 160, 160));
+      centerText("...", L(50, 28), L(2, 3), CRGB(160, 160, 160));
     } else {
       char tb[8]; snprintf(tb, sizeof(tb), "%dC", (int)lroundf(_temp));
-      centerText(tb, 36, 2, CRGB(255, 200, 90));
-      centerText(wmoText(_wcode), 64, 1, CRGB(120, 200, 255));
+      centerText(tb, L(36, 20), L(2, 3), CRGB(255, 200, 90));
+      centerText(wmoText(_wcode), L(64, 50), 1, CRGB(120, 200, 255));
     }
-    if (_city[0]) centerText(_city, 92, 1, CRGB(140, 140, 140));
+    if (_city[0]) centerText(_city, L(92, 68), 1, CRGB(140, 140, 140));
     M->update();
   }
 
   void renderWorldCup() {
     clear();
-    centerText("D.KUPASI", 12, 1, CRGB(255, 180, 80));
-    centerText("2026", 26, 1, CRGB(255, 180, 80));
+    if (PANEL_WIDE) centerText("D.KUPASI 2026", 6, 1, CRGB(255, 180, 80));
+    else {
+      centerText("D.KUPASI", 12, 1, CRGB(255, 180, 80));
+      centerText("2026", 26, 1, CRGB(255, 180, 80));
+    }
     if (!_wcOk) {
-      centerText("mac", 56, 1, CRGB(150, 150, 150));
-      centerText("yok", 70, 1, CRGB(150, 150, 150));
+      centerText("mac", L(56, 34), 1, CRGB(150, 150, 150));
+      centerText("yok", L(70, 48), 1, CRGB(150, 150, 150));
     } else {
-      if (_wcL1[0]) centerText(_wcL1, 50, 1, CRGB(230, 230, 230));
-      if (_wcL2[0]) centerText(_wcL2, 66, 1, CRGB(120, 255, 140));
-      if (_wcL3[0]) centerText(_wcL3, 84, 1, CRGB(140, 140, 140));
+      if (_wcL1[0]) centerText(_wcL1, L(50, 26), 1, CRGB(230, 230, 230));
+      if (_wcL2[0]) centerText(_wcL2, L(66, 42), 1, CRGB(120, 255, 140));
+      if (_wcL3[0]) centerText(_wcL3, L(84, 64), 1, CRGB(140, 140, 140));
     }
     M->update();
   }
 
   void renderSpotify() {
     clear();
-    centerText("SPOTIFY", 14, 1, CRGB(80, 230, 120));
+    centerText("SPOTIFY", L(14, 8), 1, CRGB(80, 230, 120));
     if (!_spOk) {
-      centerText("baglanti", 50, 1, CRGB(160, 160, 160));
-      centerText("gerekli", 64, 1, CRGB(160, 160, 160));
+      centerText("baglanti", L(50, 34), 1, CRGB(160, 160, 160));
+      centerText("gerekli", L(64, 48), 1, CRGB(160, 160, 160));
     } else {
-      if (_spTrack[0])  centerText(_spTrack, 48, 1, CRGB(235, 235, 235));
-      if (_spArtist[0]) centerText(_spArtist, 70, 1, CRGB(150, 200, 150));
+      if (_spTrack[0])  centerText(_spTrack, L(48, 34), 1, CRGB(235, 235, 235));
+      if (_spArtist[0]) centerText(_spArtist, L(70, 54), 1, CRGB(150, 200, 150));
     }
     M->update();
   }
