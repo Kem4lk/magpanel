@@ -9,6 +9,11 @@
    OE polaritesi, register profili, eslem (ayna/offset) ayarlari. Ayarlar NVS'e
    ("p186cfg") kaydedilir. Seri port + /log sayfasi durum loglarini gosterir.
    GitHub otomatik OTA bu firmware'de YOK (P4 CI build'i bunun ustune yazilmasin).
+
+   WiFi: NVS ("wificfg", P4 ile ortak) > wifi_config.h. Ikisi de baglanamazsa
+   panel "MagPanel-Setup" acik agini yayinlar: telefondan baglanip
+   http://192.168.4.1 -> test sayfasi + "WiFi ayari" (NVS'e kaydeder, restart).
+   Acilista gorunen aglar ve baglanti hatasi nedeni loga yazilir.
 */
 #include <stdarg.h>
 #include <WiFi.h>
@@ -30,6 +35,9 @@
 using namespace sm16380;
 
 static PanelSM16380 panel;
+static bool apMode = false;
+static volatile uint8_t lastDiscReason = 0;
+static volatile bool pendingRestart = false;
 static AsyncWebServer server(80);
 static Preferences prefs;
 static volatile bool otaActive = false;
@@ -43,7 +51,8 @@ static uint32_t logSeq = 0;
 static void logf(const char *fmt, ...) {
   char line[LOG_LEN];
   va_list ap; va_start(ap, fmt); vsnprintf(line, sizeof(line), fmt, ap); va_end(ap);
-  Serial.println(line);
+  printf("%s\n", line);
+  fflush(stdout);
   strncpy(logBuf[logHead], line, LOG_LEN - 1); logBuf[logHead][LOG_LEN - 1] = 0;
   logHead = (logHead + 1) % LOG_LINES;
   if (logCount < LOG_LINES) logCount++;
@@ -218,6 +227,7 @@ button.on{background:#06f}label{display:block;margin:6px 0}select,input{font-siz
 <label>X ofset (bos kanal) <select id=xo onchange="s('xo',this.value)"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
 <label>Satir ofseti <input type=number id=ro min=0 max=42 style="width:60px" onchange="s('ro',this.value)"></label>
 <h2>Log</h2><pre id=log></pre>
+<p><a href=/wifi style="color:#9cf">WiFi ayari</a></p>
 <p><a href=/update style="color:#9cf">Firmware yukle (/update)</a> <small>- P4'e donmek icin P4 firmware.bin'i buradan yukle</small></p>
 <script>
 const P=["kapali","kirmizi","yesil","mavi","beyaz","satir yuruyen","sutun yuruyen","yarilar","yon testi","cip bloklari","gradyan","izgara","otomatik"];
@@ -232,7 +242,74 @@ function poll(){fetch('/state').then(r=>r.json()).then(show);fetch('/log').then(
 poll();setInterval(poll,2000);
 </script></body></html>)HTML";
 
+static const char *reasonText(uint8_t r) {
+  switch (r) {
+    case 15: case 204: return "sifre yanlis olabilir (4-way handshake)";
+    case 201: return "ag bulunamadi (SSID yanlis ya da 2.4 GHz yok)";
+    case 202: return "kimlik dogrulama basarisiz (sifre?)";
+    case 203: return "iliskilendirme basarisiz";
+    case 205: return "baglanti zaman asimi";
+    case 210: case 211: return "guvenlik modu uyumsuz (WPA3-only?)";
+    case 0: return "-";
+    default: return "diger";
+  }
+}
+static const char *authText(wifi_auth_mode_t a) {
+  switch (a) {
+    case WIFI_AUTH_OPEN: return "acik";
+    case WIFI_AUTH_WEP: return "WEP";
+    case WIFI_AUTH_WPA_PSK: return "WPA";
+    case WIFI_AUTH_WPA2_PSK: return "WPA2";
+    case WIFI_AUTH_WPA_WPA2_PSK: return "WPA/WPA2";
+    case WIFI_AUTH_WPA3_PSK: return "WPA3";
+    case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
+    default: return "?";
+  }
+}
+
+// Acilista gorunen 2.4 GHz aglari logla (hedef SSID gorunuyor mu, guvenlik tipi ne)
+static void scanNetworks(const char *target) {
+  WiFi.mode(WIFI_STA);
+  int n = WiFi.scanNetworks();
+  logf("WiFi tarama: %d ag goruldu", n);
+  bool found = false;
+  for (int i = 0; i < n && i < 12; i++) {
+    bool t = WiFi.SSID(i) == target;
+    found |= t;
+    logf("  %s%s  RSSI %d  kanal %d  %s", t ? ">> " : "", WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.channel(i),
+         authText(WiFi.encryptionType(i)));
+  }
+  if (!found) logf("  UYARI: '%s' taramada YOK", target);
+  WiFi.scanDelete();
+}
+
+static const char WIFI_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1"><title>MagPanel WiFi</title>
+<style>body{font-family:system-ui,sans-serif;max-width:420px;margin:24px auto;padding:0 16px;background:#111;color:#eee}
+input{width:100%;padding:11px;margin:6px 0;box-sizing:border-box;font-size:16px}
+button{width:100%;padding:13px;margin-top:8px;font-size:16px;background:#06f;color:#fff;border:0;border-radius:8px}a{color:#9cf}</style></head><body>
+<h2>MagPanel WiFi ayari</h2><p>Sadece 2.4 GHz aglar. Kaydedince panel yeniden baslar.</p>
+<form method=POST action=/wifisave><label>WiFi adi (SSID)</label><input name=ssid required>
+<label>Sifre</label><input name=pass type=password><button type=submit>Kaydet ve baglan</button></form>
+<p><a href=/>Test sayfasina don</a></p></body></html>)HTML";
+
 static void setupWeb() {
+  server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest *r) {
+    r->send(200, "text/html; charset=utf-8", (const uint8_t *)WIFI_HTML, strlen_P(WIFI_HTML));
+  });
+  server.on("/wifisave", HTTP_POST, [](AsyncWebServerRequest *r) {
+    String ssid, pass;
+    if (r->hasParam("ssid", true)) ssid = r->getParam("ssid", true)->value();
+    if (r->hasParam("pass", true)) pass = r->getParam("pass", true)->value();
+    if (!ssid.length()) { r->send(400, "text/plain", "SSID bos olamaz"); return; }
+    prefs.begin("wificfg", false);
+    prefs.putString("ssid", ssid);
+    prefs.putString("pass", pass);
+    prefs.end();
+    logf("WiFi kaydedildi: %s - yeniden baslatiliyor", ssid.c_str());
+    r->send(200, "text/html; charset=utf-8", "<meta charset=utf-8><h2>Kaydedildi. Panel yeniden baslatiliyor...</h2>");
+    pendingRestart = true;
+  });
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *r) {
     AsyncWebServerResponse *res = r->beginResponse(200, "text/html; charset=utf-8", (const uint8_t *)INDEX_HTML, strlen_P(INDEX_HTML));
     res->addHeader("Cache-Control", "no-store");
@@ -277,26 +354,47 @@ static void setupWeb() {
   server.begin();
 }
 
+// Belirtilen kimlikle baglanmayi dene; basarisizsa nedeni logla
+static bool tryConnect(const char *ssid, const char *pass, int halfSeconds) {
+  lastDiscReason = 0;
+  logf("WiFi baglaniyor: '%s'", ssid);
+  WiFi.begin(ssid, pass);
+  for (int i = 0; i < halfSeconds && WiFi.status() != WL_CONNECTED; i++) { panel.refresh(); delay(500); }
+  if (WiFi.status() == WL_CONNECTED) return true;
+  logf("  basarisiz: neden %u (%s)", lastDiscReason, reasonText(lastDiscReason));
+  WiFi.disconnect(true); delay(200);
+  return false;
+}
+
 static bool connectWifi() {
+  WiFi.onEvent([](arduino_event_id_t e, arduino_event_info_t info) {
+    if (e == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) lastDiscReason = info.wifi_sta_disconnected.reason;
+  });
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   esp_wifi_set_ps(WIFI_PS_NONE);
   prefs.begin("wificfg", true);
   String ssid = prefs.getString("ssid", ""), pass = prefs.getString("pass", "");
   prefs.end();
-  if (ssid.length()) {
-    WiFi.begin(ssid.c_str(), pass.c_str());
-    for (int i = 0; i < 30 && WiFi.status() != WL_CONNECTED; i++) { panel.refresh(); delay(500); }
-    if (WiFi.status() == WL_CONNECTED) return true;
-    WiFi.disconnect(true); delay(200);
-  }
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  for (int i = 0; i < 40 && WiFi.status() != WL_CONNECTED; i++) { panel.refresh(); delay(500); }
-  return WiFi.status() == WL_CONNECTED;
+  scanNetworks(ssid.length() ? ssid.c_str() : WIFI_SSID);
+  if (ssid.length() && tryConnect(ssid.c_str(), pass.c_str(), 30)) return true;
+  if (ssid != WIFI_SSID && tryConnect(WIFI_SSID, WIFI_PASS, 40)) return true;
+  return false;
+}
+
+// Baglanti yoksa kurulum agi: test sayfasi + /wifi formu 192.168.4.1'de
+static void startSetupAP() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("MagPanel-Setup");
+  apMode = true;
+  logf("Kurulum agi acik: 'MagPanel-Setup' -> http://%s  (WiFi ayari: /wifi)", WiFi.softAPIP().toString().c_str());
 }
 
 void setup() {
-  Serial.begin(115200); delay(800);
+  Serial.begin(115200);
+  for (int i = 0; i < 20 && !Serial; i++) delay(100);   // USB monitor aciksa ilk satirlari kacirma
+  delay(300);
   esp_task_wdt_deinit();
   logf("MagPanel P1.86 TEST %s", FW_VERSION);
   logf("PSRAM: %u KB toplam, %u KB bos", ESP.getPsramSize() / 1024, ESP.getFreePsram() / 1024);
@@ -312,17 +410,20 @@ void setup() {
   logf("Dahili heap bos: %u, en buyuk blok: %u", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
   drawPattern(shownPattern());
 
-  if (connectWifi()) {
+  bool wifiOk = connectWifi();
+  if (wifiOk) {
     logf("WiFi OK - http://%s  (mDNS: %s.local)", WiFi.localIP().toString().c_str(), MDNS_HOSTNAME);
     if (MDNS.begin(MDNS_HOSTNAME)) MDNS.addService("http", "tcp", 80);
+  } else {
+    startSetupAP();
+  }
+  {
     setupWeb();
     ArduinoOTA.setHostname(MDNS_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.onStart([]() { otaActive = true; server.end(); });
     ArduinoOTA.onError([](ota_error_t e) { otaActive = false; Serial.printf("OTA hata %u\n", e); });
     ArduinoOTA.begin();
-  } else {
-    logf("WiFi BASARISIZ - sadece seri/USB. Desen otomatik dizide.");
   }
   autoT = walkT = millis();
 }
@@ -344,6 +445,7 @@ void loop() {
     logf("Register'lar yazildi: %s", panel.profileName());
   }
   if (pendingSave) { pendingSave = false; saveSettings(); }
+  if (pendingRestart) { delay(800); ESP.restart(); }
 
   uint32_t now = millis();
   if (st.pattern == P_AUTO && now - autoT > 3500) {
@@ -365,8 +467,14 @@ void loop() {
   static uint32_t netT = 0;
   if (now - netT > 30000) {
     netT = now;
-    logf("[NET] heap=%u blok=%u RSSI=%d", ESP.getFreeHeap(), ESP.getMaxAllocHeap(), WiFi.RSSI());
-    if (WiFi.status() != WL_CONNECTED) WiFi.reconnect();
+    if (apMode) {
+      logf("[NET] kurulum agi 'MagPanel-Setup' acik, istemci %d - http://192.168.4.1", WiFi.softAPgetStationNum());
+    } else {
+      wl_status_t ws = WiFi.status();
+      logf("[NET] heap=%u blok=%u RSSI=%d durum=%d", ESP.getFreeHeap(), ESP.getMaxAllocHeap(), WiFi.RSSI(), (int)ws);
+      if (ws == WL_DISCONNECTED || ws == WL_CONNECTION_LOST || ws == WL_CONNECT_FAILED || ws == WL_NO_SSID_AVAIL)
+        WiFi.reconnect();
+    }
   }
   delay(2);
 }

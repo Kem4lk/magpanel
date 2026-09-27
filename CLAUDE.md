@@ -112,6 +112,15 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 - Web UI (`/`): desenler, parlaklık (varsayılan 64 — güç!), DCLK, satır modu (SM5368/ikili),
   BK modu, OE polaritesi, register profili, gri ton bitleri, eşlem (X ayna, kanal ters, yarı takas,
   Y ters, X/satır ofseti). Ayarlar NVS `p186cfg`.
+- **İlk donanım testi (2026-09-27): ilk denemede ÇALIŞTI.** rt6 profili + varsayılan ayarlar
+  (SM5368 kaydırma, OE aktif-yüksek, BK darbe, 13 bit, 10 MHz) ile düz renkler, yarılar (üst K/alt M),
+  yön testi (K sol-üst, Y sağ-üst, M sol-alt, "P1.86" düz), çip blokları (soldan sağa 11 blok,
+  merdiven doğru) ve 8px ızgara doğru. Eşlem ayarı gerekmedi. Açık: beyaz hafif mor/mavi (kazanç
+  kalibrasyonu), gradyanın koyu ucu parlaklık 64'te tam siyah görünüyor (düşük gri ton testi yapılacak).
+- Seri log: HWCDC `Serial`, monitör açılıştan sonra bağlanınca susabiliyor (ESP_LOG satırları
+  geliyordu, `Serial.println` gelmiyordu) → test firmware'i `printf` kullanır. Web /log her zaman çalışır.
+- WiFi yoksa test firmware'i `MagPanel-Setup` açık ağını yayınlar → http://192.168.4.1 (test sayfası
+  + /wifi formu, NVS "wificfg"e yazar). Açılışta görünen ağlar + bağlantı hatası nedeni loglanır.
 - Lisans notu: protokol bilgisi DMD_STM32 (GPLv3) ve ESP32-HUB75-MatrixPanel-DMA (MIT)
   incelenerek öğrenildi; kod bağımsız yazıldı, register değerleri donanım ayarı olarak alındı.
   Ticari ürün öncesi hukuki kontrol önerilir.
