@@ -117,6 +117,10 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
   yön testi (K sol-üst, Y sağ-üst, M sol-alt, "P1.86" düz), çip blokları (soldan sağa 11 blok,
   merdiven doğru) ve 8px ızgara doğru. Eşlem ayarı gerekmedi. Açık: beyaz hafif mor/mavi (kazanç
   kalibrasyonu), gradyanın koyu ucu parlaklık 64'te tam siyah görünüyor (düşük gri ton testi yapılacak).
+- **Sütun düzeni (ızgara fotoğrafıyla ölçüldü):** 172 sütun 176 kanala dağılır; boş (LED'e gitmeyen)
+  zincir konumları **0, 16, 144, 160** = çip 0/1/9/10'un 0. kanalı (15+15+7×16+15+15). Doğrusal
+  eşlemde bu sol kenar çizgisini yutuyor, sağdaki 4 sütunu karartıyor ve sütun yürüyende "atlama"
+  yapıyordu. `Options::col_layout=1` (varsayılan) LUT ile düzeltir; X ofset artık sadece doğrusal modda.
 - Seri log: HWCDC `Serial`, monitör açılıştan sonra bağlanınca susabiliyor (ESP_LOG satırları
   geliyordu, `Serial.println` gelmiyordu) → test firmware'i `printf` kullanır. Web /log her zaman çalışır.
 - WiFi yoksa test firmware'i `MagPanel-Setup` açık ağını yayınlar → http://192.168.4.1 (test sayfası

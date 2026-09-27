@@ -181,6 +181,7 @@ static bool applySetting(const String &k, int v) {
   else if (k == "mx")  { o.mirror_x = v != 0; }
   else if (k == "cr")  { o.chan_rev = v != 0; }
   else if (k == "xo")  { o.x_offset = constrain(v, 0, 4); }
+  else if (k == "cl")  { o.col_layout = constrain(v, 0, 1); }
   else if (k == "sw")  { o.swap_halves = v != 0; }
   else if (k == "fy")  { o.flip_y = v != 0; }
   else if (k == "ro")  { o.row_offset = constrain(v, 0, SCAN - 1); }
@@ -194,9 +195,9 @@ static String stateJson() {
   char b[420];
   snprintf(b, sizeof(b),
     "{\"pat\":%u,\"bri\":%u,\"div\":%u,\"row\":%u,\"bk\":%u,\"oe\":%u,\"reg\":%u,\"gs\":%u,"
-    "\"mx\":%u,\"cr\":%u,\"xo\":%u,\"sw\":%u,\"fy\":%u,\"ro\":%u,\"ver\":\"%s\",\"prof\":\"%s\",\"shown\":\"%s\"}",
+    "\"mx\":%u,\"cr\":%u,\"cl\":%u,\"xo\":%u,\"sw\":%u,\"fy\":%u,\"ro\":%u,\"ver\":\"%s\",\"prof\":\"%s\",\"shown\":\"%s\"}",
     st.pattern, st.brightness, st.dclk_div, o.row_mode, o.bk_mode, o.oe_invert, o.reg_profile, o.gs_bits,
-    o.mirror_x, o.chan_rev, o.x_offset, o.swap_halves, o.flip_y, o.row_offset, FW_VERSION,
+    o.mirror_x, o.chan_rev, o.col_layout, o.x_offset, o.swap_halves, o.flip_y, o.row_offset, FW_VERSION,
     panel.profileName(), PAT_NAMES[shownPattern()]);
   return String(b);
 }
@@ -224,7 +225,8 @@ button.on{background:#06f}label{display:block;margin:6px 0}select,input{font-siz
 <label><input type=checkbox id=cr onchange="s('cr',+this.checked)"> kanal ters</label>
 <label><input type=checkbox id=sw onchange="s('sw',+this.checked)"> yarilar takas</label>
 <label><input type=checkbox id=fy onchange="s('fy',+this.checked)"> yari-ici Y ters</label></div>
-<label>X ofset (bos kanal) <select id=xo onchange="s('xo',this.value)"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+<label>Sutun duzeni <select id=cl onchange="s('cl',this.value)"><option value=1>P1.86-Y52 (bos kanal 0,16,144,160)</option><option value=0>dogrusal + X ofset</option></select></label>
+<label>X ofset (sadece dogrusal) <select id=xo onchange="s('xo',this.value)"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
 <label>Satir ofseti <input type=number id=ro min=0 max=42 style="width:60px" onchange="s('ro',this.value)"></label>
 <h2>Log</h2><pre id=log></pre>
 <p><a href=/wifi style="color:#9cf">WiFi ayari</a></p>
@@ -233,7 +235,7 @@ button.on{background:#06f}label{display:block;margin:6px 0}select,input{font-siz
 const P=["kapali","kirmizi","yesil","mavi","beyaz","satir yuruyen","sutun yuruyen","yarilar","yon testi","cip bloklari","gradyan","izgara","otomatik"];
 let pats=document.getElementById('pats');P.forEach((n,i)=>{let b=document.createElement('button');b.textContent=n;b.id='p'+i;b.onclick=()=>s('pat',i);pats.appendChild(b)});
 function s(k,v){fetch('/set?k='+k+'&v='+v).then(r=>r.json()).then(show)}
-function show(j){for(const k of['bri','div','row','bk','oe','reg','gs','xo','ro']){let e=document.getElementById(k);if(e)e.value=j[k]}
+function show(j){for(const k of['bri','div','row','bk','oe','reg','gs','cl','xo','ro']){let e=document.getElementById(k);if(e)e.value=j[k]}
 for(const k of['mx','cr','sw','fy'])document.getElementById(k).checked=!!j[k];
 document.getElementById('briv').textContent=j.bri;document.getElementById('ver').textContent=j.ver;
 document.getElementById('shown').textContent='Gosterilen: '+j.shown+' | profil: '+j.prof;
