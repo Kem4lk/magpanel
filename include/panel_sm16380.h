@@ -18,6 +18,14 @@
   - Gri ton: kanal basina 16 bitlik kelime, MSB once; deger alt gs_bits bite
     (varsayilan 13) yazilir, ustteki bitler 0.
 
+  COKLU PANEL (1..3, ayni ESP32): modulde OUT soketi yok -> zincir yok. Tum paneller
+  ayni RGB/DCLK/OE/ABCDE hatlarini paylasir; sadece LE (LAT, HUB75 pin 14) panel
+  basina ayri GPIO'dan gelir (P1: GPIO10 = d6, P2: GPIO17 = d13, P3: GPIO14 = d14).
+  Veri paylasilan hatta panel panel ardisik akar; bir panelin gri ton verisini yalniz
+  kendi LE'si latch'ler, digerleri ayni bitleri kaydirip gecirir ama latch'lemez.
+  Komutlar (VSYNC, 11, 14, register yazimi) tum LE hatlarinda ayni anda = yayin.
+  Duzen: dikey (alt alta, P1 ustte) ya da yatay (yan yana, P1 solda).
+
   Akis tamponu (PSRAM, tek DMA gonderimi):
     [PRE: 11 ve 14 LE komutlari] [satir yazmaci temizleme + satir0 + 12 DCLK OE
     "grup basi" + 88 bos] [SENKRON BOLGE: SCAN slotluk tam cevrimler; ustune
@@ -58,10 +66,22 @@ constexpr int OE_WIDTH   = 4;               // OE darbe genisligi (DCLK)
 constexpr int ROWREG_LEN = 48;              // SM5368 zinciri: 6 cip x 8 cikis
 
 // Veri bolgesini tam cevrime yuvarla (11 cip icin 121088 = tam 22 cevrim)
-constexpr int DATA_WORDS   = LINE_WORDS * SCAN;
+constexpr int DATA_WORDS   = LINE_WORDS * SCAN;           // PANEL BASINA
 constexpr int DATA_CYCLES  = (DATA_WORDS + CYCLE_WORDS - 1) / CYCLE_WORDS;
 constexpr int CFG_CYCLES   = 1;             // register yazimi (5 x 176 kelime) 1 cevrime sigar
-constexpr int SYNC_WORDS   = (CFG_CYCLES + DATA_CYCLES) * CYCLE_WORDS;
+static_assert(DATA_WORDS % CYCLE_WORDS == 0, "panel verisi tam cevrim olmali (paneller ardisik)");
+static_assert(DATA_WORDS % PASS_WORDS == 0, "panel verisi tam gecis olmali");
+
+// Coklu panel: panel basina LE (LAT) hatti. P1 = BIT_LAT (d6, GPIO10, P4 ile ayni kablo).
+constexpr int MAX_PANELS = 3;
+constexpr int8_t LAT2_PIN = 17;             // d13: 2. panelin HUB75 pin 14'u
+constexpr int8_t LAT3_PIN = 14;             // d14: 3. panelin HUB75 pin 14'u
+constexpr uint16_t B_LAT2 = (1 << 13);
+constexpr uint16_t B_LAT3 = (1 << 14);
+enum Layout : uint8_t { LAYOUT_VERTICAL = 0, LAYOUT_HORIZONTAL = 1 };
+
+// Calisma anindaki toplam cozunurluk (configure() ayarlar). main.cpp PANEL_W/H olarak okur.
+inline int g_w = W, g_h = H, g_panels = 1, g_layout = LAYOUT_VERTICAL;
 
 // LE komut genislikleri
 constexpr int LE_VSYNC   = 3;
@@ -132,6 +152,20 @@ class PanelSM16380 : public GFX {
  public:
   PanelSM16380() : GFX(sm16380::W, sm16380::H) {}
 
+  // Panel sayisi + duzen; initMatrix()'ten ONCE cagrilir (tampon boyutu buna gore).
+  void configure(int panels, int layout) {
+    using namespace sm16380;
+    if (initialized_) return;
+    n_ = panels < 1 ? 1 : (panels > MAX_PANELS ? MAX_PANELS : panels);
+    layout_ = (layout == LAYOUT_HORIZONTAL) ? LAYOUT_HORIZONTAL : LAYOUT_VERTICAL;
+    int w = (layout_ == LAYOUT_HORIZONTAL) ? W * n_ : W;
+    int h = (layout_ == LAYOUT_HORIZONTAL) ? H : H * n_;
+    WIDTH = _width = w; HEIGHT = _height = h;
+    g_w = w; g_h = h; g_panels = n_; g_layout = layout_;
+  }
+  int panels() const { return n_; }
+  int layout() const { return layout_; }
+
   // Matrix.h ile ayni imaj isleme alanlari (ana MagPanel firmware'i ikisini ayni sekilde surer).
   // Islem sirasi Matrix::fm_set_pixel ile ayni: doygunluk -> kontrast -> kazanc -> parlaklik -> gamma
   uint8_t global_brightness = 40;   // DUSUK varsayilan: guc/isi guvenligi (uygulama kendi degerini yazar)
@@ -145,7 +179,7 @@ class PanelSM16380 : public GFX {
     using namespace sm16380;
     // Akis tamponu: PSRAM, 64 B hizali (GDMA harici bellek kurali)
     pre_words_ = computePreWords();
-    stream_words_ = pre_words_ + SYNC_WORDS;
+    stream_words_ = pre_words_ + syncWords();
     stream_bytes_ = ((stream_words_ * 2 + 63) / 64) * 64;
     stream_ = (uint16_t *)heap_caps_aligned_alloc(64, stream_bytes_, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     commit_words_ = commitWords();
@@ -166,7 +200,10 @@ class PanelSM16380 : public GFX {
     bus_cfg.pin_d7 = MBI_GCLK;      // HUB75 OE pini
     bus_cfg.pin_d8 = ADDR_A_PIN;  bus_cfg.pin_d9 = ADDR_B_PIN;  bus_cfg.pin_d10 = ADDR_C_PIN;
     bus_cfg.pin_d11 = ADDR_D_PIN; bus_cfg.pin_d12 = ADDR_E_PIN;
-    bus_cfg.pin_d13 = -1; bus_cfg.pin_d14 = -1; bus_cfg.pin_d15 = -1;
+    // 2. ve 3. panelin LE hatlari (baglanmamis olsa da surulur: sabit 0)
+    bus_cfg.pin_d13 = n_ >= 2 ? LAT2_PIN : -1;
+    bus_cfg.pin_d14 = n_ >= 3 ? LAT3_PIN : -1;
+    bus_cfg.pin_d15 = -1;
     bus_.config(bus_cfg);
     bus_.setup_lcd_dma_periph();
     bus_.set_clock_divider(16);     // 10 MHz baslangic (P4'te dogrulanan kademe)
@@ -214,13 +251,17 @@ class PanelSM16380 : public GFX {
   void clear_pixels() {
     using namespace sm16380;
     uint16_t *d = stream_ + pre_words_ + CFG_CYCLES * CYCLE_WORDS;
-    for (int i = 0; i < DATA_WORDS; i++) d[i] &= ~(uint16_t)BIT_ALL_RGB;
+    for (int i = 0; i < DATA_WORDS * n_; i++) d[i] &= ~(uint16_t)BIT_ALL_RGB;
   }
 
   // Ham 16-bit PWM degerleriyle piksel (kalibrasyon testleri icin, gamma/parlaklik yok)
   void setPixelRaw(int x, int y, uint16_t r16, uint16_t g16, uint16_t b16) {
     using namespace sm16380;
-    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) return;
+    // Toplam kanvas -> (panel, panel-ici x/y). P1 ustte (dikey) ya da solda (yatay).
+    int panel = 0;
+    if (layout_ == LAYOUT_HORIZONTAL) { panel = x / W; x -= panel * W; }
+    else                              { panel = y / H; y -= panel * H; }
     int half = y / SCAN;
     int line = y % SCAN;
     if (opt.flip_y) line = SCAN - 1 - line;
@@ -242,7 +283,7 @@ class PanelSM16380 : public GFX {
     const uint16_t clr = ~(uint16_t)(rm | gm | bm);
     const int sh = 16 - opt.gs_bits;   // 13 bit: ust 3 bit 0
     r16 >>= sh; g16 >>= sh; b16 >>= sh;
-    uint16_t *w = stream_ + pre_words_ + CFG_CYCLES * CYCLE_WORDS
+    uint16_t *w = stream_ + pre_words_ + CFG_CYCLES * CYCLE_WORDS + panel * DATA_WORDS
                 + line * LINE_WORDS + ch * PASS_WORDS + chip * 16;
     for (int bit = 15; bit >= 0; bit--) {
       uint16_t v = *w & clr;
@@ -305,6 +346,16 @@ class PanelSM16380 : public GFX {
  private:
   Bus_Parallel16 bus_;
   bool initialized_ = false;
+  int n_ = 1;                               // panel sayisi (1..MAX_PANELS)
+  int layout_ = sm16380::LAYOUT_VERTICAL;
+
+  int syncWords() const { return (sm16380::CFG_CYCLES + sm16380::DATA_CYCLES * n_) * sm16380::CYCLE_WORDS; }
+  static uint16_t latOf(int panel) {
+    return panel == 0 ? (uint16_t)BIT_LAT : (panel == 1 ? sm16380::B_LAT2 : sm16380::B_LAT3);
+  }
+  uint16_t latAll() const {                 // komut yayini: tum panellerin LE'si
+    uint16_t m = 0; for (int p = 0; p < n_; p++) m |= latOf(p); return m;
+  }
   uint16_t *stream_ = nullptr;   // PSRAM
   uint16_t *commit_ = nullptr;   // dahili DMA RAM
   uint16_t *scan_   = nullptr;   // dahili DMA RAM, 1 tarama cevrimi
@@ -348,14 +399,14 @@ class PanelSM16380 : public GFX {
   int computePreWords() const {
     int n = CMD_WORDS + FLUSH_WORDS + INIT_WORDS;
     // Toplam akis 32 kelimenin (64 B) kati olsun: dolgu PRE'nin basina bos DCLK olarak
-    int total = n + sm16380::SYNC_WORDS;
+    int total = n + syncWords();
     int pad = (32 - (total % 32)) % 32;
     return n + pad;
   }
   int commitWords() const { return 1 + sm16380::LE_VSYNC + CMD_WORDS + FLUSH_WORDS + INIT_WORDS; }
 
   int emitIdle(uint16_t *b, int n) const { for (int i = 0; i < n; i++) b[i] = idle(); return n; }
-  int emitLE(uint16_t *b, int n) const { for (int i = 0; i < n; i++) b[i] = idle() | BIT_LAT; return n; }
+  int emitLE(uint16_t *b, int n) const { for (int i = 0; i < n; i++) b[i] = idle() | latAll(); return n; }
   int emitCmds(uint16_t *b) const {
     int p = 0;
     p += emitIdle(b + p, 8);
@@ -419,14 +470,16 @@ class PanelSM16380 : public GFX {
     p += emitCmds(s + p);
     p += emitFlushInit(s + p);
     // Senkron bolge
-    for (int i = 0; i < SYNC_WORDS; i++) {
+    const int sync = syncWords();
+    for (int i = 0; i < sync; i++) {
       int slot = i / SLOT_WORDS, k = i % SLOT_WORDS;
       int row = (slot + 1) % SCAN;
       uint16_t rgb = keepRgb ? (s[p + i] & BIT_ALL_RGB) : 0;
       uint16_t v = slotWord(row, k) | rgb;
-      // Veri bolgesi: her 176 kelimelik gecisin son kelimesinde DATA_LATCH
+      // Veri bolgesi (paneller ardisik): her 176 kelimelik gecisin son kelimesinde
+      // DATA_LATCH, yalniz o bolgenin panelinin LE hattinda
       int d = i - CFG_CYCLES * CYCLE_WORDS;
-      if (d >= 0 && d < DATA_WORDS && (d % PASS_WORDS) == PASS_WORDS - 1) v |= BIT_LAT;
+      if (d >= 0 && d < DATA_WORDS * n_ && (d % PASS_WORDS) == PASS_WORDS - 1) v |= latOf(d / DATA_WORDS);
       s[p + i] = v;
     }
   }
@@ -443,11 +496,11 @@ class PanelSM16380 : public GFX {
       uint16_t *w = base + pass * PASS_WORDS;
       for (int c = 0; c < PASS_WORDS; c++) {
         int bit = 15 - (c & 15);
-        uint16_t v = w[c] & ~(uint16_t)(BIT_ALL_RGB | BIT_LAT);
+        uint16_t v = w[c] & ~(uint16_t)(BIT_ALL_RGB | latAll());
         if ((seq_r[pass] >> bit) & 1) v |= BIT_ALL_R;
         if ((seq_g[pass] >> bit) & 1) v |= BIT_ALL_G;
         if ((seq_b[pass] >> bit) & 1) v |= BIT_ALL_B;
-        if (c >= PASS_WORDS - LE_REGWR) v |= BIT_LAT;
+        if (c >= PASS_WORDS - LE_REGWR) v |= latAll();   // tum panellere ayni register
         w[c] = v;
       }
     }

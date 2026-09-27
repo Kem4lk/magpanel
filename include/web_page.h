@@ -159,6 +159,17 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=row>
 <button id=ftbtn onclick="ftToggle()">Flicker testi (panele)</button>
 </div>
+<div id=layoutBox style="display:none">
+<div class=tuneh>Panel düzeni (P1.86 modül sayısı)</div>
+<div class=row>
+<select id=npSel style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:#1c2027;color:var(--txt)">
+<option value=1>1 panel</option><option value=2>2 panel</option><option value=3>3 panel</option></select>
+<select id=lySel style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:#1c2027;color:var(--txt)">
+<option value=0>Alt alta</option><option value=1>Yan yana</option></select>
+<button onclick="setLayout()">Uygula</button></div>
+<div class=row><button onclick="testPanels()">Panel numaraları</button></div>
+<div class=hint2>Paneller aynı hattı paylaşır; her panelin LAT'ı (HUB75 pin 14) ayrı pine gider: 1. panel GPIO10, 2. panel GPIO17, 3. panel GPIO14. 1. panel üstte (alt alta) ya da solda (yan yana). "Uygula" ayarı kaydeder ve paneli yeniden başlatır. "Panel numaraları" her panele numarasını ve sol-üst köşe işaretini çizer: yanlış sıradaysa LAT kablolarını değiştir.</div>
+</div>
 <div class=hint2>Flicker testi: panelde 33 fazlik otomatik desen dizisi calisir (~87sn) — duz renkler, gri kademeleri, cizgiler ve DCLK sweep (80&rarr;8 = 2&rarr;20&nbsp;MHz). Paneli videoya cek; sol-ust kosedeki "Pxx" etiketi hangi fazda oldugunu gosterir. Tekrar bas = durdur.</div>
 </details></div>
 
@@ -172,6 +183,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <script>
 // Panel boyutu firmware tarafindan sayfaya yazilir (P4 80x120, P1.86 172x86)
 const PW={{PW}},PH={{PH}},FB=PW*PH*3,WIDE=PW>PH;
+const PNAME='{{PN}}',NP={{NP}},LY={{LY}};   // panel tipi, modul sayisi, duzen (0 alt alta, 1 yan yana)
 // Kanvas + kucuk resimler panel en-boy oranini izlesin (P4: 200x300 onizleme)
 (function(){const cw=WIDE?Math.min(344,innerWidth-80):Math.round(300*PW/PH),ch=Math.round(cw*PH/PW);
  c.style.width=cw+'px';c.style.height=ch+'px';
@@ -647,6 +659,26 @@ async function appSpotify(){stopGif();
    history.replaceState({},'',location.pathname);
    addLog('Spotify: baglandi - "Spotify"ya tekrar bas');}
  }catch(e){addLog('Spotify token hata: '+e);}})();
+// ---- Coklu P1.86: duzen secimi (0x10) + panel numarasi testi ----
+if(PNAME==='P1.86'){layoutBox.style.display='';npSel.value=NP;lySel.value=LY;}
+function setLayout(){
+ const n=+npSel.value,l=+lySel.value;
+ if(n===NP&&l===LY){addLog('Panel duzeni zaten boyle');return;}
+ if(!ws||ws.readyState!==1){addLog('WS bagli degil');return;}
+ ws.send(new Uint8Array([0x10,n,l]));
+ addLog('Panel duzeni: '+n+' panel, '+(l?'yan yana':'alt alta')+' - panel yeniden basliyor, sayfa yenilenecek');
+ setTimeout(()=>location.reload(),7000);}
+function testPanels(){stopGif();
+ const cols=['#b01010','#10a010','#1030c0'];
+ for(let i=0;i<NP;i++){
+  const x=LY?Math.round(i*PW/NP):0,y=LY?0:Math.round(i*PH/NP),w=LY?Math.round(PW/NP):PW,h=LY?PH:Math.round(PH/NP);
+  ctx.fillStyle=cols[i%3];ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.strokeRect(x+0.5,y+0.5,w-1,h-1);
+  ctx.fillStyle='#ff0';ctx.fillRect(x+2,y+2,8,8);               // sol-ust kose isareti
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(Math.min(w,h)*0.7)+'px sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x+w/2,y+h/2+2);}
+ ctx.textAlign='start';ctx.textBaseline='alphabetic';
+ sendFrame();addLog('Panel numaralari: 1=kirmizi, 2=yesil, 3=mavi; sari kare sol-ust kose');}
 function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);sendFrame();}
 function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43,y0=Math.round(i*PH/6),y1=Math.round((i+1)*PH/6);
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,y0,PW,y1-y0);}sendFrame();}

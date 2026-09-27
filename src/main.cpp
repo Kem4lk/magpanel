@@ -16,6 +16,7 @@
      0x0C + 8B[+s] : hava konumu lat(f32 LE),lon(f32 LE),sehir
      0x0D + s      : Spotify access token (tarayici PKCE)
      0x0F          : flicker self-test baslat/durdur (panelde otomatik desen dizisi)
+     0x10 + 2B     : (P1.86) panel duzeni: sayi (1..3), yon (0=alt alta, 1=yan yana) -> NVS + restart
    Acilista Mona gosterilir; IP seri porta yazilir; http://magpanel.local
    uzerinden gomulu test sayfasi acilir (iOS app ayni protokolu konusur). */
 #include <stdarg.h>
@@ -142,7 +143,7 @@ static void sendGallery(AsyncWebSocketClient *c){
 }
 // Panel boyutu + tipi ("D:172x86:P1.86"): istemci kanvasi ve kare boyutunu buna gore kurar
 static void sendDims(AsyncWebSocketClient *c){
-  char d[32]; snprintf(d, sizeof(d), "D:%dx%d:%s", PANEL_W, PANEL_H, PANEL_NAME);
+  char d[40]; snprintf(d, sizeof(d), "D:%dx%d:%s:%d:%d", PANEL_W, PANEL_H, PANEL_NAME, PANEL_COUNT, PANEL_LAYOUT);
   c->text(d);
 }
 static int8_t lastGallery = 0;   // kazanc degisince yeniden cizim icin
@@ -157,13 +158,16 @@ void drawGallery(uint8_t idx);
 void renderFrame();
 void redrawCurrent();
 
-static const size_t FRAME_BYTES = (size_t)PANEL_W * PANEL_H * 3;  // P4 28800, P1.86 44376
-static const size_t RXBUF_BYTES = 1 + FRAME_BYTES;
 #if defined(PANEL_P186)
-// P1.86: 2 x ~44 KB tampon PSRAM'de (setup'ta ayrilir); dahili RAM WiFi/async icin kalsin
+// P1.86: boyut panel sayisi/duzenine bagli (setup'ta NVS'ten) -> tamponlar PSRAM'de,
+// setup'ta ayrilir (1 panel 2 x ~44 KB, 3 panel 2 x ~133 KB); dahili RAM WiFi/async icin kalsin
+static size_t FRAME_BYTES = 0;
+static size_t RXBUF_BYTES = 0;
 static uint8_t *rxbuf    = nullptr;
 static uint8_t *framebuf = nullptr;              // son gosterilen kare (ayar degisiminde yeniden cizim)
 #else
+static const size_t FRAME_BYTES = (size_t)PANEL_W * PANEL_H * 3;  // 28800
+static const size_t RXBUF_BYTES = 1 + FRAME_BYTES;
 static uint8_t rxbuf[RXBUF_BYTES];
 static uint8_t framebuf[FRAME_BYTES];           // son gosterilen kare (ayar degisiminde yeniden cizim)
 #endif
@@ -563,6 +567,17 @@ void handleMessage(const uint8_t *buf, size_t len){
     case 0x0F:                                   // flicker self-test baslat/durdur
       if(ftActive) ftStop(); else ftStart();
       break;
+#if defined(PANEL_P186)
+    case 0x10:                                   // panel duzeni: sayi + yon -> NVS, yeniden basla
+      if(len>=3){
+        uint8_t n = buf[1] < 1 ? 1 : (buf[1] > sm16380::MAX_PANELS ? sm16380::MAX_PANELS : buf[1]);
+        uint8_t ly = buf[2] ? 1 : 0;
+        prefs.begin(PANEL_CFG_NS, false); prefs.putUChar("npanels", n); prefs.putUChar("layout", ly); prefs.end();
+        logf("Panel duzeni: %u panel, %s -> yeniden baslatiliyor", n, ly ? "yan yana" : "alt alta");
+        delay(500); ESP.restart();
+      }
+      break;
+#endif
   }
 }
 
@@ -594,22 +609,26 @@ static void drawOtaLoading(uint8_t pct){
 // -> "art is not defined", "ws is not defined" gibi inline handler hatalari.
 // Burada sayfa dogrudan flash'tan, Content-Length ile, küçük tamponlar halinde
 // akitilir (büyük heap ayrimi yok). Yer tutucular uçuşta degistirilir:
-//   {{VER}} = FW_VERSION, {{PW}}/{{PH}} = panel boyutu, {{PN}} = panel adi.
+//   {{VER}} = FW_VERSION, {{PW}}/{{PH}} = kanvas boyutu, {{PN}} = panel adi,
+//   {{NP}} = panel sayisi, {{LY}} = duzen (0 alt alta, 1 yan yana).
 // Parca listesi (flash araligi / RAM metni) acilista bir kez kurulur.
 struct IdxSeg { const char *src; size_t len; bool flash; };
-static IdxSeg   idxSegs[24];
+static IdxSeg   idxSegs[48];
 static int      idxSegCount = 0;
 static size_t   idxTotalLen = 0;
-static char     idxPW[6], idxPH[6];
+static char     idxPW[6], idxPH[6], idxNP[4], idxLY[4];
 static void buildIndexSegments(){
   snprintf(idxPW, sizeof(idxPW), "%d", PANEL_W);
   snprintf(idxPH, sizeof(idxPH), "%d", PANEL_H);
+  snprintf(idxNP, sizeof(idxNP), "%d", PANEL_COUNT);
+  snprintf(idxLY, sizeof(idxLY), "%d", PANEL_LAYOUT);
   static const struct { const char *tag; const char *val; } PH[] = {
-    {"{{VER}}", FW_VERSION}, {"{{PW}}", idxPW}, {"{{PH}}", idxPH}, {"{{PN}}", PANEL_NAME} };
+    {"{{VER}}", FW_VERSION}, {"{{PW}}", idxPW}, {"{{PH}}", idxPH}, {"{{PN}}", PANEL_NAME},
+    {"{{NP}}", idxNP}, {"{{LY}}", idxLY} };
   const size_t htmlLen = strlen_P(INDEX_HTML);
   size_t start = 0;
   idxSegCount = 0; idxTotalLen = 0;
-  for(size_t i=0; i+1<htmlLen && idxSegCount < 22; i++){
+  for(size_t i=0; i+1<htmlLen && idxSegCount < 46; i++){
     if(pgm_read_byte(INDEX_HTML+i)!='{' || pgm_read_byte(INDEX_HTML+i+1)!='{') continue;
     for(auto &ph : PH){
       size_t tl = strlen(ph.tag);
@@ -657,6 +676,15 @@ void setup(){
   }
   esp_log_level_set("task_wdt", ESP_LOG_NONE);   // seri portu bogan TWDT spam'ini sustur
 #if defined(PANEL_P186)
+  {                                              // panel sayisi + duzen (web UI 0x10 ile ayarlanir)
+    prefs.begin(PANEL_CFG_NS, false);   // RW: ilk acilista namespace yok hatasi loglanmasin
+    uint8_t n  = prefs.getUChar("npanels", 1);
+    uint8_t ly = prefs.getUChar("layout", sm16380::LAYOUT_VERTICAL);
+    prefs.end();
+    matrix.configure(n, ly);
+    FRAME_BYTES = (size_t)PANEL_W * PANEL_H * 3;
+    RXBUF_BYTES = 1 + FRAME_BYTES;
+  }
   rxbuf    = (uint8_t*)heap_caps_malloc(RXBUF_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   framebuf = (uint8_t*)heap_caps_malloc(FRAME_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   if(!rxbuf || !framebuf){ logf("HATA: kare tamponlari ayrilamadi (PSRAM)"); delay(2000); ESP.restart(); }
@@ -667,7 +695,7 @@ void setup(){
 #else
   matrix.initMatrix(); delay(10);
 #endif
-  logf("Panel: %s %dx%d", PANEL_NAME, PANEL_W, PANEL_H);
+  logf("Panel: %s %dx%d (%d modul, %s)", PANEL_NAME, PANEL_W, PANEL_H, PANEL_COUNT, PANEL_LAYOUT ? "yan yana" : "alt alta");
   buildIndexSegments();
   // Web UI'daki DCLK tuner ile bulunan flicker ayari NVS'te ise uygula
   // (donanima ozgu en yuksek mozaiksiz hiz). Yoksa derlenmis varsayilan (2.5MHz).
