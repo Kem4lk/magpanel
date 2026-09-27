@@ -106,9 +106,20 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
   DCLK NVS'i ayrı namespace: `panelcfg186` (varsayılan bölen 16 = 10 MHz). Açılış parlaklığı 110.
 - Web sayfası boyutu `{{PW}}`/`{{PH}}`/`{{PN}}` yer tutucularıyla alır (handleIndex parça listesi);
   kanvas/kare/önizleme/kayıtlar buna göre. localStorage anahtarları P4'te aynı, diğer boyutta `_WxH` ekli.
-  WS bağlanınca firmware `D:172x86:P1.86` metin mesajı yollar (iOS app kare boyutunu buradan almalı).
+  WS bağlanınca firmware `D:WxH:P1.86:N:düzen` metin mesajı yollar (iOS app kare boyutunu buradan almalı).
 - Galeri 80×120 saklanır; P1.86'da en-boy korunarak 57×86'ya ölçeklenir, ortada, kenarlar siyah.
   Uygulamalar (saat/timer/hava/…) yatay panelde `L(p4, genis)` ile ayrı yerleşim + büyük font.
+- **Çoklu P1.86 (1..3 modül, tek ESP32):** modülde OUT yok → tüm paneller RGB/DCLK/OE/ABCDE hattını
+  PAYLAŞIR, sadece LAT (HUB75 pin 14) panel başına ayrı: P1 GPIO10 (d6), P2 **GPIO17** (d13),
+  P3 **GPIO14** (d14). Veri akışta panel panel ardışık (panel başına 22 çevrim); veri latch'i yalnız
+  o panelin LAT'ında, komutlar (VSYNC/11/14/register) tüm LAT'larda yayın. Düzen: dikey (alt alta,
+  P1 üstte → 172×86N) / yatay (yan yana, P1 solda → 172N×86). NVS `panelcfg186`: `npanels`, `layout`;
+  web UI "Görüntü ayarları → Panel düzeni" (WS `0x10 n ly` → kaydet + restart) ve "Panel numaraları"
+  testi (her panele numara + sarı sol-üst işaret). 3 panel: akış ~720 KB PSRAM, kare ~37 ms @10 MHz.
+  `PANEL_W/H` P1.86'da çalışma anında (`sm16380::g_w/g_h`); uygulamalar `L()/S()` ile ölçeklenir.
+  Host simülasyonu: her panel yalnız kendi 688 veri latch'ini görür, komut genişlikleri tüm panellerde aynı.
+- Breadboard/uzun jumper'da 10 MHz DCLK sinyal bozulması (çip sınırlı renk blokları, satır bantları)
+  görüldü → iki GND teli (HUB75 pin 4 + 16), kısa CLK, gerekirse DCLK 5–8 MHz. Ürün: 74HCT245 tampon.
 - Açık: iOS app hâlâ sabit 28800 B kare yolluyor (P1.86'da 44376 B gerekir → `D:` mesajını kullanmalı);
   güç sınırlayıcı (ABL) yok — P1.86 tam beyaz/parlaklık 255 ≈ 31 W/modül.
 
@@ -151,7 +162,7 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 0x01+W·H·3 B tam kare RGB888 (P4 28800, P1.86 44376) · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
 · 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok
 · 0x09 GitHub OTA · 0x0A canlı DCLK bölen · 0x0B uygulama seç · 0x0C hava konumu
-· 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test başlat/durdur**.
+· 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test başlat/durdur** · 0x10 (P1.86) panel düzeni.
 GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 (firmware durum tutmaz; `if(msgReady)return;` ile hızlı kareler düşürülür).
 
