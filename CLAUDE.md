@@ -94,6 +94,28 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 - Ayırt etmek istersen wifi_config.h'da FW_VERSION'ı her anlamlı değişimde elle
   bump et (örn. `v25-gif`).
 
+## P1.86 172×86 panel (SM16380SH + SM5368) — TEST firmware (P4 korunuyor)
+- Modül: YI YI STAR `P1.86-INDOOR-Y52`, etiket/QR `16380SH-5368`, 1/43 tarama,
+  tek HUB75 **giriş** (OUT yok → zincir yok; çoklu panel = ortak hat + panel başına ayrı LAT planı).
+- **P4 (FM6363C) firmware'i aynen duruyor** (varsayılan env'ler, CI, GitHub OTA). P1.86 ayrı env:
+  `pio run -e p186-test -t upload` (USB) / `-e p186-test-ota` (espota). Kaynak: `src/p186_test.cpp`
+  + `include/panel_sm16380.h`. `build_src_filter` ile P4 env'i test dosyasını, test env'i `main.cpp`'yi derlemez.
+- Geri dönüş: test firmware'inin `http://<ip>/update` sayfasından P4 `firmware.bin` yükle (ya da USB).
+  Test firmware'inde GitHub OTA yok.
+- Kablolama P4 ile AYNI (GPIO eşlemesi değişmedi). Protokol farkları:
+  DCLK = veri + PWM saati (sürekli akar); her 128 DCLK'da satır geçişi + OE (pin 15, eski GCLK biti)
+  4 DCLK darbe; SM5368: A = satır saati, B = BK, C = satır verisi (D/E = 0);
+  LE komutları VSYNC=3, 11, 14; register yazımı `00AA,01AA,değer,0055,0155` (LE son 5 DCLK);
+  gri ton 16 bit/kanal, değer alt 13 bitte. Register profili: `regtype6 P1.86-SM16380SH-5368-1/43`.
+- Akış tamponu ~248 KB **PSRAM**'de (dahili RAM'e sığmaz); `send_stuff_once` PSRAM kaynağında
+  64 B hizalı 4032'lik parçalar kullanır (dahili RAM davranışı değişmedi). `esp_cache_msync` şart.
+- Web UI (`/`): desenler, parlaklık (varsayılan 64 — güç!), DCLK, satır modu (SM5368/ikili),
+  BK modu, OE polaritesi, register profili, gri ton bitleri, eşlem (X ayna, kanal ters, yarı takas,
+  Y ters, X/satır ofseti). Ayarlar NVS `p186cfg`.
+- Lisans notu: protokol bilgisi DMD_STM32 (GPLv3) ve ESP32-HUB75-MatrixPanel-DMA (MIT)
+  incelenerek öğrenildi; kod bağımsız yazıldı, register değerleri donanım ayarı olarak alındı.
+  Ticari ürün öncesi hukuki kontrol önerilir.
+
 ## main.cpp WS protokolü (ilk bayt = opcode)
 0x01+28800B tam kare RGB888 · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
 · 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok
