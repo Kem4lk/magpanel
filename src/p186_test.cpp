@@ -74,7 +74,7 @@ static void saveSettings() {
   prefs.end();
 }
 static void loadSettings() {
-  prefs.begin("p186cfg", true);
+  prefs.begin("p186cfg", false);
   if (prefs.getBytesLength("opt") == sizeof(panel.opt)) prefs.getBytes("opt", &panel.opt, sizeof(panel.opt));
   if (prefs.getBytesLength("st") == sizeof(st)) prefs.getBytes("st", &st, sizeof(st));
   prefs.end();
@@ -373,7 +373,7 @@ static bool connectWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   esp_wifi_set_ps(WIFI_PS_NONE);
-  prefs.begin("wificfg", true);
+  prefs.begin("wificfg", false);
   String ssid = prefs.getString("ssid", ""), pass = prefs.getString("pass", "");
   prefs.end();
   scanNetworks(ssid.length() ? ssid.c_str() : WIFI_SSID);
@@ -396,6 +396,7 @@ void setup() {
   for (int i = 0; i < 20 && !Serial; i++) delay(100);   // USB monitor aciksa ilk satirlari kacirma
   delay(300);
   esp_task_wdt_deinit();
+  esp_log_level_set("task_wdt", ESP_LOG_NONE);   // AsyncTCP'nin "TWDT was never initialized" spam'i (P4 ile ayni)
   logf("MagPanel P1.86 TEST %s", FW_VERSION);
   logf("PSRAM: %u KB toplam, %u KB bos", ESP.getPsramSize() / 1024, ESP.getFreePsram() / 1024);
   loadSettings();
