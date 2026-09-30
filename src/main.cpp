@@ -17,6 +17,13 @@
      0x0D + s      : Spotify access token (tarayici PKCE)
      0x0F          : flicker self-test baslat/durdur (panelde otomatik desen dizisi)
      0x10 + 2B     : (P1.86) panel duzeni: sayi (1..3), yon (0=alt alta, 1=yan yana) -> NVS + restart
+     0x11 + sub..  : sensor/kontrol ayarlari (include/sensors.h): 1=oto parlaklik(on,min,LDR ters)
+                     2=eylemler(enkoder bas,uzun bas,dokunmatik,cift alkis) 3=alkis esigi 4=enkoder(adim,ters)
+                     -> NVS "sensors"; tum istemcilere "C:" yayini
+     0x12 + 1B     : uyku: 0 uyan, 1 uyu, 2 degistir (panel karanlik; icerik/uygulama/ayarlar korunur)
+   Firmware -> istemci metin frame'leri: "L:" log, "G:" galeri, "D:" boyut, "C:" sensor ayarlari + parlaklik
+     + uyku durumu (baglaninca ve her degisimde), "S:" 1 Hz telemetri (sicaklik/nem/isik/ses/dokunmatik),
+     "B:" parlaklik degisti (enkoder cevrilince slider izlesin). Ayni bilgi HTTP: /api/sensors
    Acilista Mona gosterilir; IP seri porta yazilir; http://magpanel.local
    uzerinden gomulu test sayfasi acilir (iOS app ayni protokolu konusur). */
 #include <stdarg.h>
@@ -37,9 +44,11 @@
 #include "wifi_config.h"
 #include "web_page.h"
 #include "apps.h"
+#include "sensors.h"
 
 Panel  matrix;                     // P4: Matrix, P1.86: PanelSM16380 (include/panel.h)
-Apps   apps;                       // firmware-tarafi uygulamalar (saat/timer/hava/dunya kupasi/spotify)
+Apps   apps;                       // firmware-tarafi uygulamalar (saat/timer/hava/dunya kupasi/spotify/oda/ses)
+Sensors sensors;                   // DHT11 / LDR / mikrofon / dokunmatik / enkoder (include/sensors.h)
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
@@ -151,6 +160,11 @@ static uint8_t mosaicBlock = 1;  // 1 = tam cozunurluk; N = NxN blok mozaik
 static volatile bool otaActive = false;
 static volatile uint32_t lastOtaActivity = 0;   // OTA ilerleme zaman damgasi (takilma kurtarma icin)
 static volatile bool otaNowRequested = false;    // 0x09 WS opcode: manuel GitHub OTA tetikle
+// ---- Uyku + parlaklik durumu (sensors.h olaylari ve 0x04/0x11/0x12 kullanir) ----
+static bool     standby     = false;   // uyku: panel karanlik, icerik/uygulama/ayarlar korunur
+static uint8_t  userBri     = 110;     // kullanicinin istedigi parlaklik (slider/enkoder); NVS "bri"
+static uint32_t briDirty    = 0;       // !=0: userBri NVS'e yazilacak (3 sn debounce, asinma olmasin)
+static uint32_t lastAutoBri = 0;       // oto parlaklik son uygulama zamani
 #ifndef FW_BUILD
 #define FW_BUILD 0
 #endif
@@ -240,6 +254,7 @@ void renderFrame(){
 // Parlaklik/kazanc/kontrast degisince panel kendi icerigini yeniden cizer -
 // istemcinin (bos olabilecek) kanvasini yeniden gondermesine gerek kalmaz.
 void redrawCurrent(){
+  if(standby) return;                              // uykuda cizme; setStandby(false) uyaninca cizer
   if(lastGallery>=0) drawGallery((uint8_t)lastGallery);
   else if(haveFrame) renderFrame();
 }
@@ -456,9 +471,127 @@ static void ftLoop(){
   }
 }
 
+
+// ===================== SENSORLER & FIZIKSEL KONTROLLER =====================
+// include/sensors.h okur (DHT11, LDR, mikrofon, dokunmatik, enkoder); burada olaylar
+// eyleme donusur. Tasarim: her sey firmware'de, tarayicisiz calisir; tarayici/iOS
+// sadece eslemeyi ayarlar (0x11) ve "S:" telemetrisini izler. Uyku (standby): panel
+// karanlik, icerik/uygulama/ayarlar korunur; dokunmatik, enkoder, cift alkis ya da bir
+// WS icerik komutu uyandirir. Enkoder cevirme = parlaklik (oto modda tavan).
+static uint8_t effectiveBrightness(){
+  if(!sensors.cfg.autoBri) return userBri;
+  return senslogic::autoBrightness(sensors.light(), userBri, sensors.cfg.briMin);
+}
+static void applyBrightness(uint8_t eff){
+  if(matrix.global_brightness == eff) return;
+  matrix.global_brightness = eff;
+  if(standby) return;                              // uyaninca zaten yeniden cizilir
+  if(apps.active()) apps.redraw(); else redrawCurrent();
+}
+// Kullanici parlakligi (slider 0x04 ya da enkoder): oto modda TAVAN, degilse dogrudan.
+static void setUserBrightness(uint8_t v){
+  userBri = v;
+  briDirty = millis() ? millis() : 1;              // 3 sn sonra NVS'e
+  applyBrightness(effectiveBrightness());
+  if(ws.count()){ char m[12]; snprintf(m, sizeof(m), "B:%u", userBri); ws.textAll(m); }   // slider izlesin
+}
+static void sendSensorConfig(AsyncWebSocketClient *c){
+  char b[200]; int k = snprintf(b, sizeof(b), "C:{");
+  k += sensors.jsonConfig(b+k, sizeof(b)-k);
+  snprintf(b+k, sizeof(b)-k, ",\"b\":%u,\"sb\":%d}", userBri, standby ? 1 : 0);
+  if(c) c->text(b); else ws.textAll(b);
+}
+static void sendTelemetry(){
+  char b[220]; int k = snprintf(b, sizeof(b), "S:{");
+  k += sensors.jsonReadings(b+k, sizeof(b)-k);
+  snprintf(b+k, sizeof(b)-k, ",\"sb\":%d,\"b\":%u,\"eb\":%u,\"ab\":%u,\"app\":%u}",
+           standby ? 1 : 0, userBri, matrix.global_brightness, sensors.cfg.autoBri, apps.mode());
+  ws.textAll(b);
+}
+static void setStandby(bool on){
+  if(on == standby) return;
+  if(on && ftActive) ftStop();
+  standby = on;
+  if(on){ matrix.clear_pixels(); matrix.update(); logf("Uyku: panel karartildi (dokunmatik/enkoder/alkis ya da WS uyandirir)"); }
+  else { logf("Uyandi"); if(apps.active()) apps.redraw(); else redrawCurrent(); }
+  if(ws.count()) sendSensorConfig(nullptr);
+}
+static void nextApp(){                             // saat -> hava -> oda -> ses -> kapat -> saat
+  static const uint8_t cyc[] = { APP_CLOCK, APP_WEATHER, APP_ROOM, APP_SOUND, APP_NONE };
+  const int n = (int)sizeof(cyc);
+  uint8_t cur = apps.mode(); int i = 0;
+  while(i < n && cyc[i] != cur) i++;
+  uint8_t nx = (i >= n) ? cyc[0] : cyc[(i+1) % n];
+  apps.select(nx, nullptr, 0);
+  if(nx == APP_NONE) redrawCurrent();
+  logf("Uygulama: %s (fiziksel kontrol)", Apps::name(nx));
+}
+static void nextGallery(){
+  apps.off();
+  int g = lastGallery < 0 ? 0 : (lastGallery + 1) % GALLERY_COUNT;
+  lastGallery = g; drawGallery((uint8_t)g);
+}
+static void doAction(uint8_t act){
+  switch(act){
+    case ACT_SLEEP:    setStandby(!standby); break;
+    case ACT_NEXT_APP: nextApp(); break;
+    case ACT_NEXT_GAL: nextGallery(); break;
+    case ACT_AUTOBRI:
+      sensors.cfg.autoBri = !sensors.cfg.autoBri; sensors.save();
+      lastAutoBri = 0; applyBrightness(effectiveBrightness());
+      logf("Oto parlaklik: %s", sensors.cfg.autoBri ? "acik" : "kapali");
+      if(ws.count()) sendSensorConfig(nullptr);
+      break;
+    default: break;
+  }
+}
+// loop()'tan her turda (uykuda da: uyandirma buradan)
+static void sensorTick(){
+  sensors.micWanted = (sensors.cfg.actClap != ACT_NONE) || (apps.mode() == APP_SOUND) || (ws.count() > 0);
+  sensors.loop();
+  uint32_t now = millis();
+  int16_t d = sensors.takeEncoderDelta();          // enkoder = parlaklik (uykuda: uyandirir)
+  if(d){
+    if(standby) setStandby(false);
+    else {
+      int v = (int)userBri + d * (int)sensors.cfg.encStep;
+      if(v < 1) v = 1;
+      if(v > 255) v = 255;
+      setUserBrightness((uint8_t)v);
+    }
+  }
+  for(SensEvent ev; (ev = sensors.poll()) != EV_NONE; ){
+    if(ev == EV_CLAP1) continue;                   // tek alkis: eylem yok (yanlis tetik olmasin)
+    uint8_t act = ACT_NONE;
+    switch(ev){
+      case EV_ENC_PRESS: act = sensors.cfg.actPress; break;
+      case EV_ENC_LONG:  act = sensors.cfg.actLong;  break;
+      case EV_TOUCH:     act = sensors.cfg.actTouch; break;
+      case EV_CLAP2:     act = sensors.cfg.actClap;  break;
+      default: break;
+    }
+    logf("Kontrol: %s -> %s", Sensors::eventName(ev), Sensors::actionName(act));
+    if(act == ACT_NONE) continue;
+    if(standby && act != ACT_SLEEP){ setStandby(false); continue; }   // uykuda: once sadece uyan
+    doAction(act);
+  }
+  if(sensors.cfg.autoBri && !ftActive && !standby && now - lastAutoBri > 1000){
+    lastAutoBri = now;
+    uint8_t eff = effectiveBrightness();
+    int diff = (int)eff - (int)matrix.global_brightness;
+    if(diff >= 3 || diff <= -3) applyBrightness(eff); // histerezis: kucuk oynamada yeniden cizme
+  }
+  if(briDirty && now - briDirty > 3000){
+    briDirty = 0;
+    prefs.begin(PANEL_CFG_NS, false); prefs.putUChar("bri", userBri); prefs.end();
+  }
+  static uint32_t lastTel = 0;
+  if(ws.count() && now - lastTel >= 1000){ lastTel = now; sendTelemetry(); }
+}
+
 void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
                void *arg, uint8_t *data, size_t len){
-  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendDims(client); sendLogHistory(client); sendGallery(client); return; }
+  if(type==WS_EVT_CONNECT){ logf("WS istemci #%u baglandi", client->id()); sendDims(client); sendSensorConfig(client); sendLogHistory(client); sendGallery(client); return; }
   if(type==WS_EVT_DISCONNECT){ Serial.printf("WS istemci #%u ayrildi\n", client->id()); return; }
   if(type!=WS_EVT_DATA) return;
   AwsFrameInfo *info=(AwsFrameInfo*)arg;
@@ -473,6 +606,8 @@ void onWsEvent(AsyncWebSocket*, AsyncWebSocketClient *client, AwsEventType type,
 void handleMessage(const uint8_t *buf, size_t len){
   if(len<1) return;
   if(ftActive && buf[0]!=0x0F) ftStop();   // flicker testi aktifken baska komut gelirse testi durdur
+  if(standby && (buf[0]==0x01 || buf[0]==0x02 || buf[0]==0x05 || buf[0]==0x0B || buf[0]==0x0F))
+    setStandby(false);                     // icerik/uygulama komutu uykudan uyandirir
   switch(buf[0]){
     case 0x01:
       if(len==1+FRAME_BYTES){
@@ -494,7 +629,7 @@ void handleMessage(const uint8_t *buf, size_t len){
       matrix.clear_pixels(); matrix.update();
       break;
     case 0x04:                                   // parlaklik (0-255)
-      if(len>=2){ matrix.global_brightness = buf[1]; redrawCurrent(); }
+      if(len>=2) setUserBrightness(buf[1]);   // oto parlaklik acikken tavan; NVS'e debounce ile
       break;
     case 0x05:                                   // gomulu galeri tablosu sec
       if(len>=2){ apps.off(); lastGallery = buf[1]; drawGallery(buf[1]); }
@@ -566,6 +701,27 @@ void handleMessage(const uint8_t *buf, size_t len){
       break;
     case 0x0F:                                   // flicker self-test baslat/durdur
       if(ftActive) ftStop(); else ftStart();
+      break;
+    case 0x11:                                   // sensor/kontrol ayarlari (alt komut)
+      if(len>=2){
+        SensConfig &c = sensors.cfg;
+        switch(buf[1]){
+          case 1: if(len>=5){ c.autoBri = buf[2] ? 1 : 0; c.briMin = buf[3]; c.ldrInv = buf[4] ? 1 : 0;
+                              lastAutoBri = 0; applyBrightness(effectiveBrightness()); } break;
+          case 2: if(len>=6){ c.actPress = buf[2]; c.actLong = buf[3]; c.actTouch = buf[4]; c.actClap = buf[5]; } break;
+          case 3: if(len>=3){ c.clapThr = buf[2]; } break;
+          case 4: if(len>=4){ c.encStep = buf[2]; c.encInv = buf[3] ? 1 : 0; } break;
+          default: break;
+        }
+        sensors.save();                          // sanitize + NVS
+        sendSensorConfig(nullptr);
+        logf("Sensor ayari %u guncellendi (oto=%u min=%u bas=%s uzun=%s dokun=%s alkis=%s esik=%u adim=%u)",
+             buf[1], c.autoBri, c.briMin, Sensors::actionName(c.actPress), Sensors::actionName(c.actLong),
+             Sensors::actionName(c.actTouch), Sensors::actionName(c.actClap), c.clapThr, c.encStep);
+      }
+      break;
+    case 0x12:                                   // uyku: 0 uyan, 1 uyu, 2 degistir
+      if(len>=2) setStandby(buf[1]==2 ? !standby : buf[1]==1);
       break;
 #if defined(PANEL_P186)
     case 0x10:                                   // panel duzeni: sayi + yon -> NVS, yeniden basla
@@ -703,6 +859,15 @@ void setup(){
   uint32_t nvsDiv = prefs.getUInt("dclkdiv", 0);
   prefs.end();
   if(nvsDiv >= 8 && nvsDiv <= 200){ matrix.setClockDiv(nvsDiv); logf("DCLK NVS ayari: bolen=%lu (~%lu kHz)", nvsDiv, 160000UL/nvsDiv); }
+  // Parlaklik: son kullanici degeri NVS'te (enkoder/slider ile degisince 3 sn sonra yazilir)
+  prefs.begin(PANEL_CFG_NS, true); userBri = prefs.getUChar("bri", matrix.global_brightness); prefs.end();
+  if(userBri < 1) userBri = 1;
+  matrix.global_brightness = userBri;
+  sensors.begin();                               // pinler, enkoder ISR, NVS "sensors" (baglanmamis sensor zararsiz)
+  apps.setSensors(&sensors);
+  logf("Sensorler: LDR G%d MIC G%d/%d ENC G%d/%d/%d DHT G%d TOUCH G%d | parlaklik %u%s",
+       SENS_PIN_LDR, SENS_PIN_MIC, SENS_PIN_MIC_DO, SENS_PIN_ENC_A, SENS_PIN_ENC_B, SENS_PIN_ENC_SW,
+       SENS_PIN_DHT, SENS_PIN_TOUCH, userBri, sensors.cfg.autoBri ? " (oto)" : "");
   drawGallery(0);                                // acilis ekrani (Mona Lisa)
 
   WiFi.mode(WIFI_STA);
@@ -753,6 +918,14 @@ void setup(){
       }
       j += "]";
       r->send(200, "application/json", j);
+    });
+    // /api/sensors — anlik sensor okumalari + uyku/parlaklik (iOS app / otomasyon icin; WS "S:" ile ayni)
+    server.on("/api/sensors", HTTP_GET, [](AsyncWebServerRequest *r){
+      char b[220]; int k = snprintf(b, sizeof(b), "{");
+      k += sensors.jsonReadings(b+k, sizeof(b)-k);
+      snprintf(b+k, sizeof(b)-k, ",\"sb\":%d,\"b\":%u,\"eb\":%u,\"ab\":%u,\"app\":%u}",
+               standby ? 1 : 0, userBri, matrix.global_brightness, sensors.cfg.autoBri, apps.mode());
+      r->send(200, "application/json", b);
     });
 
     // ---- Tarayicidan OTA: http://magpanel.local/update (kullanici: admin) ----
@@ -901,7 +1074,8 @@ void loop(){
   }
   if(msgReady){ handleMessage(rxbuf,(size_t)msgLen); msgReady=false; }
   if(ftActive) ftLoop();        // flicker self-test aktifse fazlari ilerlet (apps yerine)
-  else apps.loop();             // uygulama aciksa zamani gelince fetch+render (kendi throttle'i var)
+  else if(!standby) apps.loop(); // uygulama aciksa zamani gelince fetch+render (kendi throttle'i var); uykuda durur
+  sensorTick();                 // sensorler + enkoder/dokunmatik/alkis olaylari + oto parlaklik + telemetri
   static uint32_t t=0;
   if(millis()-t>2000){ ws.cleanupClients(); t=millis(); }
   // WiFi bekcisi: kopussa yeniden bagla, 60sn duzelmezse temiz baslangic

@@ -161,10 +161,45 @@ Lokal kaynak güncel değilse: dalı curl'le çek, sonra derle/yükle. Örn:
 ## main.cpp WS protokolü (ilk bayt = opcode)
 0x01+W·H·3 B tam kare RGB888 (P4 28800, P1.86 44376) · 0x02 piksel paketi · 0x03 temizle · 0x04 parlaklık
 · 0x05 galeri · 0x06 RGB kazanç · 0x07 kontrast/doygunluk · 0x08 mozaik blok
-· 0x09 GitHub OTA · 0x0A canlı DCLK bölen · 0x0B uygulama seç · 0x0C hava konumu
-· 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test başlat/durdur** · 0x10 (P1.86) panel düzeni.
+· 0x09 GitHub OTA · 0x0A canlı DCLK bölen · 0x0B uygulama seç (0 kapat,1 saat,2 timer,3 hava,4 dünya kupası,
+5 spotify,**6 oda,7 ses**) · 0x0C hava konumu · 0x0D Spotify token · 0x0E blur · **0x0F flicker self-test**
+· 0x10 (P1.86) panel düzeni · **0x11 sensör/kontrol ayarı** (alt komut 1 oto parlaklık `on,min,LDRters`;
+2 eylemler `bas,uzun,dokun,alkış`; 3 alkış eşiği; 4 enkoder `adım,ters`) · **0x12 uyku** (0 uyan, 1 uyu, 2 değiştir).
+Firmware→istemci metin frame'leri: `L:` log, `G:` galeri, `D:` boyut, **`C:` sensör ayarları+parlaklık+uyku
+(bağlanınca ve her değişimde), `S:` 1 Hz telemetri, `B:` parlaklık değişti (enkoder)**. HTTP: `/api/sensors`.
 GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 (firmware durum tutmaz; `if(msgReady)return;` ile hızlı kareler düşürülür).
+
+## Sensörler & fiziksel kontroller (2026-09-29, dal `ccr-f127ab41-6drmx9`)
+- **Şema:** `hardware/gen_schematic.py` → `hardware/schematic.svg/png` (kasa gibi parametrik; pinler
+  değişirse script'i düzelt, yeniden üret; script kesişim kontrolü yapar). Pin tablosu + modül notları +
+  kasa yerleşimi `hardware/README.md`. PNG: Chromium headless + Pillow crop (README'de komut).
+- **Pinler** (`include/sensors.h`, `-DSENS_PIN_*` ile değişir): LDR AO **GPIO1**, mikrofon AO **GPIO2**
+  (DO **42** isteğe bağlı), KY-040 CLK/DT/SW **41/40/39**, DHT11 DATA **47**, TTP223B OUT **21**. Hepsi 3V3.
+  Analog SADECE ADC1 (GPIO1–10): ADC2 WiFi ile çakışır. HUB75 (3–18) ve P1.86 LAT2/3 (17/14) ile çakışmaz;
+  19/20 USB, 33–37 OPI PSRAM, 0/45/46 strapping, 38/48 devkit RGB LED boş bırakıldı.
+- **Dosyalar:** `include/sensor_logic.h` saf C++ (enkoder Buxton tam-adım tablosu, buton FSM, DHT 40-bit
+  çözme, zarf, alkış, oto parlaklık) → `g++ -std=c++17 -I include tools/test_sensor_logic.cpp && ./a.out`
+  host testi. `include/sensors.h` donanım: DHT11 iki fazlı bloklamayan okuma (20 ms LOW loop'ta, sonra ~4 ms
+  kritik bölge, 3 sn'de bir; kütüphane yok), LDR 10 Hz EMA, mikrofon ≤2 kHz örnek/20 ms pencere
+  (`micWanted` = alkış açık ‖ Ses uygulaması ‖ WS istemci var), enkoder GPIO kesmesi (IRAM_ATTR **değil**:
+  Arduino ISR servisi IRAM'sız; inline IRAM fonksiyon xtensa'da "l32r literal placed after use" link hatası
+  verir), NVS `sensors`. `Sensors::loop()` OTA sırasında çağrılmaz.
+- **Davranış (main.cpp `sensorTick`):** enkoder çevirme = `userBri` (oto modda tavan) → `matrix.global_brightness`
+  → redraw; `B:` yayını; 3 sn debounce ile NVS `PANEL_CFG_NS/bri` (boot'ta geri yüklenir — artık parlaklık
+  kalıcı). Eylemler NVS'ten: enkoder bas=uyku/uyan, uzun bas=sonraki uygulama (saat→hava→oda→ses→kapat),
+  dokunmatik=uyku/uyan, çift alkış=kapalı (varsayılanlar). **Uyku:** `clear_pixels+update`, `redrawCurrent()`
+  ve `apps.loop()` uykuda çalışmaz; dokunmatik/enkoder/alkış ya da WS 0x01/02/05/0B/0F uyandırır. Oto
+  parlaklık: `min + (userBri-min)*ışık%`, 1 sn'de bir, ±3 histerezis. Tek alkış eylem üretmez.
+- **Bağlı olmayan sensör zararsız:** dokunmatik pull-down, enkoder pull-up, DHT 3 hatada "yok", oto
+  parlaklık/alkış varsayılan kapalı. Web kartı "Sensörler & kontroller" (`<details>`): canlı değerler, ses
+  çubuğu+eşik çizgisi, eylem select'leri, uyku butonu. JS `node --check` + headless Chromium yüklemesi temiz.
+- **Bellek:** P4 RAM %36.6→%37.0 (+1.4 KB), flash +27 KB; P1.86 RAM %18.3. Her iki env derlendi (pio 6.2, lokal).
+- **Donanımda doğrulanacak (henüz panelde test edilmedi):** LDR yönü ("LDR ters"), mikrofon kartı 3/4 pin
+  (3 pinliyse DO→42), enkoder yönü ("Enkoder ters"), DHT11 zamanlaması (log: `Sensorler:` satırı,
+  telemetride `d:1`), alkış eşiği. İlk testte web LOG'da `Kontrol: ... -> ...` satırlarını izle.
+- **Açık:** kasaya sensör delikleri (`enclosure/generate_case.py`) eklenmedi; iOS app `S:/C:/B:` frame'lerini
+  henüz kullanmıyor (bilinmeyen metin frame'lerini yok saymalı).
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

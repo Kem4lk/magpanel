@@ -18,6 +18,24 @@ FM6363C S-PWM surucu. Register degerleri panelin fabrika .ssx profilinden alindi
 | LAT | LE (komut) | 10 |
 | OE | **GCLK** | 11 |
 
+## Sensörler ve tam bağlantı şeması
+`hardware/` klasöründe koddan üretilen şema (`gen_schematic.py` → `schematic.svg/png`) ve
+pin tablosu var: [hardware/README.md](hardware/README.md). HUB75 kablolaması değişmedi;
+beş JSUMO modülü ESP'nin SAĞ başlığına takılır (hepsi 3V3 ile beslenir):
+
+| Modül | Pin | GPIO |
+|-------|-----|------|
+| LDR Sensor Board | AO | 1 (ADC1) |
+| Microphone Sound Sensor | AO / DO | 2 (ADC1) / 42 (isteğe bağlı) |
+| KY-040 Mechanic Encoder | CLK / DT / SW | 41 / 40 / 39 |
+| DHT11 Temperature & Humidity | DATA | 47 |
+| TTP223B Digital Touch | I/O | 21 |
+
+Firmware tarafı (`include/sensors.h`, `include/sensor_logic.h`): enkoder = parlaklık,
+enkoder/dokunmatik/çift alkış → uyku-uyan / sonraki uygulama / sonraki galeri / oto parlaklık
+(web UI "Sensörler & kontroller" kartından eşlenir, NVS'te kalır); LDR ile oto parlaklık;
+"Oda" (sıcaklık/nem/ışık/saat) ve "Ses" (VU) uygulamaları; 1 Hz `S:` telemetri + `/api/sensors`.
+
 ## Derleme
 VS Code + PlatformIO eklentisi. Proje klasorunu ac -> Build -> Upload.
 (`platformio.ini` ESP32-S3 DevKitC-1 icin hazir.)

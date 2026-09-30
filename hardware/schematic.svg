@@ -1,0 +1,412 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1190" viewBox="0 0 1700 1190">
+<rect width="1700" height="1190" fill="#fbfaf6"/>
+<rect x="20" y="20" width="1660" height="1150" fill="none" stroke="#333" stroke-width="2"/>
+<text x="850" y="52" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="22" text-anchor="middle" fill="#111" font-weight="bold" >MagPanel — bağlantı şeması: ESP32-S3-DevKitC-1 + HUB75E LED panel + sensörler</text>
+<text x="850" y="74" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555" font-weight="normal" >P4 80×120 (3× FM6363C 80×40) ya da P1.86 172×86 (SM16380SH, 1–3 modül) — aynı kablolama; sensör pinleri include/sensors.h</text>
+<rect x="640" y="200" width="300" height="572" rx="8" fill="#f2f5fb" stroke="#1d3557" stroke-width="2.2"/>
+<text x="790" y="178" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" text-anchor="middle" fill="#1d3557" font-weight="bold" >U1  ESP32-S3-DevKitC-1 (N8R8: 8 MB OPI PSRAM, 16 MB flash)</text>
+<text x="790" y="194" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#555" font-weight="normal" >USB-C aşağıda; J1 sol / J3 sağ başlık, üstten alta</text>
+<line x1="600" y1="213" x2="640" y2="213" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="217" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >3V3</text>
+<line x1="600" y1="239" x2="640" y2="239" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="243" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >3V3</text>
+<line x1="600" y1="265" x2="640" y2="265" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="269" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a8f98" font-weight="bold" >RST</text>
+<line x1="600" y1="291" x2="640" y2="291" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="295" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >4</text>
+<line x1="600" y1="317" x2="640" y2="317" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="321" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >5</text>
+<line x1="600" y1="343" x2="640" y2="343" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="347" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >6</text>
+<line x1="600" y1="369" x2="640" y2="369" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="373" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >7</text>
+<line x1="600" y1="395" x2="640" y2="395" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="399" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >15</text>
+<line x1="600" y1="421" x2="640" y2="421" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="425" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >16</text>
+<line x1="600" y1="447" x2="640" y2="447" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="451" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >17</text>
+<line x1="600" y1="473" x2="640" y2="473" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="477" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >18</text>
+<line x1="600" y1="499" x2="640" y2="499" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="503" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >8</text>
+<line x1="600" y1="525" x2="640" y2="525" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="529" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >3</text>
+<line x1="600" y1="551" x2="640" y2="551" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="555" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a8f98" font-weight="bold" >46</text>
+<line x1="600" y1="577" x2="640" y2="577" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="581" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >9</text>
+<line x1="600" y1="603" x2="640" y2="603" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="607" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >10</text>
+<line x1="600" y1="629" x2="640" y2="629" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="633" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >11</text>
+<line x1="600" y1="655" x2="640" y2="655" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="659" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >12</text>
+<line x1="600" y1="681" x2="640" y2="681" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="685" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >13</text>
+<line x1="600" y1="707" x2="640" y2="707" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="711" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >14</text>
+<line x1="600" y1="733" x2="640" y2="733" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="737" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >5V</text>
+<line x1="600" y1="759" x2="640" y2="759" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="648" y="763" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1d3557" font-weight="bold" >GND</text>
+<line x1="940" y1="213" x2="980" y2="213" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="217" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >GND</text>
+<line x1="940" y1="239" x2="980" y2="239" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="243" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >TX</text>
+<text x="986" y="243" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >UART0 (43)</text>
+<line x1="940" y1="265" x2="980" y2="265" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="269" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >RX</text>
+<text x="986" y="269" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >UART0 (44)</text>
+<line x1="940" y1="291" x2="980" y2="291" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="295" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >1</text>
+<line x1="940" y1="317" x2="980" y2="317" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="321" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >2</text>
+<line x1="940" y1="343" x2="980" y2="343" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="347" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >42</text>
+<line x1="940" y1="369" x2="980" y2="369" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="373" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >41</text>
+<line x1="940" y1="395" x2="980" y2="395" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="399" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >40</text>
+<line x1="940" y1="421" x2="980" y2="421" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="425" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >39</text>
+<line x1="940" y1="447" x2="980" y2="447" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="451" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >38</text>
+<text x="986" y="451" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >bos (v1.1 RGB LED)</text>
+<line x1="940" y1="473" x2="980" y2="473" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="477" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >37</text>
+<text x="986" y="477" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >OPI PSRAM - kullanma</text>
+<line x1="940" y1="499" x2="980" y2="499" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="503" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >36</text>
+<text x="986" y="503" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >OPI PSRAM - kullanma</text>
+<line x1="940" y1="525" x2="980" y2="525" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="529" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >35</text>
+<text x="986" y="529" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >OPI PSRAM - kullanma</text>
+<line x1="940" y1="551" x2="980" y2="551" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="555" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >0</text>
+<text x="986" y="555" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >BOOT / strapping</text>
+<line x1="940" y1="577" x2="980" y2="577" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="581" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >45</text>
+<text x="986" y="581" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >strapping - kullanma</text>
+<line x1="940" y1="603" x2="980" y2="603" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="607" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >48</text>
+<text x="986" y="607" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >bos (v1.0 RGB LED)</text>
+<line x1="940" y1="629" x2="980" y2="629" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="633" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >47</text>
+<line x1="940" y1="655" x2="980" y2="655" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="659" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >21</text>
+<line x1="940" y1="681" x2="980" y2="681" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="685" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >20</text>
+<text x="986" y="685" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >USB D+</text>
+<line x1="940" y1="707" x2="980" y2="707" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="711" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#8a8f98" font-weight="bold" >19</text>
+<text x="986" y="711" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="start" fill="#9aa0a8" font-weight="normal" >USB D-</text>
+<line x1="940" y1="733" x2="980" y2="733" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="737" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >GND</text>
+<line x1="940" y1="759" x2="980" y2="759" stroke="#1d3557" stroke-width="1.6" stroke-linecap="round"/>
+<text x="932" y="763" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="end" fill="#1d3557" font-weight="bold" >GND</text>
+<line x1="600" y1="213" x2="600" y2="201" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="594,201 606,201 600,193" fill="#c1121f"/>
+<text x="600" y="189" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="600" y1="239" x2="600" y2="227" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="594,227 606,227 600,219" fill="#c1121f"/>
+<text x="600" y="215" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<text x="586" y="217" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="end" fill="#c1121f" font-weight="normal" >3V3 → sensörler (≤ 500 mA)</text>
+<line x1="980" y1="213" x2="980" y2="223" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="971" y1="223" x2="989" y2="223" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="974" y1="227" x2="986" y2="227" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="977" y1="231" x2="983" y2="231" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="980" y1="733" x2="980" y2="743" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="971" y1="743" x2="989" y2="743" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="974" y1="747" x2="986" y2="747" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="977" y1="751" x2="983" y2="751" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="980" y1="759" x2="980" y2="769" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="971" y1="769" x2="989" y2="769" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="974" y1="773" x2="986" y2="773" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="977" y1="777" x2="983" y2="777" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="980" y1="733" x2="980" y2="759" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<text x="790" y="788" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="middle" fill="#666" font-weight="normal" >USB-C (programlama/seri) — 5 V PSU takılıyken de bağlanabilir (kart üstünde diyot)</text>
+<rect x="330" y="278" width="140" height="442" rx="8" fill="#f7f3ea" stroke="#5c4a1e" stroke-width="2"/>
+<text x="400" y="254" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" text-anchor="middle" fill="#5c4a1e" font-weight="bold" >J2  HUB75E (IDC 2×8, panel girişi)</text>
+<text x="400" y="270" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="middle" fill="#666" font-weight="normal" >sembol sırası = ESP başlığı; fiziksel pinout sol üstte</text>
+<text x="340" y="295" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#d33" font-weight="bold" >R1   pin 1</text>
+<line x1="470" y1="291" x2="600" y2="291" stroke="#d33" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="287" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#d33" font-weight="normal" >GPIO4</text>
+<text x="340" y="321" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#2a9d3a" font-weight="bold" >G1   pin 2</text>
+<line x1="470" y1="317" x2="600" y2="317" stroke="#2a9d3a" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="313" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#2a9d3a" font-weight="normal" >GPIO5</text>
+<text x="340" y="347" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#2b6fd6" font-weight="bold" >B1   pin 3</text>
+<line x1="470" y1="343" x2="600" y2="343" stroke="#2b6fd6" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="339" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#2b6fd6" font-weight="normal" >GPIO6</text>
+<text x="340" y="373" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#d33" font-weight="bold" >R2   pin 5</text>
+<line x1="470" y1="369" x2="600" y2="369" stroke="#d33" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="365" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#d33" font-weight="normal" >GPIO7</text>
+<text x="340" y="399" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#2a9d3a" font-weight="bold" >G2   pin 6</text>
+<line x1="470" y1="395" x2="600" y2="395" stroke="#2a9d3a" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="391" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#2a9d3a" font-weight="normal" >GPIO15</text>
+<text x="340" y="425" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#2b6fd6" font-weight="bold" >B2   pin 7</text>
+<line x1="470" y1="421" x2="600" y2="421" stroke="#2b6fd6" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="417" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#2b6fd6" font-weight="normal" >GPIO16</text>
+<text x="340" y="451" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a5a00" font-weight="bold" >LAT2 pin 14</text>
+<line x1="470" y1="447" x2="600" y2="447" stroke="#8a5a00" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<text x="535" y="443" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#8a5a00" font-weight="normal" >GPIO17 *</text>
+<text x="340" y="477" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#444" font-weight="bold" >A    pin 9</text>
+<line x1="470" y1="473" x2="600" y2="473" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="469" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#444" font-weight="normal" >GPIO18</text>
+<text x="340" y="503" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#444" font-weight="bold" >B    pin 10</text>
+<line x1="470" y1="499" x2="600" y2="499" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="495" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#444" font-weight="normal" >GPIO8</text>
+<text x="340" y="529" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#444" font-weight="bold" >C    pin 11</text>
+<line x1="470" y1="525" x2="600" y2="525" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="521" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#444" font-weight="normal" >GPIO3</text>
+<text x="340" y="555" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#000" font-weight="bold" >GND  (pin 4,16)</text>
+<line x1="470" y1="551" x2="492" y2="551" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="492" y1="551" x2="492" y2="561" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="483" y1="561" x2="501" y2="561" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="486" y1="565" x2="498" y2="565" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="489" y1="569" x2="495" y2="569" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="340" y="581" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#444" font-weight="bold" >D    pin 12</text>
+<line x1="470" y1="577" x2="600" y2="577" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="573" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#444" font-weight="normal" >GPIO9</text>
+<text x="340" y="607" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a5a00" font-weight="bold" >LAT  pin 14</text>
+<line x1="470" y1="603" x2="600" y2="603" stroke="#8a5a00" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="599" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#8a5a00" font-weight="normal" >GPIO10</text>
+<text x="340" y="633" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a5a00" font-weight="bold" >OE   pin 15</text>
+<line x1="470" y1="629" x2="600" y2="629" stroke="#8a5a00" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="625" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#8a5a00" font-weight="normal" >GPIO11</text>
+<text x="340" y="659" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a5a00" font-weight="bold" >CLK  pin 13</text>
+<line x1="470" y1="655" x2="600" y2="655" stroke="#8a5a00" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="651" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#8a5a00" font-weight="normal" >GPIO12</text>
+<text x="340" y="685" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#444" font-weight="bold" >E    pin 8</text>
+<line x1="470" y1="681" x2="600" y2="681" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>
+<text x="535" y="677" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#444" font-weight="normal" >GPIO13</text>
+<text x="340" y="711" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#8a5a00" font-weight="bold" >LAT3 pin 14</text>
+<line x1="470" y1="707" x2="600" y2="707" stroke="#8a5a00" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<text x="535" y="703" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#8a5a00" font-weight="normal" >GPIO14 *</text>
+<rect x="40" y="90" width="240" height="160" rx="6" fill="#fff" stroke="#5c4a1e" stroke-width="1.4"/>
+<text x="160" y="108" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="middle" fill="#5c4a1e" font-weight="bold" >HUB75E dişi konektör (panel IN), üstten</text>
+<text x="110" y="126" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" > R1  1</text>
+<rect x="126" y="117" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="117" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="126" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >2  G1</text>
+<text x="110" y="141" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" > B1  3</text>
+<rect x="126" y="132" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="132" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="141" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >4  GND</text>
+<text x="110" y="156" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" > R2  5</text>
+<rect x="126" y="147" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="147" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="156" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >6  G2</text>
+<text x="110" y="171" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" > B2  7</text>
+<rect x="126" y="162" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="162" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="171" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >8  E</text>
+<text x="110" y="186" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" >  A  9</text>
+<rect x="126" y="177" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="177" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="186" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >10 B</text>
+<text x="110" y="201" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" >  C 11</text>
+<rect x="126" y="192" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="192" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="201" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >12 D</text>
+<text x="110" y="216" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" >CLK 13</text>
+<rect x="126" y="207" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="207" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="216" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >14 LAT</text>
+<text x="110" y="231" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="end" fill="#222" font-weight="normal" > OE 15</text>
+<rect x="126" y="222" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<rect x="144" y="222" width="10" height="10" fill="#ddd" stroke="#555" stroke-width="0.8"/>
+<text x="170" y="231" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="start" fill="#222" font-weight="normal" >16 GND</text>
+<text x="160" y="242" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" font-weight="normal" >pin 1 = çentik yanı (kabloda kırmızı damar)</text>
+<rect x="60" y="800" width="200" height="90" rx="8" fill="#fff3f3" stroke="#c1121f" stroke-width="2"/>
+<text x="160" y="822" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle" fill="#c1121f" font-weight="bold" >PSU  5 V DC</text>
+<text x="160" y="840" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" text-anchor="middle" fill="#c1121f" font-weight="normal" >≥ 20 A (tepe, tam beyaz)</text>
+<text x="160" y="856" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" text-anchor="middle" fill="#666" font-weight="normal" >tipik yük 3–6 A</text>
+<text x="160" y="874" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="middle" fill="#666" font-weight="normal" >220 V girişi izole/topraklı</text>
+<line x1="260" y1="828" x2="280" y2="828" stroke="#c1121f" stroke-width="3" stroke-linecap="round"/>
+<text x="286" y="832" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="13" text-anchor="start" fill="#c1121f" font-weight="bold" >+</text>
+<line x1="260" y1="862" x2="280" y2="862" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+<text x="286" y="866" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="13" text-anchor="start" fill="#000" font-weight="bold" >−</text>
+<rect x="380" y="800" width="190" height="90" rx="6" fill="#fff" stroke="#c1121f" stroke-width="1.6"/>
+<text x="475" y="820" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >J4  panel güç (VH3.96 ×3)</text>
+<text x="475" y="836" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="middle" fill="#666" font-weight="normal" >her modüle VCC + GND</text>
+<text x="475" y="852" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="middle" fill="#666" font-weight="normal" >kalın kablo ≥ 1.5 mm², kısa</text>
+<text x="475" y="868" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="middle" fill="#666" font-weight="normal" >P4: ~30 W/modül tepe  P1.86: ~31 W</text>
+<line x1="300" y1="828" x2="380" y2="828" stroke="#c1121f" stroke-width="3.2" stroke-linecap="round"/>
+<line x1="300" y1="862" x2="380" y2="862" stroke="#000" stroke-width="3.2" stroke-linecap="round"/>
+<circle cx="300" cy="828" r="4" fill="#c1121f"/>
+<line x1="300" y1="828" x2="300" y2="733" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="300" y1="733" x2="600" y2="733" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="322" cy="862" r="4" fill="#000"/>
+<line x1="322" y1="862" x2="322" y2="759" stroke="#000" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="322" y1="759" x2="600" y2="759" stroke="#000" stroke-width="2.2" stroke-linecap="round"/>
+<text x="461" y="728" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#c1121f" font-weight="normal" >5V (VIN) — kart regülatörü 3V3 üretir</text>
+<text x="461" y="773" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="10" text-anchor="middle" fill="#000" font-weight="bold" >ORTAK GND: PSU − = panel GND = ESP GND (zorunlu)</text>
+<rect x="1290" y="118" width="270" height="84" rx="8" fill="#eef8f0" stroke="#1b5e20" stroke-width="2"/>
+<text x="1300" y="112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" text-anchor="start" fill="#1b5e20" font-weight="bold" >U2  LDR Sensor Board (JSUMO 16067)</text>
+<line x1="1250" y1="134" x2="1290" y2="134" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="138" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >VCC</text>
+<line x1="1250" y1="134" x2="1250" y2="122" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="1244,122 1256,122 1250,114" fill="#c1121f"/>
+<text x="1250" y="110" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="1250" y1="160" x2="1290" y2="160" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="164" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >AO</text>
+<text x="1348" y="164" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >ADC1_CH0 - isik (0..3.1 V)</text>
+<line x1="1250" y1="186" x2="1290" y2="186" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="190" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >GND</text>
+<line x1="1250" y1="186" x2="1250" y2="196" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1241" y1="196" x2="1259" y2="196" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1244" y1="200" x2="1256" y2="200" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1247" y1="204" x2="1253" y2="204" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1300" y="215" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >LDR panelin kendi isigini GORMEMELI (oto-parlaklik salinir):</text>
+<text x="1300" y="228" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >ust kenarda one/yukari bakan 3-4 mm delik, isik siperi.</text>
+<rect x="1290" y="260" width="270" height="110" rx="8" fill="#eef8f0" stroke="#1b5e20" stroke-width="2"/>
+<text x="1300" y="254" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" text-anchor="start" fill="#1b5e20" font-weight="bold" >U3  Microphone Sound Sensor (JSUMO 15771)</text>
+<line x1="1250" y1="276" x2="1290" y2="276" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="280" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >VCC</text>
+<line x1="1250" y1="276" x2="1250" y2="264" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="1244,264 1256,264 1250,256" fill="#c1121f"/>
+<text x="1250" y="252" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="1250" y1="302" x2="1290" y2="302" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="306" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >AO</text>
+<text x="1348" y="306" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >ADC1_CH1 - ses zarfi</text>
+<line x1="1250" y1="328" x2="1290" y2="328" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="332" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >DO</text>
+<text x="1348" y="332" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >komparator (istege bagli; 3 pinli kartta tek cikis)</text>
+<line x1="1250" y1="354" x2="1290" y2="354" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="358" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >GND</text>
+<line x1="1250" y1="354" x2="1250" y2="364" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1241" y1="364" x2="1259" y2="364" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1244" y1="368" x2="1256" y2="368" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1247" y1="372" x2="1253" y2="372" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1300" y="383" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >Kart potansiyometresi + web'deki 'Alkis esigi' birlikte ayarlanir;</text>
+<text x="1300" y="396" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >kasada 2-3 mm ses deligi yeterli.</text>
+<rect x="1290" y="428" width="270" height="136" rx="8" fill="#eef8f0" stroke="#1b5e20" stroke-width="2"/>
+<text x="1300" y="422" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" text-anchor="start" fill="#1b5e20" font-weight="bold" >U4  Mechanic Encoder Module KY-040 (JSUMO)</text>
+<line x1="1250" y1="444" x2="1290" y2="444" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="448" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >CLK</text>
+<text x="1348" y="448" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >A fazi (kart ustu 10 k pull-up)</text>
+<line x1="1250" y1="470" x2="1290" y2="470" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="474" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >DT</text>
+<text x="1348" y="474" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >B fazi</text>
+<line x1="1250" y1="496" x2="1290" y2="496" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="500" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >SW</text>
+<text x="1348" y="500" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >buton, aktif DUSUK (dahili pull-up)</text>
+<line x1="1250" y1="522" x2="1290" y2="522" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="526" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >+</text>
+<line x1="1250" y1="522" x2="1250" y2="510" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="1244,510 1256,510 1250,502" fill="#c1121f"/>
+<text x="1250" y="498" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="1250" y1="548" x2="1290" y2="548" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="552" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >GND</text>
+<line x1="1250" y1="548" x2="1250" y2="558" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1241" y1="558" x2="1259" y2="558" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1244" y1="562" x2="1256" y2="562" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1247" y1="566" x2="1253" y2="566" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1300" y="577" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >Titreme icin CLK/DT/SW - GND arasina 100 nF onerilir</text>
+<text x="1300" y="590" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >(yazilim tablosu zaten toleransli). Mil kasa yan duvarindan disari.</text>
+<rect x="1290" y="622" width="270" height="84" rx="8" fill="#eef8f0" stroke="#1b5e20" stroke-width="2"/>
+<text x="1300" y="616" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" text-anchor="start" fill="#1b5e20" font-weight="bold" >U5  DHT11 Temperature &amp; Humidity Board (JSUMO 15579)</text>
+<line x1="1250" y1="638" x2="1290" y2="638" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="642" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >+</text>
+<line x1="1250" y1="638" x2="1250" y2="626" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="1244,626 1256,626 1250,618" fill="#c1121f"/>
+<text x="1250" y="614" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="1250" y1="664" x2="1290" y2="664" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="668" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >DATA</text>
+<text x="1348" y="668" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >1-wire benzeri; kart ustu 10 k pull-up</text>
+<line x1="1250" y1="690" x2="1290" y2="690" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="694" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >-</text>
+<line x1="1250" y1="690" x2="1250" y2="700" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1241" y1="700" x2="1259" y2="700" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1244" y1="704" x2="1256" y2="704" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1247" y1="708" x2="1253" y2="708" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1300" y="719" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >Kasa ICINE koyma (LED isisi olcumu bozar): ust kenardaki</text>
+<text x="1300" y="732" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >havalandirma yuvasina, dis havada.</text>
+<rect x="1290" y="764" width="270" height="84" rx="8" fill="#eef8f0" stroke="#1b5e20" stroke-width="2"/>
+<text x="1300" y="758" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" text-anchor="start" fill="#1b5e20" font-weight="bold" >U6  TTP223B Digital Touch Sensor (JSUMO 17538)</text>
+<line x1="1250" y1="780" x2="1290" y2="780" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="784" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >VCC</text>
+<line x1="1250" y1="780" x2="1250" y2="768" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="1244,768 1256,768 1250,760" fill="#c1121f"/>
+<text x="1250" y="756" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<line x1="1250" y1="806" x2="1290" y2="806" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="810" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >I/O</text>
+<text x="1348" y="810" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#555" font-weight="normal" >aktif YUKSEK, anlik (A/B pedleri bos); dahili pull-down</text>
+<line x1="1250" y1="832" x2="1290" y2="832" stroke="#1b5e20" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1300" y="836" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="12" text-anchor="start" fill="#1b5e20" font-weight="bold" >GND</text>
+<line x1="1250" y1="832" x2="1250" y2="842" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1241" y1="842" x2="1259" y2="842" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1244" y1="846" x2="1256" y2="846" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1247" y1="850" x2="1253" y2="850" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1300" y="861" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >Ped kasa duvarinin IC yuzune yapistirilir (&lt;= 3 mm plastikten</text>
+<text x="1300" y="874" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" text-anchor="start" fill="#4a6b4f" font-weight="normal" >algilar): on yuz temiz kalir, gorunur dugme yok.</text>
+<line x1="980" y1="291" x2="1130" y2="291" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1130" y1="291" x2="1130" y2="160" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1130" y1="160" x2="1250" y2="160" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1134" y="229" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G1</text>
+<line x1="980" y1="317" x2="1146" y2="317" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1146" y1="317" x2="1146" y2="302" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1146" y1="302" x2="1250" y2="302" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1150" y="313" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G2</text>
+<line x1="980" y1="343" x2="1162" y2="343" stroke="#6b8f71" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<line x1="1162" y1="343" x2="1162" y2="328" stroke="#6b8f71" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<line x1="1162" y1="328" x2="1250" y2="328" stroke="#6b8f71" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<text x="1166" y="339" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#6b8f71" font-weight="normal" >G42</text>
+<line x1="980" y1="369" x2="1194" y2="369" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1194" y1="369" x2="1194" y2="444" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1194" y1="444" x2="1250" y2="444" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1198" y="410" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G41</text>
+<line x1="980" y1="395" x2="1178" y2="395" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1178" y1="395" x2="1178" y2="470" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1178" y1="470" x2="1250" y2="470" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1182" y="436" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G40</text>
+<line x1="980" y1="421" x2="1162" y2="421" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1162" y1="421" x2="1162" y2="496" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1162" y1="496" x2="1250" y2="496" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1166" y="462" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G39</text>
+<line x1="980" y1="629" x2="1146" y2="629" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1146" y1="629" x2="1146" y2="664" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1146" y1="664" x2="1250" y2="664" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1150" y="650" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G47</text>
+<line x1="980" y1="655" x2="1130" y2="655" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1130" y1="655" x2="1130" y2="806" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="1130" y1="806" x2="1250" y2="806" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1134" y="734" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="9.5" text-anchor="start" fill="#1b5e20" font-weight="normal" >G21</text>
+<rect x="40" y="905" width="1620" height="180" rx="6" fill="#fff" stroke="#333" stroke-width="1.4"/>
+<text x="52" y="925" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" text-anchor="start" fill="#111" font-weight="bold" >NOTLAR</text>
+<text x="52" y="945" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >1. Tüm sensörler ESP'nin 3V3 pininden beslenir. ESP32-S3 GPIO'ları 5 V toleranslı DEĞİLDİR; sensörleri 5 V'a bağlama.</text>
+<text x="52" y="964" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >2. Analog çıkışlar (LDR AO, mikrofon AO) yalnız ADC1 = GPIO1..10. ADC2 (GPIO11..20) WiFi açıkken okunamaz.</text>
+<text x="52" y="983" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >3. Ortak toprak zorunlu: PSU −, panel GND ve ESP GND aynı düğüm. Panel güç kablosu kalın ve kısa; HUB75 şeridinde ≥ 2 GND.</text>
+<text x="52" y="1002" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >4. DHT11 kartında 10 kΩ pull-up var; çıplak sensörde DATA–3V3 arasına 4.7–10 kΩ ekle. Okuma 3 sn'de bir, firmware kütüphanesiz.</text>
+<text x="52" y="1021" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >5. TTP223B: A/B pedleri boş → anlık mod, aktif YÜKSEK. Ped kasa duvarının iç yüzüne yapıştırılırsa ≤ 3 mm plastikten algılar.</text>
+<text x="52" y="1040" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >6. KY-040: CLK/DT kart üstünde 10 kΩ pull-up; SW için ESP dahili pull-up. Yön ters gelirse web'den 'Enkoder ters' ya da CLK↔DT.</text>
+<text x="52" y="1059" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >7. LDR panel ışığını görmemeli (oto-parlaklık geri besleme → salınım); mikrofon ve LDR için ön/üst kenarda küçük delik.</text>
+<text x="852" y="945" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >8. Mikrofon kartı 4 pinliyse AO→GPIO2 (asıl) + DO→GPIO42 (isteğe bağlı); 3 pinliyse tek çıkışı GPIO42'ye (DO) bağla.</text>
+<text x="852" y="964" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >9. GPIO 33–37 OPI PSRAM, 19/20 USB, 0/45/46 strapping, 43/44 UART0: sensör için kullanma. 38/48 = bazı kartlarda RGB LED.</text>
+<text x="852" y="983" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >10. Boş bırakılan sensör zararsızdır: dokunmatik pull-down, enkoder pull-up, DHT 'yok' gösterir; oto-parlaklık ve alkış varsayılan kapalı.</text>
+<text x="852" y="1002" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >11. Güç: P4 modül tepe ~30 W (tam beyaz, parlaklık 255) → 3 modül ≤ 90 W; P1.86 ≈ 31 W/modül. Firmware varsayılanı (110/255) bunu ~yarıya indirir.</text>
+<text x="852" y="1021" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >12. LAT2/LAT3 (kesikli): yalnız çoklu P1.86 — 2./3. modülün HUB75 pin 14'ü. R/G/B, CLK, OE, A–E tüm modüllere paralel; tek P4/P1.86'da boş.</text>
+<text x="852" y="1040" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.6" text-anchor="start" fill="#222" font-weight="normal" >13. Modül pin sırası (soldan, kart yazısını doğrula): KY-040 GND·+·SW·DT·CLK | TTP223B GND·VCC·I/O | DHT11 +·OUT·− | LDR/Mic 3p VCC·GND·AO(DO), 4p AO·G·+·DO.</text>
+<rect x="1230" y="1098" width="430" height="66" rx="4" fill="#fff" stroke="#333" stroke-width="1.6"/>
+<text x="1240" y="1118" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" text-anchor="start" fill="#111" font-weight="bold" >MagPanel — bağlantı şeması</text>
+<text x="1240" y="1136" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#555" font-weight="normal" >Rev 1 · 2026-09-29 · hardware/gen_schematic.py ile üretildi</text>
+<text x="1240" y="1150" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" text-anchor="start" fill="#777" font-weight="normal" >Kaynak: include/sensors.h, include/app_constants.hpp, include/panel_sm16380.h</text>
+<text x="60" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" text-anchor="start" fill="#333" font-weight="bold" >Lejant:</text>
+<line x1="120" y1="1108" x2="160" y2="1108" stroke="#1b5e20" stroke-width="1.8" stroke-linecap="round"/>
+<text x="166" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#333" font-weight="normal" >sinyal</text>
+<line x1="220" y1="1108" x2="260" y2="1108" stroke="#6b8f71" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="6,5"/>
+<text x="266" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#333" font-weight="normal" >isteğe bağlı</text>
+<line x1="360" y1="1108" x2="400" y2="1108" stroke="#c1121f" stroke-width="3.2" stroke-linecap="round"/>
+<text x="406" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#333" font-weight="normal" >5 V güç</text>
+<line x1="490" y1="1114" x2="490" y2="1102" stroke="#c1121f" stroke-width="1.6" stroke-linecap="round"/>
+<polygon points="484,1102 496,1102 490,1094" fill="#c1121f"/>
+<text x="490" y="1090" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="11" text-anchor="middle" fill="#c1121f" font-weight="bold" >3V3</text>
+<text x="504" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#333" font-weight="normal" >3V3 bayrağı</text>
+<line x1="600" y1="1102" x2="600" y2="1112" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="591" y1="1112" x2="609" y2="1112" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="594" y1="1116" x2="606" y2="1116" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<line x1="597" y1="1120" x2="603" y2="1120" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+<text x="616" y="1112" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#333" font-weight="normal" >toprak</text>
+<text x="60" y="1134" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" text-anchor="start" fill="#555" font-weight="normal" >HUB75 renkleri: kırmızı/yeşil/mavi = R/G/B verisi, kahverengi = saat/latch/OE, gri = satır adresi A–E. Sensör pinleri: include/sensors.h (−D ile değiştirilebilir).</text>
+</svg>

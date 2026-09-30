@@ -74,6 +74,14 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 .sact{display:flex;gap:4px;flex:0 0 auto}
 .sact button{padding:7px 9px;font-size:12px}
 .sact .sdel{color:var(--err);font-weight:700}
+.sens{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.sv{background:#1c2027;border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center}
+.sv b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.sv i{font-style:normal;font-size:10px;color:var(--mut)}
+.meter{position:relative;height:8px;background:#1c2027;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:2px 0 6px}
+#smBar{height:100%;width:0;background:linear-gradient(90deg,#4ade80,#ffb454 70%,#f87171);transition:width .1s}
+#smThr{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:40%}
+.sel{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:#1c2027;color:var(--txt);font:inherit}
 </style></head><body>
 <header><h1>Mag<b>Panel</b></h1><span class=ver>{{VER}} &middot; {{PN}} {{PW}}&times;{{PH}}</span>
 <span class=dot id=dot></span></header>
@@ -93,6 +101,8 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button onclick="appTimer()">Timer</button>
 <button onclick="appWeather()">Hava</button>
 <button onclick="appSel(4)">Dünya Kupası</button>
+<button onclick="appSel(6)">Oda</button>
+<button onclick="appSel(7)">Ses</button>
 </div>
 <div class=row>
 <input id=timermin type=number min=0 max=99 value=5 title="Timer dakika"
@@ -104,7 +114,7 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <button onclick="appSpotify()">Spotify</button>
 <button onclick="appSel(0)">Kapat</button>
 </div>
-<div class=hint>Panelde firmware tarafında çalışır; veriyi panel kendisi çeker, tarayıcı kapanabilir. Hava için şehir yazıp "Hava"ya bas. Son açık uygulama reboot'ta geri gelir.</div>
+<div class=hint>Panelde firmware tarafında çalışır; veriyi panel kendisi çeker, tarayıcı kapanabilir. Hava için şehir yazıp "Hava"ya bas. "Oda" = DHT11 sıcaklık/nem + ışık + saat, "Ses" = mikrofon seviyesi (VU). Son açık uygulama reboot'ta geri gelir.</div>
 </div>
 
 <div class=card><h2>Görsel &amp; Çizim</h2>
@@ -173,6 +183,32 @@ footer a{color:var(--mut);font-size:12px;text-decoration:none}
 <div class=hint2>Flicker testi: panelde 33 fazlik otomatik desen dizisi calisir (~87sn) — duz renkler, gri kademeleri, cizgiler ve DCLK sweep (80&rarr;8 = 2&rarr;20&nbsp;MHz). Paneli videoya cek; sol-ust kosedeki "Pxx" etiketi hangi fazda oldugunu gosterir. Tekrar bas = durdur.</div>
 </details></div>
 
+<div class=card><details><summary>Sensörler &amp; kontroller</summary>
+<div class=sens>
+<div class=sv><b id=svT>—</b><i>°C</i></div>
+<div class=sv><b id=svH>—</b><i>% nem</i></div>
+<div class=sv><b id=svL>—</b><i>% ışık</i></div>
+<div class=sv><b id=svS>—</b><i>ses</i></div>
+</div>
+<div class=meter><div id=smBar></div><div id=smThr></div></div>
+<div class=hint2 id=sensSt>Telemetri bekleniyor… (bağlanınca saniyede bir gelir)</div>
+<div class=row>
+<button id=sbBtn onclick="sleepToggle()">Uyku</button>
+<button id=abBtn onclick="autoBriToggle()">Oto parlaklık: kapalı</button>
+</div>
+<label><span>Min parlaklık</span><input type=range id=bmin min=0 max=150 value=10 oninput="bminv.value=this.value" onchange="sendAutoBri()"><output id=bminv>10</output></label>
+<label><span>LDR ters</span><input type=checkbox id=linv onchange="sendAutoBri()"><em class=hint2 style="margin:0">ışık artınca "% ışık" DÜŞÜYORSA işaretle</em></label>
+<div class=tuneh>Fiziksel kontroller &rarr; eylem</div>
+<label><span>Enkoder bas</span><select id=actP class=sel onchange="sendActs()"></select></label>
+<label><span>Uzun bas</span><select id=actL class=sel onchange="sendActs()"></select></label>
+<label><span>Dokunmatik</span><select id=actT class=sel onchange="sendActs()"></select></label>
+<label><span>Çift alkış</span><select id=actC class=sel onchange="sendActs()"></select></label>
+<label><span>Alkış eşiği</span><input type=range id=thr min=5 max=100 value=40 oninput="thrv.value=this.value;drawMeter()" onchange="sendThr()"><output id=thrv>40</output></label>
+<label><span>Enkoder adım</span><input type=range id=estep min=1 max=32 value=8 oninput="estepv.value=this.value" onchange="sendEnc()"><output id=estepv>8</output></label>
+<label><span>Enkoder ters</span><input type=checkbox id=einv onchange="sendEnc()"></label>
+<div class=hint2>Enkoder çevirme = parlaklık (oto parlaklık açıkken tavan; LDR karanlıkta "Min parlaklık"a iner). <b>Uyku</b>: panel kararır, içerik ve uygulama korunur; dokunmatik, enkoder, çift alkış ya da bu sayfadan içerik/uygulama göndermek uyandırır. Alkış için ses çubuğuna bak: alkışta çubuk eşik çizgisini geçmeli, konuşmada geçmemeli (kart potansiyometresi + eşik). Ayarlar panelde (NVS) saklanır. Pinler: LDR GPIO1, mikrofon GPIO2 (DO 42), enkoder 41/40/39, DHT11 47, dokunmatik 21 — <a href="https://github.com/Kem4lk/magpanel/tree/main/hardware" style="color:var(--acc)">şema</a>.</div>
+</details></div>
+
 <div class=card><div class=loghdr><span>LOG</span>
 <button id=logbtn class=logbtn onclick="toggleLog()">Durdur</button></div>
 <pre id=logbox class=logbox></pre></div>
@@ -209,7 +245,10 @@ function connect(){
   if(e.data.startsWith('L:'))addLog(e.data.slice(2));
   else if(e.data.startsWith('G:')){try{buildGallery(JSON.parse(e.data.slice(2)));}catch(_){}}
   else if(e.data.startsWith('D:')){const m=/^D:(\d+)x(\d+)/.exec(e.data);   // panel boyutu (iOS app de kullanir)
-   if(m&&(+m[1]!==PW||+m[2]!==PH))location.reload();}};
+   if(m&&(+m[1]!==PW||+m[2]!==PH))location.reload();}
+  else if(e.data.startsWith('S:')){try{onTelemetry(JSON.parse(e.data.slice(2)));}catch(_){}}   // 1 Hz sensor telemetrisi
+  else if(e.data.startsWith('C:')){try{onSensConfig(JSON.parse(e.data.slice(2)));}catch(_){}} // sensor ayarlari + parlaklik
+  else if(e.data.startsWith('B:')){const v=+e.data.slice(2);if(v>0&&+br.value!==v){br.value=v;brv.value=v;}}};
 }
 connect();
 function setGhBtn(disabled,html){const b=document.querySelector('.ghbtn');if(b){b.disabled=disabled;b.innerHTML=html;}}
@@ -598,7 +637,7 @@ function setDclk(d,btn){                          // canli DCLK ayari (opcode 0x
 
 // ====== Uygulamalar (firmware tarafi render; opcode 0x0B/0x0C/0x0D) ======
 function appSel(id){stopGif();ws.send(new Uint8Array([0x0B,id]));
- addLog('Uygulama: '+['kapat','saat','timer','hava','dunya kupasi','spotify'][id]);}
+ addLog('Uygulama: '+['kapat','saat','timer','hava','dunya kupasi','spotify','oda','ses'][id]);}
 function appTimer(){stopGif();
  const mn=parseInt(document.getElementById('timermin').value)||0;
  const sec=Math.max(0,Math.min(5999,mn*60));
@@ -682,6 +721,33 @@ function testPanels(){stopGif();
 function testW(){stopGif();ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);sendFrame();}
 function testRamp(){stopGif();for(let i=0;i<6;i++){const v=40+i*43,y0=Math.round(i*PH/6),y1=Math.round((i+1)*PH/6);
  ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(0,y0,PW,y1-y0);}sendFrame();}
+// ====== Sensörler & kontroller (opcode 0x11 ayar, 0x12 uyku; "S:" telemetri, "C:" ayar, "B:" parlaklik) ======
+const ACTS=['—','Uyku / uyan','Sonraki uygulama','Sonraki galeri','Oto parlaklık aç/kapat'];
+['actP','actL','actT','actC'].forEach(id=>{const s=document.getElementById(id);
+ ACTS.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;s.appendChild(o);});});
+let abOn=false,sbOn=false;
+function wsOk(){if(ws&&ws.readyState===1)return true;addLog('WS bagli degil');return false;}
+function sendAutoBri(){if(!wsOk())return;ws.send(new Uint8Array([0x11,1,abOn?1:0,+bmin.value,linv.checked?1:0]));}
+function autoBriToggle(){abOn=!abOn;setAbBtn();sendAutoBri();}
+function setAbBtn(){abBtn.textContent='Oto parlaklık: '+(abOn?'AÇIK':'kapalı');abBtn.classList.toggle('acc',abOn);}
+function sendActs(){if(!wsOk())return;ws.send(new Uint8Array([0x11,2,+actP.value,+actL.value,+actT.value,+actC.value]));}
+function sendThr(){if(!wsOk())return;ws.send(new Uint8Array([0x11,3,+thr.value]));}
+function sendEnc(){if(!wsOk())return;ws.send(new Uint8Array([0x11,4,+estep.value,einv.checked?1:0]));}
+function sleepToggle(){if(!wsOk())return;stopGif();ws.send(new Uint8Array([0x12,2]));}
+function drawMeter(){smThr.style.left=thr.value+'%';}
+function setSbBtn(){sbBtn.textContent=sbOn?'Uyan (uykuda)':'Uyku';sbBtn.classList.toggle('acc',sbOn);}
+function onSensConfig(c){   // "C:" panel ayarlari -> kontrolleri doldur (baglaninca + her degisimde)
+ abOn=!!c.ab;setAbBtn();bmin.value=c.bmin;bminv.value=c.bmin;linv.checked=!!c.linv;
+ actP.value=c.pa;actL.value=c.la;actT.value=c.ta;actC.value=c.ca;
+ thr.value=c.thr;thrv.value=c.thr;drawMeter();estep.value=c.step;estepv.value=c.step;einv.checked=!!c.einv;
+ if(c.b!==undefined){br.value=c.b;brv.value=c.b;}
+ sbOn=!!c.sb;setSbBtn();}
+function onTelemetry(s){    // "S:" 1 Hz
+ svT.textContent=s.d?s.t:'—';svH.textContent=s.d?s.h:'—';svL.textContent=s.l;svS.textContent=s.s;
+ smBar.style.width=Math.min(100,Math.max(s.p||0,s.s||0))+'%';
+ if(sbOn!==!!s.sb){sbOn=!!s.sb;setSbBtn();}
+ if(abOn!==!!s.ab){abOn=!!s.ab;setAbBtn();}
+ sensSt.textContent=(s.d?'DHT11 ok':'DHT11 yok')+' · parlaklık '+s.b+(s.ab?' → etkin '+s.eb:'')+(s.sb?' · UYKUDA':'')+(s.tc?' · dokunuluyor':'')+(s.eh?' · enkoder basılı':'');}
 // Flicker self-test (firmware tarafi, opcode 0x0F) baslat/durdur
 let ftOn=false;
 function ftToggle(){

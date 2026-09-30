@@ -25,6 +25,7 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include "panel.h"
+#include "sensors.h"
 
 // Dunya Kupasi icin TheSportsDB lig ID'si (server-side fetch, CORS sorunu yok).
 // "4429" = FIFA World Cup (TheSportsDB). Veri gelmezse web LOG'da uyari cikar;
@@ -44,6 +45,9 @@ enum AppMode : uint8_t {
   APP_WEATHER  = 3,
   APP_WORLDCUP = 4,
   APP_SPOTIFY  = 5,
+  APP_ROOM     = 6,   // ic mekan: DHT11 sicaklik/nem + LDR isik + saat (sensors.h)
+  APP_SOUND    = 7,   // ses seviyesi (VU) - mikrofon zarfi
+  APP_MAX      = 7,
 };
 
 class Apps {
@@ -57,7 +61,7 @@ class Apps {
     { String c = cfg.getString("city", ""); strlcpy(_city, c.c_str(), sizeof(_city)); }
     uint8_t saved = cfg.getUChar("app", APP_NONE);
     cfg.end();
-    if (saved >= APP_CLOCK && saved <= APP_SPOTIFY) {
+    if (saved >= APP_CLOCK && saved <= APP_MAX) {
       _app = (AppMode)saved;          // boot'ta son uygulamayi ac
       _lastRender = 0; _lastFetch = 0;
     }
@@ -65,6 +69,14 @@ class Apps {
 
   AppMode mode() const { return _app; }
   bool active() const { return _app != APP_NONE; }
+  // Sensor okumalari (Oda/Ses uygulamalari, Hava'daki ic mekan satiri). nullptr = sensor yok.
+  void setSensors(const Sensors* s) { _sens = s; }
+  // Bir sonraki loop()'ta hemen yeniden ciz (uykudan uyaninca / parlaklik degisince)
+  void redraw() { _lastRender = 0; }
+  static const char* name(uint8_t id) {
+    static const char* N[APP_MAX + 1] = { "kapat", "saat", "timer", "hava", "dunya kupasi", "spotify", "oda", "ses" };
+    return id <= APP_MAX ? N[id] : "?";
+  }
 
   // Gecici kapat (kullanici resim/video/galeri gonderince). SADECE bellekte;
   // NVS'teki "home" uygulama korunur -> reboot'ta panel ona geri doner.
@@ -73,7 +85,7 @@ class Apps {
 
   // Tarayicidan WS 0x0B ile uygulama secimi (+ opsiyonel parametre).
   void select(uint8_t id, const uint8_t* p, size_t n) {
-    if (id > APP_SPOTIFY) return;
+    if (id > APP_MAX) return;
     _app = (AppMode)id;
     _lastRender = 0;                  // hemen ciz
     if (_app == APP_TIMER && n >= 2) {
@@ -115,7 +127,8 @@ class Apps {
     if (_app == APP_SPOTIFY  && (now - _lastFetch > 5000UL   || (_lastFetch == 0))) { _lastFetch = now ? now : 1; fetchSpotify(); }
 
     // ---- render hizi ----
-    uint32_t interval = (_app == APP_CLOCK || _app == APP_TIMER) ? 500 : 2000;
+    uint32_t interval = (_app == APP_CLOCK || _app == APP_TIMER) ? 500
+                      : (_app == APP_SOUND ? 50 : (_app == APP_ROOM ? 1000 : 2000));
     if (_lastRender != 0 && now - _lastRender < interval) return;
     _lastRender = now ? now : 1;
     switch (_app) {
@@ -124,12 +137,15 @@ class Apps {
       case APP_WEATHER:  renderWeather();  break;
       case APP_WORLDCUP: renderWorldCup(); break;
       case APP_SPOTIFY:  renderSpotify();  break;
+      case APP_ROOM:     renderRoom();     break;
+      case APP_SOUND:    renderSound();    break;
       default: break;
     }
   }
 
  private:
   Panel*      M = nullptr;
+  const Sensors* _sens = nullptr;
   AppMode     _app = APP_NONE;
   Preferences cfg;
   uint32_t    _lastRender = 0;
@@ -149,6 +165,12 @@ class Apps {
   // world cup
   char _wcL1[20] = "", _wcL2[20] = "", _wcL3[20] = "";
   bool _wcOk = false;
+
+  // ses (VU): seviye gecmisi (sutun basina 50 ms) + tepe tutucu
+  uint8_t  _hist[256] = {0};
+  uint16_t _histHead = 0;
+  uint8_t  _vuPeak = 0;
+  uint32_t _vuPeakAt = 0;
 
   // spotify (iskelet)
   char _spToken[300] = "";
@@ -236,7 +258,70 @@ class Apps {
       centerText(tb, L(36, 20), S(2, 3), CRGB(255, 200, 90));
       centerText(wmoText(_wcode), L(64, 50), S(1, 1), CRGB(120, 200, 255));
     }
+    if (_sens && _sens->dhtOk()) {                             // ic mekan (DHT11): "ic 24C %45"
+      char ib[20]; snprintf(ib, sizeof(ib), "ic %dC %%%u", _sens->temp10() / 10, (unsigned)((_sens->hum10() + 5) / 10));
+      centerText(ib, L(78, 59), S(1, 1), CRGB(150, 220, 150));
+    }
     if (_city[0]) centerText(_city, L(92, 68), S(1, 1), CRGB(140, 140, 140));
+    M->update();
+  }
+
+  // Oda: DHT11 sicaklik (buyuk) + nem + LDR isik + saat. DHT yoksa "DHT11 yok".
+  void renderRoom() {
+    clear();
+    centerText("ODA", L(14, 6), S(1, 1), CRGB(150, 150, 150));
+    if (!_sens || !_sens->dhtOk()) {
+      centerText("DHT11", L(40, 26), S(1, 1), CRGB(255, 180, 80));
+      centerText("yok", L(54, 40), S(1, 1), CRGB(255, 180, 80));
+    } else {
+      char tb[10]; snprintf(tb, sizeof(tb), "%d.%dC", _sens->temp10() / 10, abs(_sens->temp10() % 10));
+      centerText(tb, L(30, 18), S(2, 3), CRGB(255, 200, 90));    // 5 kr x 12 px = 60 px (P4) / x 18 = 90 px (genis)
+      char hb[12]; snprintf(hb, sizeof(hb), "nem %%%u", (unsigned)((_sens->hum10() + 5) / 10));
+      centerText(hb, L(56, 48), S(1, 1), CRGB(120, 200, 255));
+    }
+    if (_sens) {
+      char lb[14]; snprintf(lb, sizeof(lb), "isik %%%u", _sens->light());
+      centerText(lb, L(72, 60), S(1, 1), CRGB(200, 200, 120));
+    }
+    struct tm t;
+    if (getLocalTime(&t, 10)) {
+      char hm[6]; snprintf(hm, sizeof(hm), "%02d:%02d", t.tm_hour, t.tm_min);
+      centerText(hm, L(96, 72), S(1, 1), CRGB(140, 140, 140));
+    }
+    M->update();
+  }
+
+  // Ses (VU): seviye gecmisi soldan saga akar (sutun = 50 ms), sag kenarda anlik seviye
+  // cubugu + kirmizi tepe tutucu (1.5 sn). Renk yukseklige gore yesil -> sari -> kirmizi.
+  // Spektrum degil, zarf: FFT yok (dusuk heap), mikrofon karti AO genligi.
+  void renderSound() {
+    clear();
+    uint8_t lvl = _sens ? _sens->sound() : 0;
+    uint8_t pk  = _sens ? _sens->soundPeak() : 0;
+    _hist[_histHead] = pk > lvl ? pk : lvl; _histHead = (_histHead + 1) & 255;
+    uint32_t now = millis();
+    if (pk >= _vuPeak || now - _vuPeakAt > 1500) { _vuPeak = pk; _vuPeakAt = now; }
+    const int W = PANEL_W, H = PANEL_H;
+    const int barW = W >= 160 ? 6 : 4;             // sag kenar: anlik seviye
+    const int gw = (W - barW - 2) > 256 ? 256 : (W - barW - 2);
+    const int top = 9, hh = H - top - 1;
+    for (int x = 0; x < gw; x++) {
+      uint8_t v = _hist[(_histHead + 256 - gw + x) & 255];
+      int h = (int)v * hh / 100;
+      for (int y = 0; y < h; y++) {
+        int q = y * 100 / (hh > 0 ? hh : 1);
+        uint8_t r = q < 60 ? (uint8_t)(q * 255 / 60) : 255;
+        uint8_t g = q < 60 ? 200 : (q < 85 ? 180 : 40);
+        M->drawPixel((int16_t)x, (int16_t)(H - 1 - y), r, g, (uint8_t)20);
+      }
+    }
+    int lh = (int)lvl * hh / 100;
+    for (int y = 0; y < lh; y++)
+      for (int x = W - barW; x < W; x++) M->drawPixel((int16_t)x, (int16_t)(H - 1 - y), (uint8_t)255, (uint8_t)255, (uint8_t)255);
+    int ph = (int)_vuPeak * hh / 100;
+    if (ph > 0) for (int x = W - barW; x < W; x++) M->drawPixel((int16_t)x, (int16_t)(H - 1 - ph), (uint8_t)255, (uint8_t)80, (uint8_t)80);
+    char lb[12]; snprintf(lb, sizeof(lb), "SES %u", lvl);
+    M->setTextSize(1); M->setTextColor(0x8410); M->setCursor(1, 0); M->print(lb);
     M->update();
   }
 
