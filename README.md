@@ -36,6 +36,10 @@ enkoder/dokunmatik/çift alkış → uyku-uyan / sonraki uygulama / sonraki gale
 (web UI "Sensörler & kontroller" kartından eşlenir, NVS'te kalır); LDR ile oto parlaklık;
 "Oda" (sıcaklık/nem/ışık/saat) ve "Ses" (VU) uygulamaları; 1 Hz `S:` telemetri + `/api/sensors`.
 
+**KiCad taşıyıcı kart:** ESP32-S3-DevKitC-1 soketi, 2× 74AHCT245 (3.3 → 5 V), üç HUB75E
+çıkışı ve sensör başlıkları olan 2 katmanlı PCB. Şematik, PCB, gerber ve BOM koddan üretilir:
+[hardware/kicad/README.md](hardware/kicad/README.md).
+
 ## Derleme
 VS Code + PlatformIO eklentisi. Proje klasorunu ac -> Build -> Upload.
 (`platformio.ini` ESP32-S3 DevKitC-1 icin hazir.)

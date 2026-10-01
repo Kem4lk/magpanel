@@ -1,0 +1,9 @@
+# gen_carrier.py ara dosyalari (DSN/SES, netlist, render katmanlari, Freerouting jar)
+work/
+__pycache__/
+# KiCad kullanici/oturum dosyalari
+*.kicad_prl
+*-backups/
+*.lck
+fp-info-cache
+_autosave-*

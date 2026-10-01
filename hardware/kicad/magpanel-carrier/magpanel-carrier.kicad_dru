@@ -1,0 +1,5 @@
+(version 1)
+# gen_carrier.py uretir. 2.54 mm baslik GND pinleri iz arasinda kalinca termal kollarin bir kismi
+# baglanamiyor; tek kol (0.45 mm, iki katmanda) sensor akimlari icin fazlasiyla yeterli.
+(rule "termal_tek_kol"
+  (constraint min_resolved_spokes 1))

@@ -10,6 +10,13 @@ ile birebir aynı olmalı.
 
 Vektör: [`schematic.svg`](schematic.svg) · Üretici: [`gen_schematic.py`](gen_schematic.py)
 
+## KiCad taşıyıcı kart (şematik + PCB)
+Aynı bağlantıların üretilebilir hâli: DevKit soketi, 2× 74AHCT245 seviye dönüştürücü,
+3× HUB75E çıkışı (LAT panel başına), 5 V giriş koruması ve sensör başlıkları. KiCad 8
+projesi, gerber/BOM/CPL dosyaları ve üretici [`kicad/`](kicad/README.md) klasöründe.
+
+![MagPanel taşıyıcı kart](kicad/img/pcb-top.png)
+
 ## Pin tablosu (ESP32-S3-DevKitC-1)
 
 ### HUB75E (değişmedi — `include/app_constants.hpp`)
@@ -65,7 +72,8 @@ karanlıkta daha da düşürür.
   Kasa **içine** koyma: LED paneli ısınır, oda sıcaklığı yanlış çıkar → üst kenardaki
   havalandırma yuvasına, dış havada. DHT22/AM2302 takılırsa `-DSENS_DHT22=1`.
 - **KY-040:** CLK/DT kart üstünde 10 kΩ pull-up; SW için ESP dahili pull-up. Titreme için
-  CLK/DT/SW–GND 100 nF önerilir (yazılım tablosu zaten sıçrama toleranslı). Yön ters
+  CLK/DT/SW–GND 100 nF önerilir (yazılım tablosu zaten sıçrama toleranslı; KiCad
+  taşıyıcı kartında C5–C7 olarak var). Yön ters
   gelirse web'den "Enkoder ters" ya da CLK↔DT değiştir. Mil kasa yan duvarından dışarı,
   düğme takılır.
 - **LDR kartı:** panelin **kendi ışığını görmemeli** (geri besleme → oto parlaklık salınımı):

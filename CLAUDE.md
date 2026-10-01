@@ -201,6 +201,32 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - **Açık:** kasaya sensör delikleri (`enclosure/generate_case.py`) eklenmedi; iOS app `S:/C:/B:` frame'lerini
   henüz kullanmıyor (bilinmeyen metin frame'lerini yok saymalı).
 
+## KiCad taşıyıcı kart (2026-10-01, `hardware/kicad/`)
+- `gen_carrier.py` tek kaynak: `sch` → `pcb` → `route` → `fab` (`all` hepsi). KiCad 8'in python'u ile
+  çalışır (Linux `/usr/bin/python3`, macOS KiCad.app içindeki python). `sch` yalnız stdlib: `sexp.py`
+  (S-ifade okuma/yazma), `schlib.py` (KiCad sembol kütüphanesi; dönüşüm sırası: önce döndür, sonra ayna).
+- Kart 100×63.5 mm, 2 katman. DevKit dişi soket (sağ sıra çift: 0.9" resmi / 1.0" klon, aynı pad no),
+  2×74AHCT245 (kanal sırası DevKit J1 pin sırası → kesişimsiz), 4×33R dizi, LAT/LAT2/LAT3/OE 10k
+  pull-down (OE=GCLK/aktif-yüksek → düşük = karanlık), 3× IDC 2×8 HUB75E (LAT IO10/IO17/IO14),
+  5 V klemens + PTC 1.5 A + SMAJ5.0A + 470 µF, sensör başlıkları J5–J10 (`SENSOR_HDRS`).
+- Netler PCB'ye KiCad'in kendi netlist'inden yazılır (`kicad-cli sch export netlist`): yerel etiket
+  `/AD`, NC pin `unconnected-(U1-…)` + pintype `…+no_connect` → şematik↔PCB farkı 0. Net sınıfları ve
+  tasarım kuralları `.kicad_pro` JSON'una yazılır (`SaveBoard(..., True)` API'den ayarlanan kuralları
+  kaydetmiyor); `.kicad_dru`: `min_resolved_spokes 1`.
+- `route`: Freerouting 2.1.0 (Java 21; `-inc` ile net sınıfı dışlama ÇALIŞMIYOR). GND de iz olarak
+  çekilir, sonra iki katman GND dökümü + dikiş via'ları (serigrafi altına konmaz). Yalnız döküme
+  güvenince IDC GND pinleri (4/16) veri yolu izleri arasında yalıtılıyordu. Freerouting deterministik
+  değil ve ara sıra KiCad'in bağlanmamış saydığı parça bırakıyor → DRC temiz olana kadar ≤10 deneme;
+  her deneme `work/…-preroute.kicad_pcb`'den başlar.
+- **KiCad 8 SWIG tuzağı:** `board.Remove(x)` sonrası Python vekili çöp toplanırsa tip tablosu bozuluyor
+  (`board.Zones()` / `GetConnectivity()` ham `SwigPyObject` döner) → silinen öğeye referans tut
+  (`board_remove()`).
+- `fab`: ERC/DRC/parity sıfır değilse durur. Gerber zip (sabit tarih), BOM (işleve göre gruplu),
+  JLC BOM/CPL (yalnız SMD, LCSC boş), şematik PDF, görseller (`kicad-cli pcb export svg` katmanları →
+  Chromium → PIL birleştirme; headless pencere görüntüden yüksek olmalı, yoksa alt kenar kesilir).
+- Açık: DevKit resmi/klon sıra seçimi, sensör modül pin sıraları (kart yazısına göre), kasaya taşıyıcı
+  ayakları + sensör delikleri, LCSC numaraları.
+
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
 firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).
