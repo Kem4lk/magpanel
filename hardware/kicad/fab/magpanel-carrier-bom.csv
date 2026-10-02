@@ -1,26 +1,26 @@
-Ref,Adet,Deger,Footprint,Montaj,Parca / MPN,Not
-C1,1,470uF 10V,CP_Radial_D8.0mm_P3.50mm,THT,"Elektrolitik 470 uF 10 V, D8 P3.5 (low ESR)","5 V giris tamponu (kablo enduktansi, tampon anahtarlama akimlari)"
-C2,1,10uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,MLCC 10 uF 16 V X5R 0805,5 V giris seramik dekuplaj
-C3 C4,2,100nF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,MLCC 100 nF 50 V X7R 0805,74HCT245 VCC dekuplaj (pin 20 yaninda)
-C5 C6 C7,3,100nF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,MLCC 100 nF 50 V X7R 0805,Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)
-C8,1,10uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,MLCC 10 uF 16 V X5R 0805,Tamponlar icin yerel 5 V yigin kapasitesi
-D1,1,SMAJ5.0A,D_SMA_Handsoldering,SMD,"SMAJ5.0A (400 W, 5 V TVS)",TVS: ters kutup/asiri gerilimde iletir -> F1 acar
-D2,1,PWR (yesil),LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,SMD,LED 0805 yesil,5 V var gostergesi
-F1,1,1.5A,Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder,SMD,"Bourns MF-MSMF150-2 (1812, 1.5 A hold)",Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar
-J1,1,5V IN,"TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",THT,"Phoenix MKDS 1,5/2-5,08 (1714955) ya da esdegeri",5 V DC giris (PSU). Panel gucu PSU -> panel dogrudan; bu kart <= 1 A ceker.
-J2,1,HUB75E PANEL 1,IDC-Header_2x08_P2.54mm_Vertical,THT,"Kutu baslik (box header) 2x8 2.54 mm, duz",HUB75E panel cikisi: LAT = IO10 (P4 ve P1.86)
-J3,1,HUB75E PANEL 2,IDC-Header_2x08_P2.54mm_Vertical,THT,"Kutu baslik (box header) 2x8 2.54 mm, duz",HUB75E panel cikisi: LAT2 = IO17 (yalniz coklu P1.86)
-J4,1,HUB75E PANEL 3,IDC-Header_2x08_P2.54mm_Vertical,THT,"Kutu baslik (box header) 2x8 2.54 mm, duz",HUB75E panel cikisi: LAT3 = IO14 (yalniz coklu P1.86)
-J5,1,LDR,PinHeader_1x03_P2.54mm_Vertical,THT,Pin header 1x3 2.54 mm erkek (Dupont),LDR karti (JSUMO 16067) - VCC/GND/DO; DO -> IO1
-J6,1,MIC,PinHeader_1x03_P2.54mm_Vertical,THT,Pin header 1x3 2.54 mm erkek (Dupont),Mikrofon (JSUMO 15771) - OUT/GND/VCC; OUT -> IO42
-J7,1,ENC,PinHeader_1x05_P2.54mm_Vertical,THT,Pin header 1x5 2.54 mm erkek (Dupont),Enkoder KY-040 (JSUMO) - CLK/DT/SW -> IO41/40/39
-J8,1,DHT,PinHeader_1x03_P2.54mm_Vertical,THT,Pin header 1x3 2.54 mm erkek (Dupont),DHT11 (JSUMO 15579) - -/OUT/+; OUT -> IO47
-J9,1,TOUCH,PinHeader_1x03_P2.54mm_Vertical,THT,Pin header 1x3 2.54 mm erkek (Dupont),TTP223B (JSUMO 17538) - SIG/VCC/GND; SIG -> IO21
-J10,1,EXP,PinHeader_1x05_P2.54mm_Vertical,THT,Pin header 1x5 2.54 mm erkek (Dupont),"Genisleme (UART0/I2C) - IO43, IO44, IO38"
-R1,1,2.2k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,0805 2.2 kOhm 1%,PWR LED akim siniri (~1 mA)
-R2 R3 R4 R5,4,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,0805 10 kOhm 1%,Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik
-R6,1,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,0805 10 kOhm 1%,DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)
-R7,1,100k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,0805 100 kOhm 1%,IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital
-R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25,16,33R,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,0805 33 Ohm 1%,Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir
-U1,1,ESP32-S3-DevKitC-1,ESP32-S3-DevKitC-1_Socket,THT,"ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)","ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in."
-U2 U3,2,74HCT245,DIP-20_W7.62mm_Socket_LongPads,THT,CD74HCT245E (PDIP-20) + 20 pin DIP soket,"Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND"
+Ref,Adet,Deger,Footprint,Montaj,Uretici,Parca / MPN,LCSC,Not
+C1,1,470uF 10V,CP_Radial_D8.0mm_P3.50mm,THT,,"Elektrolitik 470 uF 10 V, D8 P3.5 (low ESR)",,"5 V giris tamponu (kablo enduktansi, tampon anahtarlama akimlari)"
+C2,1,10uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,Samsung,CL21A106KAYNNNE,C15850,5 V giris seramik dekuplaj
+C3 C4,2,100nF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,YAGEO,CC0805KRX7R9BB104,C49678,74HCT245 VCC dekuplaj (pin 20 yaninda)
+C5 C6 C7,3,100nF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,YAGEO,CC0805KRX7R9BB104,C49678,Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)
+C8,1,10uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,SMD,Samsung,CL21A106KAYNNNE,C15850,Tamponlar icin yerel 5 V yigin kapasitesi
+D1,1,SMAJ5.0A,D_SMA_Handsoldering,SMD,Littelfuse,SMAJ5.0A,C83329,TVS: ters kutup/asiri gerilimde iletir -> F1 acar
+D2,1,PWR (yesil),LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,SMD,Hubei KENTO,KT-0805G,C2297,5 V var gostergesi
+F1,1,1.5A,Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder,SMD,BOURNS,MF-MSMF150-2,C89648,Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar
+J1,1,5V IN,"TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",THT,,"Phoenix MKDS 1,5/2-5,08 (1714955) ya da esdegeri",,5 V DC giris (PSU). Panel gucu PSU -> panel dogrudan; bu kart <= 1 A ceker.
+J2,1,HUB75E PANEL 1,IDC-Header_2x08_P2.54mm_Vertical,THT,,"Kutu baslik (box header) 2x8 2.54 mm, duz",,HUB75E panel cikisi: LAT = IO10 (P4 ve P1.86)
+J3,1,HUB75E PANEL 2,IDC-Header_2x08_P2.54mm_Vertical,THT,,"Kutu baslik (box header) 2x8 2.54 mm, duz",,HUB75E panel cikisi: LAT2 = IO17 (yalniz coklu P1.86)
+J4,1,HUB75E PANEL 3,IDC-Header_2x08_P2.54mm_Vertical,THT,,"Kutu baslik (box header) 2x8 2.54 mm, duz",,HUB75E panel cikisi: LAT3 = IO14 (yalniz coklu P1.86)
+J5,1,LDR,PinHeader_1x03_P2.54mm_Vertical,THT,,Pin header 1x3 2.54 mm erkek (Dupont),,LDR karti (JSUMO 16067) - VCC/GND/DO; DO -> IO1
+J6,1,MIC,PinHeader_1x03_P2.54mm_Vertical,THT,,Pin header 1x3 2.54 mm erkek (Dupont),,Mikrofon (JSUMO 15771) - OUT/GND/VCC; OUT -> IO42
+J7,1,ENC,PinHeader_1x05_P2.54mm_Vertical,THT,,Pin header 1x5 2.54 mm erkek (Dupont),,Enkoder KY-040 (JSUMO) - CLK/DT/SW -> IO41/40/39
+J8,1,DHT,PinHeader_1x03_P2.54mm_Vertical,THT,,Pin header 1x3 2.54 mm erkek (Dupont),,DHT11 (JSUMO 15579) - -/OUT/+; OUT -> IO47
+J9,1,TOUCH,PinHeader_1x03_P2.54mm_Vertical,THT,,Pin header 1x3 2.54 mm erkek (Dupont),,TTP223B (JSUMO 17538) - SIG/VCC/GND; SIG -> IO21
+J10,1,EXP,PinHeader_1x05_P2.54mm_Vertical,THT,,Pin header 1x5 2.54 mm erkek (Dupont),,"Genisleme (UART0/I2C) - IO43, IO44, IO38"
+R1,1,2.2k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F2201T5E,C17520,PWR LED akim siniri (~1 mA)
+R2 R3 R4 R5,4,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1002T5E,C17414,Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik
+R6,1,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1002T5E,C17414,DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)
+R7,1,100k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1003T5E,C17407,IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital
+R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25,16,33R,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F330JT5E,C17634,Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir
+U1,1,ESP32-S3-DevKitC-1,ESP32-S3-DevKitC-1_Socket,THT,,"ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)",,"ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in."
+U2 U3,2,74HCT245,DIP-20_W7.62mm_Socket_LongPads,THT,,CD74HCT245E (PDIP-20) + 20 pin DIP soket,,"Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND"

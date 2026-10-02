@@ -16,7 +16,9 @@
  "C2": {
   "desc": "5 V giris seramik dekuplaj",
   "fields": {
-   "MPN": "MLCC 10 uF 16 V X5R 0805"
+   "LCSC": "C15850",
+   "MPN": "CL21A106KAYNNNE",
+   "Manufacturer": "Samsung"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -30,7 +32,9 @@
  "C3": {
   "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
   "fields": {
-   "MPN": "MLCC 100 nF 50 V X7R 0805"
+   "LCSC": "C49678",
+   "MPN": "CC0805KRX7R9BB104",
+   "Manufacturer": "YAGEO"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -44,7 +48,9 @@
  "C4": {
   "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
   "fields": {
-   "MPN": "MLCC 100 nF 50 V X7R 0805"
+   "LCSC": "C49678",
+   "MPN": "CC0805KRX7R9BB104",
+   "Manufacturer": "YAGEO"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -58,7 +64,9 @@
  "C5": {
   "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
   "fields": {
-   "MPN": "MLCC 100 nF 50 V X7R 0805"
+   "LCSC": "C49678",
+   "MPN": "CC0805KRX7R9BB104",
+   "Manufacturer": "YAGEO"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -72,7 +80,9 @@
  "C6": {
   "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
   "fields": {
-   "MPN": "MLCC 100 nF 50 V X7R 0805"
+   "LCSC": "C49678",
+   "MPN": "CC0805KRX7R9BB104",
+   "Manufacturer": "YAGEO"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -86,7 +96,9 @@
  "C7": {
   "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
   "fields": {
-   "MPN": "MLCC 100 nF 50 V X7R 0805"
+   "LCSC": "C49678",
+   "MPN": "CC0805KRX7R9BB104",
+   "Manufacturer": "YAGEO"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -100,7 +112,9 @@
  "C8": {
   "desc": "Tamponlar icin yerel 5 V yigin kapasitesi",
   "fields": {
-   "MPN": "MLCC 10 uF 16 V X5R 0805"
+   "LCSC": "C15850",
+   "MPN": "CL21A106KAYNNNE",
+   "Manufacturer": "Samsung"
   },
   "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
@@ -114,7 +128,9 @@
  "D1": {
   "desc": "TVS: ters kutup/asiri gerilimde iletir -> F1 acar",
   "fields": {
-   "MPN": "SMAJ5.0A (400 W, 5 V TVS)"
+   "LCSC": "C83329",
+   "MPN": "SMAJ5.0A",
+   "Manufacturer": "Littelfuse"
   },
   "footprint": "Diode_SMD:D_SMA_Handsoldering",
   "in_bom": true,
@@ -128,7 +144,9 @@
  "D2": {
   "desc": "5 V var gostergesi",
   "fields": {
-   "MPN": "LED 0805 yesil"
+   "LCSC": "C2297",
+   "MPN": "KT-0805G",
+   "Manufacturer": "Hubei KENTO"
   },
   "footprint": "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder",
   "in_bom": true,
@@ -142,7 +160,9 @@
  "F1": {
   "desc": "Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar",
   "fields": {
-   "MPN": "Bourns MF-MSMF150-2 (1812, 1.5 A hold)"
+   "LCSC": "C89648",
+   "MPN": "MF-MSMF150-2",
+   "Manufacturer": "BOURNS"
   },
   "footprint": "Fuse:Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder",
   "in_bom": true,
@@ -384,7 +404,9 @@
  "R1": {
   "desc": "PWR LED akim siniri (~1 mA)",
   "fields": {
-   "MPN": "0805 2.2 kOhm 1%"
+   "LCSC": "C17520",
+   "MPN": "0805W8F2201T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -398,7 +420,9 @@
  "R10": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -412,7 +436,9 @@
  "R11": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -426,7 +452,9 @@
  "R12": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -440,7 +468,9 @@
  "R13": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -454,7 +484,9 @@
  "R14": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -468,7 +500,9 @@
  "R15": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -482,7 +516,9 @@
  "R16": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -496,7 +532,9 @@
  "R17": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -510,7 +548,9 @@
  "R18": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -524,7 +564,9 @@
  "R19": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -538,7 +580,9 @@
  "R2": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
-   "MPN": "0805 10 kOhm 1%"
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -552,7 +596,9 @@
  "R20": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -566,7 +612,9 @@
  "R21": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -580,7 +628,9 @@
  "R22": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -594,7 +644,9 @@
  "R23": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -608,7 +660,9 @@
  "R24": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -622,7 +676,9 @@
  "R25": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
-   "MPN": "0805 33 Ohm 1%"
+   "LCSC": "C17634",
+   "MPN": "0805W8F330JT5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -636,7 +692,9 @@
  "R3": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
-   "MPN": "0805 10 kOhm 1%"
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -650,7 +708,9 @@
  "R4": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
-   "MPN": "0805 10 kOhm 1%"
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -664,7 +724,9 @@
  "R5": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
-   "MPN": "0805 10 kOhm 1%"
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -678,7 +740,9 @@
  "R6": {
   "desc": "DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)",
   "fields": {
-   "MPN": "0805 10 kOhm 1%"
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
@@ -692,7 +756,9 @@
  "R7": {
   "desc": "IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital",
   "fields": {
-   "MPN": "0805 100 kOhm 1%"
+   "LCSC": "C17407",
+   "MPN": "0805W8F1003T5E",
+   "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,

@@ -237,8 +237,16 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   3.8 mm), DevKit altı SMD'ler `DEV_OFF` 4.5 mm, `RCOL` 39.4 (DIP courtyard'ına 0.5). D1 anodu J1 GND'sine
   kilitli kalın iz; C2/R1 ana hatta T kol. Via'lar maskeli (gerber'de via aperturu yok). Montaj sırası
   ve ilk açılış `hardware/kicad/README.md`.
+- **SMT montaj (2026-10-02, kullanıcı Robotistan'dan sipariş ediyor):** `SMT_PARTS` (Comment, üretici, MPN,
+  LCSC, kılıf) SMD şematik alanlarını (MPN/Manufacturer/LCSC) besler. LCSC no.'ları LCSC ürün API'siyle
+  doğrulandı (`wmsc.lcsc.com/ftps/wm/product/detail?productCode=C…`; arama uç noktası 403). `fab` üretir:
+  JLC BOM/CPL (csv) + Robotistan `robotistan-bom.xlsx` (Comment, Designator, Footprint, RobotistanPro Part =
+  LCSC, MPN, Quantity = kart başına) ve `robotistan-pnp.xlsx` (Designator, Mid X/Y `…mm`, Layer T/B, Rotation);
+  `xlsx.py` stdlib yazıcı (Robotistan örneğinin stili). Yalnız 33 SMD (hepsi üst yüz). Orijin kartın sol-alt
+  köşesi (`PLACE_ORIGIN` = aux origin; gerber `--use-drill-file-origin`, delik `--drill-origin plot`, CPL aynı);
+  `fab` aux origin yoksa durur. Form önerisi: Edge rails/fiducials Robotistan eklesin, yerleşim onayı Evet.
 - Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
-  kasaya taşıyıcı ayakları + sensör delikleri; LCSC numaraları.
+  kasaya taşıyıcı ayakları + sensör delikleri; delikli parçalar için LCSC yok (elle lehim).
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

@@ -3813,10 +3813,15 @@
 			(at 50.8 35.56 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "Bourns MF-MSMF150-2 (1812, 1.5 A hold)"
+		(property "MPN" "MF-MSMF150-2"
 			(at 50.8 35.56 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
+		(property "Manufacturer" "BOURNS"
+			(at 50.8 35.56 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C89648" (at 50.8 35.56 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "34b63893-ea8f-556b-bde9-f77ff5075942"))
 		(pin "2" (uuid "e5eca6da-15b0-5231-a6f4-d39eddfe3ab3"))
 		(instances
@@ -3980,7 +3985,15 @@
 			(at 60.96 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "SMAJ5.0A (400 W, 5 V TVS)"
+		(property "MPN" "SMAJ5.0A"
+			(at 60.96 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "Littelfuse"
+			(at 60.96 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C83329"
 			(at 60.96 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -4116,7 +4129,15 @@
 			(at 96.52 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 10 uF 16 V X5R 0805"
+		(property "MPN" "CL21A106KAYNNNE"
+			(at 96.52 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "Samsung"
+			(at 96.52 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C15850"
 			(at 96.52 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -4184,7 +4205,15 @@
 			(at 114.3 41.91 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 2.2 kOhm 1%"
+		(property "MPN" "0805W8F2201T5E"
+			(at 114.3 41.91 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 114.3 41.91 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17520"
 			(at 114.3 41.91 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -4225,10 +4254,15 @@
 			(at 114.3 53.34 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "LED 0805 yesil"
+		(property "MPN" "KT-0805G"
 			(at 114.3 53.34 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
+		(property "Manufacturer" "Hubei KENTO"
+			(at 114.3 53.34 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C2297" (at 114.3 53.34 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "a094f2ad-29ea-57ce-98a5-7f46700843ea"))
 		(pin "2" (uuid "21b127ba-25c4-5dfc-8c31-d19022d14484"))
 		(instances
@@ -4732,7 +4766,15 @@
 			(at 248.92 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 100 nF 50 V X7R 0805"
+		(property "MPN" "CC0805KRX7R9BB104"
+			(at 248.92 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "YAGEO"
+			(at 248.92 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C49678"
 			(at 248.92 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5033,10 +5075,15 @@
 			(at 248.92 127 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 100 nF 50 V X7R 0805"
+		(property "MPN" "CC0805KRX7R9BB104"
 			(at 248.92 127 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
+		(property "Manufacturer" "YAGEO"
+			(at 248.92 127 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C49678" (at 248.92 127 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "82b4a8e0-0043-5bfe-8f85-b4510f2732eb"))
 		(pin "2" (uuid "5da54bd6-00da-5f96-9bc5-cb30b6c55f4e"))
 		(instances
@@ -5140,7 +5187,15 @@
 			(at 248.92 93.98 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 10 uF 16 V X5R 0805"
+		(property "MPN" "CL21A106KAYNNNE"
+			(at 248.92 93.98 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "Samsung"
+			(at 248.92 93.98 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C15850"
 			(at 248.92 93.98 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5247,7 +5302,15 @@
 			(at 160.02 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 10 kOhm 1%"
+		(property "MPN" "0805W8F1002T5E"
+			(at 160.02 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 160.02 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17414"
 			(at 160.02 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5321,7 +5384,15 @@
 			(at 177.8 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 10 kOhm 1%"
+		(property "MPN" "0805W8F1002T5E"
+			(at 177.8 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 177.8 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17414"
 			(at 177.8 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5395,7 +5466,15 @@
 			(at 195.58 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 10 kOhm 1%"
+		(property "MPN" "0805W8F1002T5E"
+			(at 195.58 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 195.58 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17414"
 			(at 195.58 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5469,7 +5548,15 @@
 			(at 213.36 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 10 kOhm 1%"
+		(property "MPN" "0805W8F1002T5E"
+			(at 213.36 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 213.36 184.15 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17414"
 			(at 213.36 184.15 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5537,7 +5624,15 @@
 			(at 297.18 25.4 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 25.4 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 25.4 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 25.4 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5572,7 +5667,15 @@
 			(at 297.18 34.29 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 34.29 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 34.29 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 34.29 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5607,7 +5710,15 @@
 			(at 297.18 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 43.18 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5642,7 +5753,15 @@
 			(at 297.18 52.07 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 52.07 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 52.07 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 52.07 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5677,7 +5796,15 @@
 			(at 297.18 60.96 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 60.96 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 60.96 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 60.96 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5712,7 +5839,15 @@
 			(at 297.18 69.85 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 69.85 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 69.85 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 69.85 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5747,7 +5882,15 @@
 			(at 297.18 78.74 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 78.74 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 78.74 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 78.74 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5782,7 +5925,15 @@
 			(at 297.18 87.63 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 87.63 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 87.63 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 87.63 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5817,7 +5968,15 @@
 			(at 297.18 100.33 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 100.33 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 100.33 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 100.33 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5852,7 +6011,15 @@
 			(at 297.18 109.22 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 109.22 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 109.22 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 109.22 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5887,7 +6054,15 @@
 			(at 297.18 118.11 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 118.11 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 118.11 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 118.11 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5919,10 +6094,15 @@
 			(at 297.18 127 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
 			(at 297.18 127 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 127 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634" (at 297.18 127 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "3ff7d3a8-8a05-5532-802c-3ad694a77088"))
 		(pin "2" (uuid "fefdfddf-bf9a-58c6-810e-b5735280c6c0"))
 		(instances
@@ -5954,7 +6134,15 @@
 			(at 297.18 135.89 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 135.89 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 135.89 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 135.89 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5989,7 +6177,15 @@
 			(at 297.18 144.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 144.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 144.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 144.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6024,7 +6220,15 @@
 			(at 297.18 153.67 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 153.67 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 153.67 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 153.67 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6059,7 +6263,15 @@
 			(at 297.18 162.56 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 33 Ohm 1%"
+		(property "MPN" "0805W8F330JT5E"
+			(at 297.18 162.56 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 297.18 162.56 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17634"
 			(at 297.18 162.56 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7145,7 +7357,15 @@
 			(at 106.68 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 100 nF 50 V X7R 0805"
+		(property "MPN" "CC0805KRX7R9BB104"
+			(at 106.68 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "YAGEO"
+			(at 106.68 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C49678"
 			(at 106.68 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7219,7 +7439,15 @@
 			(at 121.92 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 100 nF 50 V X7R 0805"
+		(property "MPN" "CC0805KRX7R9BB104"
+			(at 121.92 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "YAGEO"
+			(at 121.92 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C49678"
 			(at 121.92 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7293,7 +7521,15 @@
 			(at 137.16 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "MLCC 100 nF 50 V X7R 0805"
+		(property "MPN" "CC0805KRX7R9BB104"
+			(at 137.16 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "YAGEO"
+			(at 137.16 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C49678"
 			(at 137.16 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7364,10 +7600,15 @@
 			(at 76.2 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 100 kOhm 1%"
+		(property "MPN" "0805W8F1003T5E"
 			(at 76.2 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 76.2 266.7 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17407" (at 76.2 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "9fdbdab6-d9a1-5c97-b15b-05f04aaa9493"))
 		(pin "2" (uuid "8fa6beb3-1dfb-5d47-882b-c5d99bce51e2"))
 		(instances
@@ -7426,7 +7667,15 @@
 			(at 162.56 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805 10 kOhm 1%"
+		(property "MPN" "0805W8F1002T5E"
+			(at 162.56 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 162.56 271.78 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "LCSC" "C17414"
 			(at 162.56 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)

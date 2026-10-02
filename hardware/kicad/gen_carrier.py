@@ -126,6 +126,26 @@ FP = {
     'DEVKIT': 'MagPanel:ESP32-S3-DevKitC-1_Socket',
 }
 
+# SMT montaj tedariki (Robotistan / JLCPCB). LCSC numaralari ve stok LCSC urun API'sinden dogrulandi
+# (2026-10-02). anahtar -> (BOM 'Comment', uretici, MPN, LCSC, kilif)
+SMT_PARTS = {
+    '33R': ('33R 1% SMD Resistor', 'UNI-ROYAL', '0805W8F330JT5E', 'C17634', '0805'),
+    '10k': ('10k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1002T5E', 'C17414', '0805'),
+    '2.2k': ('2.2k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F2201T5E', 'C17520', '0805'),
+    '100k': ('100k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1003T5E', 'C17407', '0805'),
+    '100nF': ('100nF 50V X7R Ceramic Capacitor', 'YAGEO', 'CC0805KRX7R9BB104', 'C49678', '0805'),
+    '10uF': ('10uF 25V X5R Ceramic Capacitor', 'Samsung', 'CL21A106KAYNNNE', 'C15850', '0805'),
+    'LED': ('Green LED 0805', 'Hubei KENTO', 'KT-0805G', 'C2297', '0805'),
+    'PTC': ('PTC Resettable Fuse 6V 1.5A', 'BOURNS', 'MF-MSMF150-2', 'C89648', '1812'),
+    'TVS': ('TVS Diode 5V 400W Unidirectional', 'Littelfuse', 'SMAJ5.0A', 'C83329', 'SMA (DO-214AC)'),
+}
+SMT_BY_MPN = {v[2]: v for v in SMT_PARTS.values()}
+
+def smt(key):
+    """SMD parcanin sematik alanlari (uretici, MPN, LCSC). BOM/CPL ciktilari buradan okur."""
+    _, mfr, mpn, lcsc, _ = SMT_PARTS[key]
+    return {'MPN': mpn, 'Manufacturer': mfr, 'LCSC': lcsc}
+
 # =============================================================================
 #  OZEL KUTUPHANE: ESP32-S3-DevKitC-1 sembolu
 # =============================================================================
@@ -373,7 +393,7 @@ def build_schematic(libs):
                    desc='5 V DC giris (PSU). Panel gucu PSU -> panel dogrudan; bu kart <= 1 A ceker.')
     f1 = sch.place('Device:Polyfuse', 'F1', '1.5A', *P(20, 14), rot=90, footprint=FP['PTC'],
                    ref_at=(0, -3.81, ('center',)), val_at=(0, 3.81, ('center',)),
-                   fields={'MPN': 'Bourns MF-MSMF150-2 (1812, 1.5 A hold)'},
+                   fields=smt('PTC'),
                    desc='Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar')
     p1x, p1y, _ = j1.pin(1)
     p2x, p2y, _ = j1.pin(2)
@@ -398,7 +418,7 @@ def build_schematic(libs):
     # D1 TVS (katot +5V)
     d1 = sch.place('Diode:SMAJ5.0A', 'D1', 'SMAJ5.0A', xs[0], P(0, 17)[1], rot=270, footprint=FP['SMA'],
                    ref_at=(2.54, -1.27), val_at=(2.54, 1.27),
-                   fields={'MPN': 'SMAJ5.0A (400 W, 5 V TVS)'},
+                   fields=smt('TVS'),
                    desc='TVS: ters kutup/asiri gerilimde iletir -> F1 acar')
     k = d1.pin(1)
     sch.wire((xs[0], rail_y), (k[0], k[1])); sch.assign(d1, 1, '+5V')
@@ -409,16 +429,16 @@ def build_schematic(libs):
     t = c1.pin(1); sch.wire((xs[1], rail_y), (t[0], t[1])); sch.assign(c1, 1, '+5V')
     sch.pwr(c1, 2, 'GND', length=0)
     c2 = sch.place('Device:C', 'C2', '10uF', xs[2], P(0, 17)[1], footprint=FP['C0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 10 uF 16 V X5R 0805'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10uF'),
                    desc='5 V giris seramik dekuplaj')
     t = c2.pin(1); sch.wire((xs[2], rail_y), (t[0], t[1])); sch.assign(c2, 1, '+5V')
     sch.pwr(c2, 2, 'GND', length=0)
     r1 = sch.place('Device:R', 'R1', '2.2k', xs[3], P(0, 16.5)[1], footprint=FP['R0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 2.2 kOhm 1%'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('2.2k'),
                    desc='PWR LED akim siniri (~1 mA)')
     t = r1.pin(1); sch.wire((xs[3], rail_y), (t[0], t[1])); sch.assign(r1, 1, '+5V')
     d2 = sch.place('Device:LED', 'D2', 'PWR (yesil)', xs[3], P(0, 21)[1], rot=90, footprint=FP['LED0805'],
-                   ref_at=(4.45, -1.27), val_at=(4.45, 1.27), fields={'MPN': 'LED 0805 yesil'},
+                   ref_at=(4.45, -1.27), val_at=(4.45, 1.27), fields=smt('LED'),
                    desc='5 V var gostergesi')
     ra = r1.pin(2); la = d2.pin(2)
     sch.wire((ra[0], ra[1]), (la[0], la[1]))
@@ -489,18 +509,18 @@ def build_schematic(libs):
         sch.pwr(u, '20', '+5V', length=0)
         sch.pwr(u, '10', 'GND', length=0)
         c = sch.place('Device:C', cref, '100nF', *P(98, gy - 6), footprint=FP['C0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 100 nF 50 V X7R 0805'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100nF'),
                       desc='74HCT245 VCC dekuplaj (pin 20 yaninda)')
         sch.pwr(c, '1', '+5V', length=0)
         sch.pwr(c, '2', 'GND', length=0)
     c8 = sch.place('Device:C', 'C8', '10uF', *P(98, 37), footprint=FP['C0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 10 uF 16 V X5R 0805'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10uF'),
                    desc='Tamponlar icin yerel 5 V yigin kapasitesi')
     sch.pwr(c8, '1', '+5V', length=0)
     sch.pwr(c8, '2', 'GND', length=0)
     for i, (ref, net) in enumerate(PULLDOWNS):
         r = sch.place('Device:R', ref, '10k', *P(63 + i * 7, 72.5), footprint=FP['R0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 10 kOhm 1%'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10k'),
                       desc='Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik')
         x0, y0, _ = r.pin('1')
         sch.wire((x0, y0), (x0, y0 - G))
@@ -517,7 +537,7 @@ def build_schematic(libs):
         gy = 10 + i * 3.5 + (1.5 if i >= 8 else 0)                    # U2 grubu ust, U3 grubu alt
         r = sch.place('Device:R', ref, '33R', *P(117, gy), rot=90, footprint=FP['R0805'],
                       ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)),
-                      fields={'MPN': '0805 33 Ohm 1%'},
+                      fields=smt('33R'),
                       desc='Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir')
         sch.stub(r, '1', sig + '_5V', length=2 * G)                    # tampon tarafi
         sch.stub(r, '2', 'HUB_' + sig, length=2 * G)                   # konnektor tarafi
@@ -559,7 +579,7 @@ def build_schematic(libs):
             sch.text(desc.split(' - ')[1], *P(9 + i * 17, 98.3), size=1.0)
     for i, (ref, net) in enumerate(ENC_CAPS):
         c = sch.place('Device:C', ref, '100nF', *P(42 + i * 6, 107), footprint=FP['C0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 100 nF 50 V X7R 0805'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100nF'),
                       desc='Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)')
         x0, y0, _ = c.pin('1')
         sch.wire((x0, y0), (x0, y0 - G))
@@ -567,7 +587,7 @@ def build_schematic(libs):
         sch.assign(c, '1', net)
         sch.pwr(c, '2', 'GND', length=0)
     r7 = sch.place('Device:R', 'R7', '100k', *P(30, 105), footprint=FP['R0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 100 kOhm 1%'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100k'),
                    desc='IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital')
     x0, y0, _ = r7.pin('1')
     sch.wire((x0, y0), (x0, y0 - G))
@@ -575,7 +595,7 @@ def build_schematic(libs):
     sch.assign(r7, '1', 'MIC_AO')
     sch.pwr(r7, '2', 'GND', length=0)
     r6 = sch.place('Device:R', 'R6', '10k', *P(64, 107), rot=90, footprint=FP['R0805'],
-                   ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)), fields={'MPN': '0805 10 kOhm 1%'},
+                   ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)), fields=smt('10k'),
                    desc='DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)')
     sch.pwr(r6, '1', '+3V3', length=G)
     sch.stub(r6, '2', 'DHT_DATA', length=2 * G)
@@ -621,7 +641,7 @@ def write_project_files():
     data = json.loads(pro.read_text()) if pro.exists() else {}
     data.setdefault('meta', {'filename': PROJ + '.kicad_pro', 'version': 1})
     classes = []
-    for name, tw, cl, vd, vdr, _ in NETCLASSES:
+    for name, tw, cl, vd, vdr, _ in sorted(NETCLASSES, key=lambda nc: (nc[0] != 'Default', nc[0])):   # KiCad sirasi
         classes.append({'name': name, 'track_width': tw, 'clearance': cl, 'via_diameter': vd, 'via_drill': vdr,
                         'bus_width': 12, 'wire_width': 6, 'diff_pair_gap': 0.25, 'diff_pair_via_gap': 0.25,
                         'diff_pair_width': 0.2, 'line_style': 0, 'microvia_diameter': 0.3, 'microvia_drill': 0.1,
@@ -631,7 +651,7 @@ def write_project_files():
         'netclass_patterns': [{'netclass': nc[0], 'pattern': p} for nc in NETCLASSES for p in nc[5]]}
     data.setdefault('text_variables', {})
     data['text_variables'].update({'REV': REV, 'DATE': DATE})
-    pro.write_text(json.dumps(data, indent=2) + '\n')
+    pro.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
 
 def stage_sch():
     write_project_files()
@@ -653,6 +673,7 @@ def stage_sch():
 # =============================================================================
 BOARD_W, BOARD_H = 100.0, 63.5
 ORIGIN = (50.0, 50.0)            # kartin sol-ust kosesi (KiCad sayfa koordinati, mm)
+PLACE_ORIGIN = (0.0, BOARD_H)    # gerber/delik/yerlesim dosyasi orijini: kartin sol-alt kosesi (yerel mm, Y yukari)
 J1X, PIN1Y = 56.5, 1.6           # DevKit J1 pin 1: ust kenara 1.6 mm -> anten kartin DISINDA kalir
 XA = 51.0                        # 74HCT245 A sutunu (pin 1..10; B sutunu XA - 7.62)
 XR = J1X + DEVKIT_ROW_IN         # DevKit sag sira (sensorlere en yakin)
@@ -965,6 +986,7 @@ def stage_pcb():
     ds.m_HoleToHoleMin = mm(0.25)
     ds.m_HoleClearance = mm(0.25)
     ds.m_SolderMaskMinWidth = mm(0)
+    ds.SetAuxOrigin(V(*PLACE_ORIGIN))      # montaj servisleri sol-alt kose orijini bekler (pozitif koordinat)
     tb = board.GetTitleBlock()
     tb.SetTitle('MagPanel Carrier'); tb.SetRevision(REV); tb.SetDate(DATE)
     tb.SetCompany('MagPanel (github.com/Kem4lk/magpanel)')
@@ -1060,7 +1082,7 @@ def patch_rules():
     dsets.setdefault('rules', {}).update(RULES)
     dsets['track_widths'] = [0.0, 0.25, 0.4, 0.5, 0.8, 1.0]
     dsets['via_dimensions'] = [{'diameter': 0.0, 'drill': 0.0}, {'diameter': 0.6, 'drill': 0.3}, {'diameter': 0.8, 'drill': 0.4}]
-    pro.write_text(json.dumps(data, indent=2) + '\n')
+    pro.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
 
 # =============================================================================
 #  YONLENDIRME (Freerouting) + GND DOKUMU
@@ -1323,16 +1345,24 @@ def fab_gerbers():
     gd.mkdir(parents=True)
     kcli('pcb', 'export', 'gerbers', '--layers',
          'F.Cu,B.Cu,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts',
-         '--subtract-soldermask', '-o', str(gd) + os.sep, pcb)
+         '--subtract-soldermask', '--use-drill-file-origin', '-o', str(gd) + os.sep, pcb)
     kcli('pcb', 'export', 'drill', '--format', 'excellon', '--excellon-separate-th', '-u', 'mm',
-         '-o', str(gd) + os.sep, pcb)
+         '--drill-origin', 'plot', '-o', str(gd) + os.sep, pcb)
     zip_dir(gd, FAB / (PROJ + '-gerber.zip'))
     return sorted(f.name for f in gd.iterdir())
 
+def place_xy(fp):
+    """Footprint merkezi kartin sol-alt kosesine gore (mm, Y yukari): gerber ve delik dosyalariyla ayni orijin."""
+    import pcbnew
+    pos = fp.GetPosition()
+    return (pcbnew.ToMM(pos.x) - ORIGIN[0] - PLACE_ORIGIN[0], PLACE_ORIGIN[1] - (pcbnew.ToMM(pos.y) - ORIGIN[1]))
+
 def fab_bom_cpl(board):
-    """Tam BOM (insan) + JLCPCB SMT BOM/CPL (yalniz SMD; LCSC no. siparis aninda eslenir)."""
+    """Tam BOM (insan) + SMT montaj dosyalari: JLCPCB BOM/CPL (csv), Robotistan BOM/PnP (xlsx).
+    Montaj dosyalarinda yalniz SMD parcalar var (hepsi ust yuzde); delikli parcalar elle lehimlenir."""
     import csv
     import pcbnew
+    import xlsx
     nl = json.loads((OUT / 'netlist.json').read_text())
     fps = {fp.GetReference(): fp for fp in board.GetFootprints()}
     def is_smd(ref):
@@ -1351,27 +1381,42 @@ def fab_bom_cpl(board):
     rows = grouped(True)                      # insan BOM'u: ayni deger, farkli gorev -> ayri satir
     with open(FAB / (PROJ + '-bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['Ref', 'Adet', 'Deger', 'Footprint', 'Montaj', 'Parca / MPN', 'Not'])
+        w.writerow(['Ref', 'Adet', 'Deger', 'Footprint', 'Montaj', 'Uretici', 'Parca / MPN', 'LCSC', 'Not'])
         for (val, fpn, mpn, desc), refs in rows:
+            fl = nl[refs[0]]['fields']
             w.writerow([' '.join(refs), len(refs), val, fpn.split(':')[1], 'SMD' if is_smd(refs[0]) else 'THT',
-                        mpn, desc])
+                        fl.get('Manufacturer', ''), mpn, fl.get('LCSC', ''), desc])
+    smt_rows = []                             # (Comment, refs, kilif, LCSC, MPN) - adet kart basina
+    for (val, fpn, mpn), refs in grouped(False):
+        if is_smd(refs[0]):
+            assert mpn in SMT_BY_MPN, ('SMT_PARTS tablosunda yok', refs, mpn)
+            comment, _, _, lcsc, pkg = SMT_BY_MPN[mpn]
+            smt_rows.append((comment, refs, pkg, lcsc, mpn))
     with open(FAB / (PROJ + '-jlc-bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
-        for (val, fpn, mpn), refs in grouped(False):
-            if is_smd(refs[0]):
-                w.writerow([mpn or val, ','.join(refs), fpn.split(':')[1], ''])
+        for comment, refs, pkg, lcsc, mpn in smt_rows:
+            w.writerow([comment, ','.join(refs), pkg, lcsc])
+    xlsx.write(FAB / (PROJ + '-robotistan-bom.xlsx'),
+               [['Comment', 'Designator', 'Footprint', 'RobotistanPro Part', 'Manufacturer Part Number (MPN)', 'Quantity']]
+               + [[comment, ','.join(refs), pkg, lcsc, mpn, len(refs)] for comment, refs, pkg, lcsc, mpn in smt_rows],
+               widths=[34, 44, 18, 22, 34, 12])
+    place = []                                # (ref, x, y, alt yuz, aci)
+    for ref in sorted(fps, key=refkey):
+        if is_smd(ref) and nl.get(ref, {}).get('in_bom', True):
+            fp = fps[ref]
+            x, y = place_xy(fp)
+            place.append((ref, x, y, fp.IsFlipped(), int(round(fp.GetOrientationDegrees())) % 360))
     with open(FAB / (PROJ + '-jlc-cpl.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
-        for ref in sorted(fps, key=refkey):
-            fp = fps[ref]
-            if not is_smd(ref) or not nl.get(ref, {}).get('in_bom', True):
-                continue
-            pos = fp.GetPosition()               # gerber ile ayni mutlak koordinat (Y yukari)
-            w.writerow([ref, '%.4fmm' % pcbnew.ToMM(pos.x), '%.4fmm' % -pcbnew.ToMM(pos.y),
-                        'Bottom' if fp.IsFlipped() else 'Top', '%g' % (fp.GetOrientationDegrees() % 360)])
-    return len(rows)
+        for ref, x, y, back, rot in place:
+            w.writerow([ref, '%.4fmm' % x, '%.4fmm' % y, 'Bottom' if back else 'Top', rot])
+    xlsx.write(FAB / (PROJ + '-robotistan-pnp.xlsx'),
+               [['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation']]
+               + [[ref, '%.4fmm' % x, '%.4fmm' % y, 'B' if back else 'T', rot] for ref, x, y, back, rot in place],
+               widths=[18, 22, 22, 14, 14])
+    return len(rows), len(smt_rows), len(place)
 
 # kart gorseli renkleri (yesil maske, ENIG gorunumu)
 RENDER_COL = {'fr4_masked': (22, 84, 48, 255), 'cu_masked': (38, 118, 66, 255), 'fr4_bare': (196, 176, 122, 255),
@@ -1479,12 +1524,15 @@ def schematic_png(out_png, width=4200, final=2400):
 
 def stage_fab():
     check_erc_drc()
-    FAB.mkdir(exist_ok=True)
-    files = fab_gerbers()
-    print('gerber: %d dosya -> fab/%s-gerber.zip' % (len(files), PROJ))
     import pcbnew
     board = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
-    print('bom: %d satir -> fab/%s-bom.csv (+ jlc-bom/cpl)' % (fab_bom_cpl(board), PROJ))
+    if board.GetDesignSettings().GetAuxOrigin() != V(*PLACE_ORIGIN):
+        raise RuntimeError('yerlesim orijini kartin sol-alt kosesinde degil: pcb ve route asamalarini yeniden calistir')
+    FAB.mkdir(exist_ok=True)
+    files = fab_gerbers()
+    print('gerber: %d dosya -> fab/%s-gerber.zip (orijin: kartin sol-alt kosesi)' % (len(files), PROJ))
+    print('bom: %d satir, montaj: %d satir / %d parca -> fab/%s-bom.csv, jlc-bom/cpl, robotistan-bom/pnp'
+          % (*fab_bom_cpl(board), PROJ))
     kcli('sch', 'export', 'pdf', '-o', FAB / (PROJ + '-schematic.pdf'), OUT / (PROJ + '.kicad_sch'))
     fab_print(board, FAB / (PROJ + '-1to1.pdf'))
     print('baski: fab/%s-1to1.pdf (A4, %%100 olcek)' % PROJ)
