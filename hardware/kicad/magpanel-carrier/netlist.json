@@ -18,7 +18,7 @@
   "fields": {
    "MPN": "MLCC 10 uF 16 V X5R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -32,7 +32,7 @@
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -46,7 +46,7 @@
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -60,7 +60,7 @@
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "ENC_CLK",
@@ -74,7 +74,7 @@
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "ENC_DT",
@@ -88,7 +88,7 @@
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "ENC_SW",
@@ -102,7 +102,7 @@
   "fields": {
    "MPN": "MLCC 10 uF 16 V X5R 0805"
   },
-  "footprint": "Capacitor_SMD:C_0805_2012Metric",
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -116,7 +116,7 @@
   "fields": {
    "MPN": "SMAJ5.0A (400 W, 5 V TVS)"
   },
-  "footprint": "Diode_SMD:D_SMA",
+  "footprint": "Diode_SMD:D_SMA_Handsoldering",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -130,7 +130,7 @@
   "fields": {
    "MPN": "LED 0805 yesil"
   },
-  "footprint": "LED_SMD:LED_0805_2012Metric",
+  "footprint": "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "GND",
@@ -144,7 +144,7 @@
   "fields": {
    "MPN": "Bourns MF-MSMF150-2 (1812, 1.5 A hold)"
   },
-  "footprint": "Fuse:Fuse_1812_4532Metric",
+  "footprint": "Fuse:Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "VIN",
@@ -386,7 +386,7 @@
   "fields": {
    "MPN": "0805 2.2 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -395,12 +395,152 @@
   "uuid": "bb3ee5f0-d268-573d-aa3c-476bf5eeca3d",
   "value": "2.2k"
  },
+ "R10": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "R1_5V",
+   "2": "HUB_R1"
+  },
+  "uuid": "2dc06d07-cc33-5b0d-80b1-49f18a231af8",
+  "value": "33R"
+ },
+ "R11": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "G1_5V",
+   "2": "HUB_G1"
+  },
+  "uuid": "bf1be714-c972-5376-95cd-3af1ca89f206",
+  "value": "33R"
+ },
+ "R12": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "B1_5V",
+   "2": "HUB_B1"
+  },
+  "uuid": "0fdc3d07-bbd9-5ead-8ea1-5e869074035a",
+  "value": "33R"
+ },
+ "R13": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "R2_5V",
+   "2": "HUB_R2"
+  },
+  "uuid": "59d31430-affc-57f3-b599-9299446bd595",
+  "value": "33R"
+ },
+ "R14": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "G2_5V",
+   "2": "HUB_G2"
+  },
+  "uuid": "b259ae21-e9f0-5428-af2e-0e1981cf3c72",
+  "value": "33R"
+ },
+ "R15": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "B2_5V",
+   "2": "HUB_B2"
+  },
+  "uuid": "52cd25ec-d424-5f0d-94fd-4a6caee7912e",
+  "value": "33R"
+ },
+ "R16": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT2_5V",
+   "2": "HUB_LAT2"
+  },
+  "uuid": "2d3a7fb2-76be-5877-bef6-54cd7ec865b3",
+  "value": "33R"
+ },
+ "R17": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_A_5V",
+   "2": "HUB_ADDR_A"
+  },
+  "uuid": "7c823dac-7aa0-54b6-8024-f95105839aff",
+  "value": "33R"
+ },
+ "R18": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_B_5V",
+   "2": "HUB_ADDR_B"
+  },
+  "uuid": "a6260435-05eb-507a-89a2-64b4a414db81",
+  "value": "33R"
+ },
+ "R19": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_C_5V",
+   "2": "HUB_ADDR_C"
+  },
+  "uuid": "462ea84c-beaf-59cc-9898-863d9c944d1d",
+  "value": "33R"
+ },
  "R2": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
    "MPN": "0805 10 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "LAT",
@@ -409,12 +549,96 @@
   "uuid": "1c82d232-4df9-5685-9111-9dcf4fd7a7bb",
   "value": "10k"
  },
+ "R20": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_D_5V",
+   "2": "HUB_ADDR_D"
+  },
+  "uuid": "cfa22091-b968-578e-97cc-bce79b566e4b",
+  "value": "33R"
+ },
+ "R21": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT_5V",
+   "2": "HUB_LAT"
+  },
+  "uuid": "dfb977e1-9267-55bf-99bd-ae48de98d975",
+  "value": "33R"
+ },
+ "R22": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "OE_5V",
+   "2": "HUB_OE"
+  },
+  "uuid": "7c61a4e1-6d8a-5c32-982c-0d3610e60ee4",
+  "value": "33R"
+ },
+ "R23": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "CLK_5V",
+   "2": "HUB_CLK"
+  },
+  "uuid": "3be1cde0-3b34-551d-98d1-382237a9667c",
+  "value": "33R"
+ },
+ "R24": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_E_5V",
+   "2": "HUB_ADDR_E"
+  },
+  "uuid": "9a4a22fe-4bf9-5daa-8717-a192fa0f0a7e",
+  "value": "33R"
+ },
+ "R25": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT3_5V",
+   "2": "HUB_LAT3"
+  },
+  "uuid": "3c4227db-d796-5402-8a1c-04ccc37c1186",
+  "value": "33R"
+ },
  "R3": {
   "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
   "fields": {
    "MPN": "0805 10 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "LAT2",
@@ -428,7 +652,7 @@
   "fields": {
    "MPN": "0805 10 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "LAT3",
@@ -442,7 +666,7 @@
   "fields": {
    "MPN": "0805 10 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "OE",
@@ -456,7 +680,7 @@
   "fields": {
    "MPN": "0805 10 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "+3V3",
@@ -470,7 +694,7 @@
   "fields": {
    "MPN": "0805 100 kOhm 1%"
   },
-  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
   "in_bom": true,
   "pins": {
    "1": "MIC_AO",
@@ -478,86 +702,6 @@
   },
   "uuid": "cc1daf9d-4546-5829-89a3-ca5cac38af26",
   "value": "100k"
- },
- "RN1": {
-  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
-  "fields": {
-   "MPN": "4x33 Ohm dizi 0603 convex (orn. YC164-JR-0733RL)"
-  },
-  "footprint": "Resistor_SMD:R_Array_Convex_4x0603",
-  "in_bom": true,
-  "pins": {
-   "1": "HUB_R1",
-   "2": "HUB_G1",
-   "3": "HUB_B1",
-   "4": "HUB_R2",
-   "5": "R2_5V",
-   "6": "B1_5V",
-   "7": "G1_5V",
-   "8": "R1_5V"
-  },
-  "uuid": "82bd2a93-f921-546e-87fe-c9f099d24eca",
-  "value": "4x33R"
- },
- "RN2": {
-  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
-  "fields": {
-   "MPN": "4x33 Ohm dizi 0603 convex (orn. YC164-JR-0733RL)"
-  },
-  "footprint": "Resistor_SMD:R_Array_Convex_4x0603",
-  "in_bom": true,
-  "pins": {
-   "1": "HUB_G2",
-   "2": "HUB_B2",
-   "3": "HUB_LAT2",
-   "4": "HUB_ADDR_A",
-   "5": "ADDR_A_5V",
-   "6": "LAT2_5V",
-   "7": "B2_5V",
-   "8": "G2_5V"
-  },
-  "uuid": "67f42f8f-d524-58a4-a5c4-9ebdac1c887e",
-  "value": "4x33R"
- },
- "RN3": {
-  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
-  "fields": {
-   "MPN": "4x33 Ohm dizi 0603 convex (orn. YC164-JR-0733RL)"
-  },
-  "footprint": "Resistor_SMD:R_Array_Convex_4x0603",
-  "in_bom": true,
-  "pins": {
-   "1": "HUB_ADDR_B",
-   "2": "HUB_ADDR_C",
-   "3": "HUB_ADDR_D",
-   "4": "HUB_LAT",
-   "5": "LAT_5V",
-   "6": "ADDR_D_5V",
-   "7": "ADDR_C_5V",
-   "8": "ADDR_B_5V"
-  },
-  "uuid": "e20eb870-c17e-531b-a8e3-41bfa25e4722",
-  "value": "4x33R"
- },
- "RN4": {
-  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
-  "fields": {
-   "MPN": "4x33 Ohm dizi 0603 convex (orn. YC164-JR-0733RL)"
-  },
-  "footprint": "Resistor_SMD:R_Array_Convex_4x0603",
-  "in_bom": true,
-  "pins": {
-   "1": "HUB_OE",
-   "2": "HUB_CLK",
-   "3": "HUB_ADDR_E",
-   "4": "HUB_LAT3",
-   "5": "LAT3_5V",
-   "6": "ADDR_E_5V",
-   "7": "CLK_5V",
-   "8": "OE_5V"
-  },
-  "uuid": "7f7c72bb-a8d4-5ca8-a6e4-6cab379762aa",
-  "value": "4x33R"
  },
  "U1": {
   "desc": "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in.",
@@ -620,7 +764,7 @@
   "fields": {
    "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
   },
-  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket",
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket_LongPads",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -652,7 +796,7 @@
   "fields": {
    "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
   },
-  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket",
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket_LongPads",
   "in_bom": true,
   "pins": {
    "1": "+5V",

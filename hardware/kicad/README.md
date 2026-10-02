@@ -13,6 +13,7 @@ tabloları düzelt ve yeniden üret. KiCad'de elle yapılan değişiklik bir son
 | Kart | 100 × 63.5 mm, 2 katman, 1.6 mm FR4, köşelerde 4× M3 |
 | İz genişliği | sinyal 0.25 mm, 3V3 0.5 mm, 5 V / VIN 0.8–1.0 mm |
 | Kurallar | boşluk ≥ 0.15 mm, via 0.6/0.3 mm, kenar 0.3 mm (JLCPCB standart 2 katman) |
+| El lehimi | en küçük parça 0805, el lehimi pedleri, parçalar arası ≥ 0.5 mm (DRC kuralı) |
 | GND | iki katmanda döküm + dikiş via'ları |
 | Doğrulama | ERC 0, DRC 0 ihlal, 0 bağlanmamış, şematik↔PCB farkı 0 |
 
@@ -48,8 +49,9 @@ gerber üretilmez.
    2.54 mm adımda, bir iki satır kayarak kısa ve kesişmeyen izlerle bağlanır.
    LAT, LAT2, LAT3 ve OE'de 10 kΩ pull-down var: açılışta GPIO'lar sürülmezken panel karanlık
    kalır. P4'te OE hattı GCLK taşır, P1.86'da aktif-yüksek OE darbesi.
-4. **HUB75E çıkışları J2–J4.** 4×33 Ω seri direnç dizileri (RN1–RN4) kablo yansımalarını
-   bastırır. Bütün hatlar paraleldir, yalnız LAT panel başına ayrıdır:
+4. **HUB75E çıkışları J2–J4.** Her hatta bir 33 Ω seri direnç (R10–R25, 0805) kablo
+   yansımalarını bastırır. Dirençler tek sütundadır, her biri kendi tampon pininin hizasında.
+   Bütün hatlar paraleldir, yalnız LAT panel başına ayrıdır:
 
    | Konnektör | LAT | Kullanım |
    |---|---|---|
@@ -101,14 +103,46 @@ $PY gen_carrier.py all     # hepsi sırayla
 - **Önce 1:1 test:** `fab/magpanel-carrier-1to1.pdf` dosyasını yazıcıda %100 ölçekle bas,
   alttaki 100 mm çizgiyi cetvelle doğrula, gerçek parçaları deliklere oturt.
 - **SMT montaj (isteğe bağlı):** `jlc-bom` ve `jlc-cpl` dosyaları. LCSC numaraları boştur,
-  sipariş ekranında değer ve MPN'e göre eşleştir. Önizlemede D1, D2 ve dizi dirençlerin
-  dönüşünü kontrol et; JLC kütüphanesi bazen 90° ya da 180° farklıdır.
-- **Elle lehim:** 0805 pasifler, 1812 PTC ve SMA diyot kolaydır. 4×0603 dizi direnç ince uç
-  ister. Delikli parçalar: iki 20 pin DIP soket, üç kutu başlık, altı pin başlık, klemens,
-  elektrolitik ve iki 1×22 dişi soket.
+  sipariş ekranında değer ve MPN'e göre eşleştir. Önizlemede D1 ve D2'nin dönüşünü kontrol et;
+  JLC kütüphanesi bazen 90° ya da 180° farklıdır.
+
+### Elle lehim
+Kart havyayla lehimlenecek şekilde çizildi:
+
+| | v1.1 | v1.2 |
+|---|---|---|
+| Seri dirençler | 4× dizi 4×0603, komşu pedler arası 0.35 mm | 16× 0805, komşu pedler arası 1.14 mm |
+| SMD ayak izi | standart ped | el lehimi pedi (dışa uzun) |
+| En dar parça aralığı (courtyard) | 0.16 mm | 0.58 mm |
+| 0.5 mm kuralına göre ihlal | 13 | 0 |
+| HUB75 başlık gövdeleri arası | 2.4 mm | 3.8 mm |
+| DevKit altındaki SMD pedi ile soket gövdesi arası | 1.2 mm | 1.6 mm |
+| DIP soket pedi | 1.6 mm yuvarlak | 2.4 × 1.6 mm uzun |
+
+- Parçalar arası en az 0.5 mm bir DRC kuralıdır (`el_lehim_aralik`). İhlal varsa gerber çıkmaz.
+- Via'lar maskeyle örtülüdür, pede yakın via lehimi emmez. GND pinleri dökümle termal kolla
+  bağlıdır, havya ısıyı kaybetmez.
+- D1 (TVS) anodu J1'in GND pinine doğrudan kalın izle gider. Ters kutupta F1'i açan akım yolu kısadır.
+
+Montaj sırası (alçaktan yükseğe, kart masada düz durur):
+1. SMD'ler: 0805 dirençler ve kondansatörler, D2, sonra F1 ve D1. D1 ve D2'nin katodu serigrafideki
+   kapalı uca bakar. DevKit altındakiler (R2–R7, C5–C7) soketlerden önce lehimlenmeli.
+2. İki DIP-20 soket. Çentik serigrafideki çentikle aynı yöne.
+3. Altı pin başlık (sensörler).
+4. Üç HUB75 kutu başlığı. Kutunun çentiği serigrafideki boşluğa (sola) gelir.
+5. Vida klemensi J1, kablo girişi kart kenarına bakar.
+6. Elektrolitik C1, uzun bacak (+) kare pede.
+7. DevKit'in iki 1×22 dişi soketi en son. DevKit soketlere takılıyken lehimlenirse sıralar hizalı kalır.
+
+İlk açılış: tamponlar ve DevKit takılı değilken 5 V ver. PWR yanmalı, DevKit soketinin 5V ve GND
+pinleri arasında 5 V ölçülmeli. Sonra 74HCT245'leri (çentik aynı yöne) ve DevKit'i tak.
+
+Başlıkların yan yana durması sorun değildir: hatlar zaten paraleldir, fiş kutunun içine oturur.
+Çok çıkışlı HUB75 adaptör kartlarında başlıklar genelde bundan da sık dizilir. BOM düz kutu başlık
+der. Kollu (kilitli) başlıklar daha uzundur ve bu yerleşime sığmaz.
 
 ## Açık sorular
-1. Pasifler SMD varsayıldı: 0805 direnç ve kondansatör, 4×0603 dizi direnç, 1812 PTC, SMA TVS.
+1. Pasifler SMD varsayıldı: 0805 direnç ve kondansatör, 1812 PTC, SMA TVS (hepsi el lehimi pedli).
    Elinde delikli parçalar varsa ayak izleri `FP` tablosundan değiştirilip yeniden üretilir.
 2. 5 V klemens 5.08 mm adımlı, elektrolitik 8 mm çaplı ve 3.5 mm bacak aralıklı varsayıldı.
 3. Kasa: `enclosure/generate_case.py` henüz bu kart için ayak ve sensör deliği içermiyor.

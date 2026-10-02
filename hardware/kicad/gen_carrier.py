@@ -35,7 +35,7 @@ from schlib import uid, r4                   # noqa: E402
 
 PROJ = 'magpanel-carrier'
 OUT = HERE / PROJ
-REV = '1.1'
+REV = '1.2'
 DATE = '2026-10-02'
 G = 2.54                                     # sematik izgara (100 mil)
 
@@ -74,14 +74,11 @@ BUF_CH = {
     'U2': ['ADDR_A', 'LAT2', 'B2', 'G2', 'R2', 'B1', 'G1', 'R1'],          # A0..A7
     'U3': ['LAT3', 'ADDR_E', 'CLK', 'OE', 'LAT', 'ADDR_D', 'ADDR_C', 'ADDR_B'],
 }
-# Seri 33R dizileri (R_Array_Convex_4x0603: direnc i = pin i <-> pin 9-i).
-# pin 8..5 tampon tarafi (*_5V), pin 1..4 konnektor tarafi (HUB_*), sirasi ust->alt.
-RN_CH = {
-    'RN1': ['R1', 'G1', 'B1', 'R2'],
-    'RN2': ['G2', 'B2', 'LAT2', 'ADDR_A'],
-    'RN3': ['ADDR_B', 'ADDR_C', 'ADDR_D', 'LAT'],
-    'RN4': ['OE', 'CLK', 'ADDR_E', 'LAT3'],
-}
+# Seri 33R: her hatta tek 0805 (el lehimi; 4x0603 dizi ince uc ister). PCB'de tek sutun, her direnc
+# kendi B pininin satirinda: R10..R17 = U2 B7..B0 (satir 2..9), R18..R25 = U3 B7..B0 (satir 13..20).
+# pin 1 tampon tarafi (*_5V), pin 2 konnektor tarafi (HUB_*). (ref, sinyal, DevKit satiri)
+SERIES_R = ([('R%d' % (10 + k), sig, 2 + k) for k, sig in enumerate(reversed(BUF_CH['U2']))] +
+            [('R%d' % (18 + k), sig, 13 + k) for k, sig in enumerate(reversed(BUF_CH['U3']))])
 # HUB75E konnektor pinleri (standart). 14 = LAT (panel basina ayri).
 HUB_PINS = {1: 'R1', 2: 'G1', 3: 'B1', 4: 'GND', 5: 'R2', 6: 'G2', 7: 'B2', 8: 'ADDR_E',
             9: 'ADDR_A', 10: 'ADDR_B', 11: 'ADDR_C', 12: 'ADDR_D', 13: 'CLK', 14: None,
@@ -111,17 +108,16 @@ SENSOR_GPIO = {'LDR_OUT': 'IO1', 'MIC_AO': 'IO2', 'MIC_DO': 'IO42', 'ENC_CLK': '
                'EXP_IO44': 'IO44/RX', 'EXP_IO38': 'IO38'}
 ENC_CAPS = [('C5', 'ENC_CLK'), ('C6', 'ENC_DT'), ('C7', 'ENC_SW')]
 
-# Parca bilgileri: ref -> (deger, footprint, MPN/oneri, aciklama)
+# SMD'ler el lehimi pedli (HandSolder: ped disari uzun, havya ucu sigar); en kucugu 0805.
 FP = {
     'TB2': 'TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal',
-    'PTC': 'Fuse:Fuse_1812_4532Metric',
-    'SMA': 'Diode_SMD:D_SMA',
+    'PTC': 'Fuse:Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder',
+    'SMA': 'Diode_SMD:D_SMA_Handsoldering',
     'CP8': 'Capacitor_THT:CP_Radial_D8.0mm_P3.50mm',
-    'C0805': 'Capacitor_SMD:C_0805_2012Metric',
-    'R0805': 'Resistor_SMD:R_0805_2012Metric',
-    'LED0805': 'LED_SMD:LED_0805_2012Metric',
-    'RN4': 'Resistor_SMD:R_Array_Convex_4x0603',
-    'DIP20': 'Package_DIP:DIP-20_W7.62mm_Socket',      # CD74HCT245E (PDIP-20), soketle
+    'C0805': 'Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder',
+    'R0805': 'Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder',
+    'LED0805': 'LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder',
+    'DIP20': 'Package_DIP:DIP-20_W7.62mm_Socket_LongPads',   # CD74HCT245E (PDIP-20), soketle; uzun ped
     'IDC16': 'Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical',
     'H3': 'Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical',
     'H4': 'Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical',
@@ -517,14 +513,16 @@ def build_schematic(libs):
 
     # ------------------------------------------------------------ 4) HUB75 CIKISLARI
     sch.frame(*P(107, 6), *P(161, 80), '4  HUB75E CIKISLARI (seri 33R, 3 panel)')
-    for i, (ref, nets) in enumerate(RN_CH.items()):
-        rn = sch.place('Device:R_Pack04', ref, '4x33R', *P(117, 14 + i * 9), rot=90, footprint=FP['RN4'],
-                       ref_at=(0, -5.08, ('center',)), val_at=(0, 7.62, ('center',)),
-                       fields={'MPN': '4x33 Ohm dizi 0603 convex (orn. YC164-JR-0733RL)'},
-                       desc='Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir')
-        for k, sig in enumerate(nets):
-            sch.stub(rn, str(8 - k), sig + '_5V', length=2 * G)       # tampon tarafi
-            sch.stub(rn, str(1 + k), 'HUB_' + sig, length=2 * G)      # konnektor tarafi
+    for i, (ref, sig, _) in enumerate(SERIES_R):
+        gy = 10 + i * 3.5 + (1.5 if i >= 8 else 0)                    # U2 grubu ust, U3 grubu alt
+        r = sch.place('Device:R', ref, '33R', *P(117, gy), rot=90, footprint=FP['R0805'],
+                      ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)),
+                      fields={'MPN': '0805 33 Ohm 1%'},
+                      desc='Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir')
+        sch.stub(r, '1', sig + '_5V', length=2 * G)                    # tampon tarafi
+        sch.stub(r, '2', 'HUB_' + sig, length=2 * G)                   # konnektor tarafi
+    sch.text('R10-R25: her hatta 33R seri (0805).\nPCB: tek sutun, her direnc kendi\ntampon pininin satirinda.',
+             *P(108, 70), size=1.27)
     for i, (ref, latnet, title, note) in enumerate(HUB_CONN):
         gy = 18 + i * 20
         j = sch.place('Connector_Generic:Conn_02x08_Odd_Even', ref, 'HUB75E ' + title, *P(144, gy),
@@ -656,8 +654,12 @@ def stage_sch():
 BOARD_W, BOARD_H = 100.0, 63.5
 ORIGIN = (50.0, 50.0)            # kartin sol-ust kosesi (KiCad sayfa koordinati, mm)
 J1X, PIN1Y = 56.5, 1.6           # DevKit J1 pin 1: ust kenara 1.6 mm -> anten kartin DISINDA kalir
-XA, RNX = 51.0, 37.6             # 74HCT245 A sutunu (pin 1..10; B sutunu XA - 7.62), seri dizi sutunu
+XA = 51.0                        # 74HCT245 A sutunu (pin 1..10; B sutunu XA - 7.62)
 XR = J1X + DEVKIT_ROW_IN         # DevKit sag sira (sensorlere en yakin)
+# El lehimi: tum courtyard'lar arasi >= 0.5 mm (DRU kurali 'el_lehim_aralik'), 0805 en kucuk parca.
+RCOL = 39.4                      # seri 33R sutunu (+ C3/C4/C8): DIP soket courtyard'ina 0.5 mm
+HUB_X0, HUB_PITCH, HUB_Y = 5.1, 12.8, 13.2   # J2..J4 pin 1; govdeler arasi 3.8 mm (eskiden 2.4)
+DEV_OFF = 4.5                    # DevKit altindaki SMD'ler: soket sirasina uzaklik (govdeye 1.6 mm bosluk)
 
 def pin_y(n):
     """DevKit baslik pin n (1..22) y konumu (yerel mm); kesirli n iki pinin arasi."""
@@ -671,35 +673,39 @@ U2_ROW1, U3_ROW1 = 11, 22
 # ref -> (x, y, donus derece, katman)
 PLACE = {
     'U1': (J1X, PIN1Y, 0, 'F'),
-    'J2': (5.2, 13.2, 0, 'F'), 'J3': (16.63, 13.2, 0, 'F'), 'J4': (28.06, 13.2, 0, 'F'),
+    'J2': (HUB_X0, HUB_Y, 0, 'F'), 'J3': (HUB_X0 + HUB_PITCH, HUB_Y, 0, 'F'),
+    'J4': (HUB_X0 + 2 * HUB_PITCH, HUB_Y, 0, 'F'),
     'U2': (XA, pin_y(U2_ROW1), 180, 'F'), 'U3': (XA, pin_y(U3_ROW1), 180, 'F'),
-    # dizi i: B pinleriyle ayni 4 satirin ortasi (U2 B8..B1 = satir 2..9, U3 = 13..20)
-    'RN1': (RNX, pin_y(3.5), 0, 'F'), 'RN2': (RNX, pin_y(7.5), 0, 'F'),
-    'RN3': (RNX, pin_y(14.5), 0, 'F'), 'RN4': (RNX, pin_y(18.5), 0, 'F'),
-    # dekuplaj: VCC (pin 20) B sutununun en altinda
-    'C3': (40.0, pin_y(U2_ROW1), 180, 'F'), 'C4': (40.0, pin_y(U3_ROW1), 180, 'F'),
-    'C8': (40.0, pin_y(U3_ROW1) + 2.7, 180, 'F'),
-    # DevKit altinda (soketler 8.5 mm: kart ustte kalir), soket seritlerinden >= 0.3 mm courtyard boslugu
-    'R2': (J1X + 3.9, pin_y(16), 0, 'F'), 'R3': (J1X + 3.9, pin_y(10), 0, 'F'),
-    'R4': (J1X + 3.9, pin_y(20), 0, 'F'), 'R5': (J1X + 3.9, pin_y(17), 0, 'F'),
-    'C5': (XR - 3.9, pin_y(7), 180, 'F'), 'C6': (XR - 3.9, pin_y(8), 180, 'F'),
-    'C7': (XR - 3.9, pin_y(9), 180, 'F'), 'R6': (XR - 3.9, pin_y(17), 0, 'F'),
-    'R7': (XR - 3.9, pin_y(5), 180, 'F'),
-    # 5V giris blogu (sol-alt; vida klemensi kablo girisi sol kenara bakar)
-    'J1': (5.5, 43.5, 270, 'F'), 'F1': (15.0, 43.5, 0, 'F'), 'D1': (15.0, 48.1, 180, 'F'),
-    'C1': (22.0, 45.6, 0, 'F'), 'C2': (15.0, 51.7, 0, 'F'), 'R1': (11.6, 55.2, 0, 'F'), 'D2': (15.7, 55.2, 180, 'F'),
+    # seri 33R (R10..R25): SERIES_R'den asagida eklenir (her biri kendi B pininin satirinda)
+    # dekuplaj: VCC (pin 20) B sutununun en altinda, direnc sutununda bos kalan satirlarda
+    'C3': (RCOL, pin_y(U2_ROW1), 180, 'F'), 'C4': (RCOL, pin_y(U3_ROW1), 180, 'F'),
+    'C8': (RCOL, pin_y(U3_ROW1) + 2.7, 180, 'F'),
+    # DevKit altinda (soketler 8.5 mm: kart ustte kalir); once bunlar lehimlenir, sonra soketler
+    'R2': (J1X + DEV_OFF, pin_y(16), 0, 'F'), 'R3': (J1X + DEV_OFF, pin_y(10), 0, 'F'),
+    'R4': (J1X + DEV_OFF, pin_y(20), 0, 'F'), 'R5': (J1X + DEV_OFF, pin_y(17), 0, 'F'),
+    'C5': (XR - DEV_OFF, pin_y(7), 180, 'F'), 'C6': (XR - DEV_OFF, pin_y(8), 180, 'F'),
+    'C7': (XR - DEV_OFF, pin_y(9), 180, 'F'), 'R6': (XR - DEV_OFF, pin_y(17), 0, 'F'),
+    'R7': (XR - DEV_OFF, pin_y(5), 180, 'F'),
+    # 5V giris blogu (sol-alt; vida klemensi kablo girisi sol kenara bakar). D1 (TVS) dogrudan
+    # J1 GND'sine kalin izle baglanir; C2 ve R1 +5V ana hattina (x = C1+) kisa kolla.
+    'J1': (5.5, 43.5, 270, 'F'), 'F1': (15.2, 43.5, 0, 'F'), 'D1': (16.5, 48.58, 180, 'F'),
+    'C1': (24.3, 45.0, 0, 'F'), 'C2': (21.3, 53.0, 180, 'F'), 'R1': (21.3, 56.0, 180, 'F'),
+    'D2': (16.8, 56.0, 0, 'F'),
     # sensor basliklari: sutun A (x=89.5) LDR/MIC/ENC, sutun B (x=96) EXP/DHT/TOUCH
     'J5': (89.5, 10.0, 0, 'F'), 'J6': (89.5, 20.16, 0, 'F'), 'J7': (89.5, 32.86, 0, 'F'),
     'J10': (96.0, 10.0, 0, 'F'), 'J8': (96.0, 25.24, 0, 'F'), 'J9': (96.0, 35.4, 0, 'F'),
     'H1': (3.5, 3.5, 0, 'F'), 'H2': (96.5, 3.5, 0, 'F'), 'H3': (3.5, 60.0, 0, 'F'), 'H4': (96.5, 60.0, 0, 'F'),
 }
+# 180 derece: ped 1 (*_5V) saga, tampon B pinine; ped 2 (HUB_*) sola, konnektorlere
+PLACE.update({ref: (RCOL, pin_y(row), 180, 'F') for ref, _, row in SERIES_R})
 # SMD/DIP GND pedlerinin yanina sabit via (alt GND dokumune kisa yol). (ref, ped): (dx, dy) ped merkezinden
+# Via kenari ped kenarindan >= 0.6 mm (maskeli via; lehim via'ya akmaz).
 GND_VIAS = {
     ('U2', '10'): (-2.15, 0), ('U2', '19'): (2.25, 0), ('U3', '10'): (-2.15, 0), ('U3', '19'): (2.25, 0),
-    ('C3', '2'): (-1.5, 0), ('C4', '2'): (-1.5, 0), ('C8', '2'): (-1.5, 0),
-    ('R2', '2'): (1.5, 0), ('R3', '2'): (1.5, 0), ('R4', '2'): (1.5, 0), ('R5', '2'): (1.5, 0),
-    ('C5', '2'): (-1.5, 0), ('C6', '2'): (-1.5, 0), ('C7', '2'): (-1.5, 0), ('R7', '2'): (-1.5, 0),
-    ('D1', '2'): (-2.3, 0), ('C2', '2'): (1.5, 0), ('D2', '1'): (1.5, 0),
+    ('C3', '2'): (0, 1.6), ('C4', '2'): (-1.65, 0), ('C8', '2'): (-1.65, 0),
+    ('R2', '2'): (1.65, 0), ('R3', '2'): (1.65, 0), ('R4', '2'): (1.65, 0), ('R5', '2'): (1.65, 0),
+    ('C5', '2'): (-1.65, 0), ('C6', '2'): (-1.65, 0), ('C7', '2'): (-1.65, 0), ('R7', '2'): (-1.65, 0),
+    ('C2', '2'): (-1.65, 0), ('D2', '1'): (-1.65, 0),
 }
 TRUNK_W = 1.0          # +5V ana hat (mm)
 TRUNK_Y = 60.8         # ana hat tamponlarin ALTINDAN gecer (alt serit)
@@ -716,6 +722,7 @@ def V(x, y):
 def make_devkit_footprint():
     """MagPanel:ESP32-S3-DevKitC-1_Socket: sol sira + DEVKIT_RIGHT_ROWS'taki sag sira(lar) (ayni pin no)."""
     import pcbnew
+    pcbnew.KIID.SeedGenerator(0x4D50)          # sabit UUID'ler: ayni girdi -> ayni dosya (git farki yok)
     fp = pcbnew.FOOTPRINT(None)
     fp.SetFPIDAsString('ESP32-S3-DevKitC-1_Socket')
     fp.SetReference('REF**')
@@ -856,16 +863,16 @@ def pad_xy(fp, num):
 # ref -> (dx, dy, aci, boyut) serigrafi ref konumu (parca merkezine gore); None = gizle
 REF_POS = {
     'U2': (-3.81, -11.43, 90, 1.0), 'U3': (-3.81, -11.43, 90, 1.0),      # DIP govde ortasi (pin 1 = konum)
-    'RN1': (-2.45, 0, 90, 0.8), 'RN2': (-2.45, 0, 90, 0.8), 'RN3': (-2.45, 0, 90, 0.8), 'RN4': (-2.45, 0, 90, 0.8),
-    'C3': (0.3, 1.65, 0, 0.8), 'C4': (0.3, -1.65, 0, 0.8), 'C8': (0.3, 1.65, 0, 0.8),
+    'C3': (0, -1.65, 0, 0.8), 'C4': (0, -1.65, 0, 0.8), 'C8': (0, 1.65, 0, 0.8),
     'R2': (0, -1.45, 0, 0.8), 'R3': (0, -1.45, 0, 0.8), 'R4': (0, 1.45, 0, 0.8), 'R5': (0, 1.45, 0, 0.8),
-    'C5': (-4.0, 0, 0, 0.8), 'C6': (-4.0, 0, 0, 0.8), 'C7': (-4.0, 0, 0, 0.8), 'R6': (-3.2, 0, 0, 0.8),
-    'R7': (-4.0, 0, 0, 0.8),
-    'F1': (0, -2.4, 0, 0.8), 'D1': (0, 2.25, 0, 0.8), 'C1': (1.75, 5.0, 0, 0.8), 'C2': (-2.6, 0, 0, 0.8),
+    'C5': (-4.2, 0, 0, 0.8), 'C6': (-4.2, 0, 0, 0.8), 'C7': (-4.2, 0, 0, 0.8), 'R6': (-3.2, 0, 0, 0.8),
+    'R7': (-4.2, 0, 0, 0.8),
+    'F1': (0, -2.6, 0, 0.8), 'D1': (0, 2.45, 0, 0.8), 'C1': (1.75, 5.0, 0, 0.8), 'C2': (0, -1.65, 0, 0.8),
     'R1': (0, 1.75, 0, 0.8), 'D2': (0, 1.75, 0, 0.8),
     'J1': None, 'J2': None, 'J3': None, 'J4': None, 'J5': None, 'J6': None, 'J7': None, 'J8': None,
     'J9': None, 'J10': None, 'H1': None, 'H2': None, 'H3': None, 'H4': None,
 }
+REF_POS.update({ref: None for ref, _, _ in SERIES_R})     # 2.54 mm adimda yer yok: grup etiketi (serigrafi)
 
 def silk_bbox(fp):
     """Footprint'in F.Silkscreen cizimlerinin kutusu (yerel mm, kart koordinati)."""
@@ -908,7 +915,10 @@ def layout_silkscreen(board, fps):
     x0, y0, x1, y1 = silk_bbox(fps['J1'])
     silk_text(board, '+5V IN', x0 + 0.1, y0 - 0.9, 0.8, align='left')      # pin 1 (ust)
     silk_text(board, 'GND', x0 + 0.1, y1 + 0.9, 0.8, align='left')         # pin 2 (alt)
-    silk_text(board, 'PWR', PLACE['D2'][0] + 3.0, PLACE['D2'][1], 0.8, align='left')
+    silk_text(board, 'PWR', PLACE['D2'][0] - 3.2, PLACE['D2'][1], 0.8, align='right')
+    # seri direnc sutunu: grup basinda ilk-son ref (ust U2 grubu, satir 12'de U3 grubu)
+    for refs, row in ((SERIES_R[:8], 1), (SERIES_R[8:], 12)):
+        silk_text(board, '%s-%s' % (refs[0][0], refs[-1][0][1:]), RCOL, pin_y(row) + (0.15 if row == 1 else 0), 0.8)
     # baslik / surum: on yuzde sag-alt bos alanda kisa, arka yuzde tam
     silk_text(board, 'MagPanel', 92.0, 48.6, 1.2, bold=True)
     silk_text(board, 'Carrier v' + REV, 92.0, 50.6, 1.0)
@@ -941,6 +951,7 @@ def stage_pcb():
             kn = knl[(ref, num)][0]
             assert (pcb_net(net) == kn) if net else kn.startswith('unconnected-('), (ref, num, net, kn)
     make_devkit_footprint()
+    pcbnew.KIID.SeedGenerator(0x4D51)
     path = OUT / (PROJ + '.kicad_pcb')
     if path.exists():
         path.unlink()
@@ -995,9 +1006,17 @@ def stage_pcb():
     c1p = pad_xy(fps['C1'], '1')
     u5v = pad_xy(fps['U1'], devkit_pin('5V'))
     f1a, f1b = pad_xy(fps['F1'], '1'), pad_xy(fps['F1'], '2')
+    d1k, d1a = pad_xy(fps['D1'], '1'), pad_xy(fps['D1'], '2')
+    c2p, r1p = pad_xy(fps['C2'], '1'), pad_xy(fps['R1'], '1')
     add_track(board, nets['VIN'], [pad_xy(fps['J1'], '1'), f1a], TRUNK_W)
     add_track(board, nets['+5V'], [f1b, (c1p[0] - 2.0, f1b[1]), c1p], TRUNK_W)
-    add_track(board, nets['+5V'], [c1p, (c1p[0], TRUNK_Y), (TRUNK_X, TRUNK_Y), (TRUNK_X, u5v[1]), u5v], TRUNK_W)
+    # TVS: F1 cikisi -> katot; anot dogrudan J1 GND'sine (ters kutupta F1'i acan akim yolu kisa ve kalin)
+    add_track(board, nets['+5V'], [f1b, (f1b[0], d1k[1]), d1k], TRUNK_W)
+    add_track(board, nets['GND'], [d1a, pad_xy(fps['J1'], '2')], TRUNK_W)
+    add_track(board, nets['+5V'], [c1p, (c1p[0], c2p[1]), (c1p[0], r1p[1]), (c1p[0], TRUNK_Y), (TRUNK_X, TRUNK_Y),
+                                   (TRUNK_X, u5v[1]), u5v], TRUNK_W)
+    add_track(board, nets['+5V'], [c2p, (c1p[0], c2p[1])], 0.8)          # C2 ve R1: ana hatta T kol
+    add_track(board, nets['+5V'], [r1p, (c1p[0], r1p[1])], 0.5)
     # U3 kollari: ana hat -> C8+ -> C4+ -> VCC (pin 20); ana hat -> DIR (pin 1)
     c8p, c4p = pad_xy(fps['C8'], '1'), pad_xy(fps['C4'], '1')
     u3vcc, u3dir = pad_xy(fps['U3'], '20'), pad_xy(fps['U3'], '1')
@@ -1028,6 +1047,9 @@ DRU = '''(version 1)
 # baglanamiyor; tek kol (0.45 mm, iki katmanda) sensor akimlari icin fazlasiyla yeterli.
 (rule "termal_tek_kol"
   (constraint min_resolved_spokes 1))
+# El lehimi: parca courtyard'lari arasinda en az 0.5 mm (havya ucu ve cimbiz icin pay).
+(rule "el_lehim_aralik"
+  (constraint courtyard_clearance (min 0.5mm)))
 '''
 
 def patch_rules():
@@ -1193,6 +1215,7 @@ def route_once(passes, gnd_plane=False):
         stage_pcb()
     shutil.copyfile(PREROUTE, path)
     board = pcbnew.LoadBoard(str(path))
+    pcbnew.KIID.SeedGenerator(0x4D52)          # Freerouting deterministik degil ama ayni SES -> ayni dosya
     if gnd_plane:
         add_gnd_zones(board)                   # once dokum: GND 'plane' -> Freerouting GND izi cekmez
     zones = board.Zones()                      # kartin kendi listesine referans

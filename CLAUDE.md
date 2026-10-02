@@ -205,10 +205,11 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - `gen_carrier.py` tek kaynak: `sch` → `pcb` → `route` → `fab` (`all` hepsi). KiCad 8'in python'u ile
   çalışır (Linux `/usr/bin/python3`, macOS KiCad.app içindeki python). `sch` yalnız stdlib: `sexp.py`
   (S-ifade okuma/yazma), `schlib.py` (KiCad sembol kütüphanesi; dönüşüm sırası: önce döndür, sonra ayna).
-- Kart v1.1, 100×63.5 mm, 2 katman. DevKit dişi soket: sağ sıra `DEVKIT_RIGHT_ROWS` (eldeki N16R8 klon,
+- Kart v1.2, 100×63.5 mm, 2 katman. DevKit dişi soket: sağ sıra `DEVKIT_RIGHT_ROWS` (eldeki N16R8 klon,
   2× USB-C = 1.0" / 25.4 mm; 1:1 baskıyla doğrulandı; resmi kart 0.9"). Tampon **2× CD74HCT245E DIP-20
   soketli** (HCT şart: düz HC 5 V'ta 3.3 V girişi garanti okumaz); A pinleri DevKit adımında
-  (U2 pin1 = satır 11, U3 pin1 = satır 22, 180°), 4×33R dizi, LAT/LAT2/LAT3/OE 10k pull-down
+  (U2 pin1 = satır 11, U3 pin1 = satır 22, 180°), 16× 33R 0805 (R10–R25, tek sütun, her biri kendi
+  B pininin satırında; `SERIES_R` BUF_CH'den türer), LAT/LAT2/LAT3/OE 10k pull-down
   (OE=GCLK/aktif-yüksek → düşük = karanlık), 3× IDC 2×8 HUB75E (LAT IO10/IO17/IO14), 5 V klemens + PTC
   1.5 A + SMAJ5.0A + 470 µF; 5 V ana hat tamponların altından (alt şerit) DevKit 5V pinine sağdan girer.
 - Eldeki modüller (foto 2026-10-02), başlıklar bu sırada: LDR 16067 VCC/GND/DO, MIC 15771 OUT/GND/VCC,
@@ -230,7 +231,13 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   JLC BOM/CPL (yalnız SMD, LCSC boş), şematik PDF, **1:1 yerleşim PDF'i** (A4, yalnız ped+delik, 100 mm
   ölçek çubuğu; kullanıcı tablette/kâğıtta gerçek parçalarla denedi), görseller (`kicad-cli pcb export svg`
   katmanları → Chromium → PIL; headless pencere görüntüden yüksek olmalı, yoksa alt kenar kesilir).
-- Açık: pasifler SMD varsayıldı (0805, 4×0603 dizi, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
+- **El lehimi (v1.2, kullanıcı elle lehimleyecek):** SMD'ler HandSolder ayak izi (en küçük 0805; 4×0603
+  dizi kaldırıldı), DIP soket LongPads, `.kicad_dru` kuralı `el_lehim_aralik` = courtyard arası ≥ 0.5 mm
+  (v1.1'de 13 ihlal, en darı 0.16 mm). HUB75 başlıkları `HUB_X0/HUB_PITCH` 5.1/12.8 (gövdeler arası
+  3.8 mm), DevKit altı SMD'ler `DEV_OFF` 4.5 mm, `RCOL` 39.4 (DIP courtyard'ına 0.5). D1 anodu J1 GND'sine
+  kilitli kalın iz; C2/R1 ana hatta T kol. Via'lar maskeli (gerber'de via aperturu yok). Montaj sırası
+  ve ilk açılış `hardware/kicad/README.md`.
+- Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
   kasaya taşıyıcı ayakları + sensör delikleri; LCSC numaraları.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
