@@ -128,11 +128,11 @@ FP = {
 
 # SMT montaj tedariki (Robotistan / JLCPCB). LCSC numaralari ve stok LCSC urun API'sinden dogrulandi
 # (2026-10-02). anahtar -> (BOM 'Comment', uretici, MPN, LCSC, kilif)
+# R7 10k: 100k (C17407, '(SMT)' kaydi) Robotistan'da stok yok cikti; IO2 bos girisi icin deger onemsiz.
 SMT_PARTS = {
     '33R': ('33R 1% SMD Resistor', 'UNI-ROYAL', '0805W8F330JT5E', 'C17634', '0805'),
     '10k': ('10k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1002T5E', 'C17414', '0805'),
     '2.2k': ('2.2k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F2201T5E', 'C17520', '0805'),
-    '100k': ('100k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1003T5E', 'C17407', '0805'),
     '100nF': ('100nF 50V X7R Ceramic Capacitor', 'YAGEO', 'CC0805KRX7R9BB104', 'C49678', '0805'),
     '10uF': ('10uF 25V X5R Ceramic Capacitor', 'Samsung', 'CL21A106KAYNNNE', 'C15850', '0805'),
     'LED': ('Green LED 0805', 'Hubei KENTO', 'KT-0805G', 'C2297', '0805'),
@@ -586,8 +586,8 @@ def build_schematic(libs):
         sch.label(net, x0, y0 - G, (0, -1))
         sch.assign(c, '1', net)
         sch.pwr(c, '2', 'GND', length=0)
-    r7 = sch.place('Device:R', 'R7', '100k', *P(30, 105), footprint=FP['R0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100k'),
+    r7 = sch.place('Device:R', 'R7', '10k', *P(30, 105), footprint=FP['R0805'],
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10k'),
                    desc='IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital')
     x0, y0, _ = r7.pin('1')
     sch.wire((x0, y0), (x0, y0 - G))
@@ -1348,6 +1348,10 @@ def fab_gerbers():
          '--subtract-soldermask', '--use-drill-file-origin', '-o', str(gd) + os.sep, pcb)
     kcli('pcb', 'export', 'drill', '--format', 'excellon', '--excellon-separate-th', '-u', 'mm',
          '--drill-origin', 'plot', '-o', str(gd) + os.sep, pcb)
+    import re
+    for f in gd.iterdir():                     # KiCad'in yazdigi uretim zamani -> DATE (ayni kart -> ayni zip)
+        f.write_text(re.sub(r'\d{4}-\d\d-\d\d([T ])\d\d:\d\d:\d\d', lambda m: DATE + m.group(1) + '00:00:00',
+                            f.read_text()))
     zip_dir(gd, FAB / (PROJ + '-gerber.zip'))
     return sorted(f.name for f in gd.iterdir())
 

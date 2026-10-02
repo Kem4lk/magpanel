@@ -20,7 +20,7 @@ J10,1,EXP,PinHeader_1x05_P2.54mm_Vertical,THT,,Pin header 1x5 2.54 mm erkek (Dup
 R1,1,2.2k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F2201T5E,C17520,PWR LED akim siniri (~1 mA)
 R2 R3 R4 R5,4,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1002T5E,C17414,Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik
 R6,1,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1002T5E,C17414,DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)
-R7,1,100k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1003T5E,C17407,IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital
+R7,1,10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F1002T5E,C17414,IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital
 R10 R11 R12 R13 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25,16,33R,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,SMD,UNI-ROYAL,0805W8F330JT5E,C17634,Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir
 U1,1,ESP32-S3-DevKitC-1,ESP32-S3-DevKitC-1_Socket,THT,,"ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)",,"ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in."
 U2 U3,2,74HCT245,DIP-20_W7.62mm_Socket_LongPads,THT,,CD74HCT245E (PDIP-20) + 20 pin DIP soket,,"Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND"

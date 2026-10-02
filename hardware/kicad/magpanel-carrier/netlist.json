@@ -756,8 +756,8 @@
  "R7": {
   "desc": "IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital",
   "fields": {
-   "LCSC": "C17407",
-   "MPN": "0805W8F1003T5E",
+   "LCSC": "C17414",
+   "MPN": "0805W8F1002T5E",
    "Manufacturer": "UNI-ROYAL"
   },
   "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
@@ -767,7 +767,7 @@
    "2": "GND"
   },
   "uuid": "cc1daf9d-4546-5829-89a3-ca5cac38af26",
-  "value": "100k"
+  "value": "10k"
  },
  "U1": {
   "desc": "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in.",

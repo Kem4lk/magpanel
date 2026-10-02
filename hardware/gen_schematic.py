@@ -276,7 +276,7 @@ NOTES = [
  "5. TTP223B: A/B pedleri boş → anlık mod, aktif YÜKSEK. Ped kasa duvarının iç yüzüne yapıştırılırsa ≤ 3 mm plastikten algılar.",
  "6. KY-040: CLK/DT kart üstünde 10 kΩ pull-up; SW için ESP dahili pull-up. Yön ters gelirse web'den 'Enkoder ters' ya da CLK↔DT.",
  "7. LDR panel ışığını görmemeli (oto-parlaklık geri besleme → salınım); mikrofon ve LDR için ön/üst kenarda küçük delik.",
- "8. Mikrofon kartı (15771) 3 pinli, yalnız dijital: OUT → GPIO42. GPIO2 (analog mikrofon girişi) boşta: 100 kΩ ile GND'ye çek.",
+ "8. Mikrofon kartı (15771) 3 pinli, yalnız dijital: OUT → GPIO42. GPIO2 (analog mikrofon girişi) boşta: 10 kΩ ile GND'ye çek.",
  "9. GPIO 33–37 OPI PSRAM, 19/20 USB, 0/45/46 strapping, 43/44 UART0: sensör için kullanma. 38/48 = bazı kartlarda RGB LED.",
  "10. Boş bırakılan sensör zararsızdır: dokunmatik pull-down, enkoder pull-up, DHT 'yok' gösterir; oto-parlaklık ve alkış varsayılan kapalı.",
  "11. Güç: P4 modül tepe ~30 W (tam beyaz, parlaklık 255) → 3 modül ≤ 90 W; P1.86 ≈ 31 W/modül. Firmware varsayılanı (110/255) bunu ~yarıya indirir.",

@@ -74,7 +74,7 @@ gerber üretilmez.
 
    LDR ve mikrofon modülleri yalnız dijital çıkışlıdır. LDR'nin DO'su IO1'den okunur ve oto
    parlaklık iki kademe çalışır. Mikrofonun OUT'u IO42 kesmesine gider. Analog mikrofon girişi
-   IO2 boşta gürültü okumasın diye R7 (100 kΩ) onu GND'ye çeker. C5–C7 enkoder için RC filtre,
+   IO2 boşta gürültü okumasın diye R7 (10 kΩ) onu GND'ye çeker. C5–C7 enkoder için RC filtre,
    R6 DHT11 veri hattı pull-up'ıdır.
 
 GPIO tablosu ve modül notları: [`../README.md`](../README.md).
@@ -104,7 +104,7 @@ $PY gen_carrier.py all     # hepsi sırayla
 - **Önce 1:1 test:** `fab/magpanel-carrier-1to1.pdf` dosyasını yazıcıda %100 ölçekle bas,
   alttaki 100 mm çizgiyi cetvelle doğrula, gerçek parçaları deliklere oturt.
 - **SMT montaj (isteğe bağlı):** bütün SMD parçalar üst yüzdedir. Montaj dosyalarında yalnız
-  bunlar var (33 parça, 9 satır); delikli parçalar elle lehimlenir. Koordinatlar kartın sol-alt
+  bunlar var (33 parça, 8 satır); delikli parçalar elle lehimlenir. Koordinatlar kartın sol-alt
   köşesine göredir, gerber ve delik dosyaları da aynı orijini kullanır. Parçaların LCSC
   numaraları `gen_carrier.py` içindeki `SMT_PARTS` tablosundadır ve LCSC'de stoklu olarak
   doğrulandı (2026-10-02). Yönler KiCad'den gelir: yerleşim önizlemesinde D1'in katot bandı

@@ -7587,7 +7587,7 @@
 			(at 78.74 265.43 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Value" "100k"
+		(property "Value" "10k"
 			(at 78.74 267.97 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
@@ -7600,7 +7600,7 @@
 			(at 76.2 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "0805W8F1003T5E"
+		(property "MPN" "0805W8F1002T5E"
 			(at 76.2 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7608,7 +7608,7 @@
 			(at 76.2 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C17407" (at 76.2 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C17414" (at 76.2 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "9fdbdab6-d9a1-5c97-b15b-05f04aaa9493"))
 		(pin "2" (uuid "8fa6beb3-1dfb-5d47-882b-c5d99bce51e2"))
 		(instances

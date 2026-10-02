@@ -4067,7 +4067,7 @@
 				)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "10k"
 			(at 0 1.65 180)
 			(layer "F.Fab")
 			(hide yes)

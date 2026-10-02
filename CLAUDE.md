@@ -214,7 +214,7 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   1.5 A + SMAJ5.0A + 470 µF; 5 V ana hat tamponların altından (alt şerit) DevKit 5V pinine sağdan girer.
 - Eldeki modüller (foto 2026-10-02), başlıklar bu sırada: LDR 16067 VCC/GND/DO, MIC 15771 OUT/GND/VCC,
   KY-040 CLK/DT/SW/+/GND, DHT11 15579 −/OUT/+, TTP223B 17538 SIG/VCC/GND. **LDR ve MIC yalnız dijital**
-  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 100k GND.
+  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 10k GND (100k C17407 Robotistan'da stok yok çıktı; değer önemsiz).
 - Netler PCB'ye KiCad'in kendi netlist'inden yazılır (`kicad-cli sch export netlist`): yerel etiket
   `/AD`, NC pin `unconnected-(U1-…)` + pintype `…+no_connect` → şematik↔PCB farkı 0. Net sınıfları ve
   tasarım kuralları `.kicad_pro` JSON'una yazılır (`SaveBoard(..., True)` API'den ayarlanan kuralları
@@ -244,7 +244,10 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   LCSC, MPN, Quantity = kart başına) ve `robotistan-pnp.xlsx` (Designator, Mid X/Y `…mm`, Layer T/B, Rotation);
   `xlsx.py` stdlib yazıcı (Robotistan örneğinin stili). Yalnız 33 SMD (hepsi üst yüz). Orijin kartın sol-alt
   köşesi (`PLACE_ORIGIN` = aux origin; gerber `--use-drill-file-origin`, delik `--drill-origin plot`, CPL aynı);
-  `fab` aux origin yoksa durur. Form önerisi: Edge rails/fiducials Robotistan eklesin, yerleşim onayı Evet.
+  `fab` aux origin yoksa durur. Gerber/delik dosyalarındaki üretim zamanı `DATE`'e sabitlenir: aynı kart → aynı
+  zip (kullanıcı gereksiz yere yeniden yüklemesin). Form önerisi: Edge rails/fiducials Robotistan eklesin,
+  yerleşim onayı Evet. Robotistan BOM eşleştirmesinde C17407 (100k, LCSC'de '(SMT)' kaydı) "Stok Yok" çıktı
+  → R7 10k yapıldı (C17414, R2–R6 ile aynı satır).
 - Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
   kasaya taşıyıcı ayakları + sensör delikleri; delikli parçalar için LCSC yok (elle lehim).
 
