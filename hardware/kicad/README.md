@@ -29,6 +29,7 @@ gerber üretilmez.
 | `fab/magpanel-carrier-bom.csv` | tam malzeme listesi |
 | `fab/magpanel-carrier-jlc-bom.csv`, `fab/magpanel-carrier-jlc-cpl.csv` | JLCPCB SMT montajı (yalnız SMD, LCSC numaralı) |
 | `fab/magpanel-carrier-robotistan-bom.xlsx`, `fab/magpanel-carrier-robotistan-pnp.xlsx` | Robotistan SMT montajı (yalnız SMD, LCSC numaralı) |
+| `fab/magpanel-carrier-bomlist.xlsx` | Türkçe BOM şablonu: Fabrika Kodu, Açıklama, Designatör, Malzeme Kılıfı, Adet (yalnız SMD) |
 | `fab/magpanel-carrier-schematic.pdf` | şematik (A3) |
 | `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
 | `img/` | şematik ve kart görselleri |
@@ -112,6 +113,7 @@ $PY gen_carrier.py all     # hepsi sırayla
   - JLCPCB: `jlc-bom.csv` ve `jlc-cpl.csv`.
   - Robotistan: `robotistan-bom.xlsx` ve `robotistan-pnp.xlsx` (örnek dosyalarıyla aynı sütunlar).
     BOM'daki Quantity kart başına adettir.
+  - Türkçe şablon isteyen servisler: `bomlist.xlsx` (Fabrika Kodu = MPN, Adet kart başına).
 
 ### Robotistan PCB servisi
 | Form alanı | Seçim |

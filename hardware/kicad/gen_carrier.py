@@ -127,23 +127,31 @@ FP = {
 }
 
 # SMT montaj tedariki (Robotistan / JLCPCB). LCSC numaralari ve stok LCSC urun API'sinden dogrulandi
-# (2026-10-02). anahtar -> (BOM 'Comment', uretici, MPN, LCSC, kilif)
+# (2026-10-02). anahtar -> (BOM 'Comment', uretici, MPN, LCSC, kilif, teknik aciklama)
 # R7 10k: 100k (C17407, '(SMT)' kaydi) Robotistan'da stok yok cikti; IO2 bos girisi icin deger onemsiz.
 SMT_PARTS = {
-    '33R': ('33R 1% SMD Resistor', 'UNI-ROYAL', '0805W8F330JT5E', 'C17634', '0805'),
-    '10k': ('10k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1002T5E', 'C17414', '0805'),
-    '2.2k': ('2.2k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F2201T5E', 'C17520', '0805'),
-    '100nF': ('100nF 50V X7R Ceramic Capacitor', 'YAGEO', 'CC0805KRX7R9BB104', 'C49678', '0805'),
-    '10uF': ('10uF 25V X5R Ceramic Capacitor', 'Samsung', 'CL21A106KAYNNNE', 'C15850', '0805'),
-    'LED': ('Green LED 0805', 'Hubei KENTO', 'KT-0805G', 'C2297', '0805'),
-    'PTC': ('PTC Resettable Fuse 6V 1.5A', 'BOURNS', 'MF-MSMF150-2', 'C89648', '1812'),
-    'TVS': ('TVS Diode 5V 400W Unidirectional', 'Littelfuse', 'SMAJ5.0A', 'C83329', 'SMA (DO-214AC)'),
+    '33R': ('33R 1% SMD Resistor', 'UNI-ROYAL', '0805W8F330JT5E', 'C17634', '0805',
+            '0805 33 Ohms 1% 1/8W'),
+    '10k': ('10k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1002T5E', 'C17414', '0805',
+            '0805 10K Ohms 1% 1/8W'),
+    '2.2k': ('2.2k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F2201T5E', 'C17520', '0805',
+             '0805 2.2K Ohms 1% 1/8W'),
+    '100nF': ('100nF 50V X7R Ceramic Capacitor', 'YAGEO', 'CC0805KRX7R9BB104', 'C49678', '0805',
+              '100nF 50VDC ±10% X7R'),
+    '10uF': ('10uF 25V X5R Ceramic Capacitor', 'Samsung', 'CL21A106KAYNNNE', 'C15850', '0805',
+             '10uF 25VDC ±10% X5R'),
+    'LED': ('Green LED 0805', 'Hubei KENTO', 'KT-0805G', 'C2297', '0805',
+            'Green LED 525nm'),
+    'PTC': ('PTC Resettable Fuse 6V 1.5A', 'BOURNS', 'MF-MSMF150-2', 'C89648', '1812',
+            'PTC Resettable Fuse 6V 1.5A hold 3A trip'),
+    'TVS': ('TVS Diode 5V 400W Unidirectional', 'Littelfuse', 'SMAJ5.0A', 'C83329', 'SMA (DO-214AC)',
+            'TVS Diode 5V 400W Unidirectional'),
 }
 SMT_BY_MPN = {v[2]: v for v in SMT_PARTS.values()}
 
 def smt(key):
     """SMD parcanin sematik alanlari (uretici, MPN, LCSC). BOM/CPL ciktilari buradan okur."""
-    _, mfr, mpn, lcsc, _ = SMT_PARTS[key]
+    _, mfr, mpn, lcsc, _, _ = SMT_PARTS[key]
     return {'MPN': mpn, 'Manufacturer': mfr, 'LCSC': lcsc}
 
 # =============================================================================
@@ -1390,21 +1398,27 @@ def fab_bom_cpl(board):
             fl = nl[refs[0]]['fields']
             w.writerow([' '.join(refs), len(refs), val, fpn.split(':')[1], 'SMD' if is_smd(refs[0]) else 'THT',
                         fl.get('Manufacturer', ''), mpn, fl.get('LCSC', ''), desc])
-    smt_rows = []                             # (Comment, refs, kilif, LCSC, MPN) - adet kart basina
+    smt_rows = []                             # (Comment, refs, kilif, LCSC, MPN, uretici, aciklama); adet kart basina
     for (val, fpn, mpn), refs in grouped(False):
         if is_smd(refs[0]):
             assert mpn in SMT_BY_MPN, ('SMT_PARTS tablosunda yok', refs, mpn)
-            comment, _, _, lcsc, pkg = SMT_BY_MPN[mpn]
-            smt_rows.append((comment, refs, pkg, lcsc, mpn))
+            comment, mfr, _, lcsc, pkg, spec = SMT_BY_MPN[mpn]
+            smt_rows.append((comment, refs, pkg, lcsc, mpn, mfr, spec))
     with open(FAB / (PROJ + '-jlc-bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
-        for comment, refs, pkg, lcsc, mpn in smt_rows:
+        for comment, refs, pkg, lcsc, mpn, mfr, spec in smt_rows:
             w.writerow([comment, ','.join(refs), pkg, lcsc])
     xlsx.write(FAB / (PROJ + '-robotistan-bom.xlsx'),
                [['Comment', 'Designator', 'Footprint', 'RobotistanPro Part', 'Manufacturer Part Number (MPN)', 'Quantity']]
-               + [[comment, ','.join(refs), pkg, lcsc, mpn, len(refs)] for comment, refs, pkg, lcsc, mpn in smt_rows],
+               + [[comment, ','.join(refs), pkg, lcsc, mpn, len(refs)] for comment, refs, pkg, lcsc, mpn, _, _ in smt_rows],
                widths=[34, 44, 18, 22, 34, 12])
+    # Turkce "default_bomlist" sablonu (Fabrika Kodu = MPN; sade Calibri, sayfa adi 'Worksheet')
+    xlsx.write(FAB / (PROJ + '-bomlist.xlsx'),
+               [['Fabrika Kodu', 'Açıklama', 'Designatör', 'Malzeme Kılıfı', 'Adet']]
+               + [[mpn, '%s (%s)' % (spec, mfr), ','.join(refs), pkg, len(refs)]
+                  for comment, refs, pkg, lcsc, mpn, mfr, spec in smt_rows],
+               widths=[22, 50, 60, 16, 8], sheet='Worksheet', plain=True)
     place = []                                # (ref, x, y, alt yuz, aci)
     for ref in sorted(fps, key=refkey):
         if is_smd(ref) and nl.get(ref, {}).get('in_bom', True):

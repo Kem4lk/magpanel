@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Kucuk XLSX yazici (yalniz stdlib): tek sayfa, ilk satir baslik.
-Montaj servislerinin (Robotistan) ornek dosyalariyla ayni gorunum: Arial 11, lacivert zemin + beyaz
-kalin baslik, ince kenarlik. Ayni girdi -> ayni dosya (zip tarihi sabit).
+Kucuk XLSX yazici (yalniz stdlib): tek sayfa, ilk satir baslik. Ayni girdi -> ayni dosya (zip tarihi sabit).
+Iki gorunum, montaj servislerinin ornek dosyalari gibi:
+  varsayilan: Arial 11, lacivert zemin + beyaz kalin baslik, ince kenarlik, baslik sabit (Robotistan)
+  plain=True: Calibri 11, bicimsiz (Turkce "default_bomlist" sablonu)
 """
 import zipfile
 from xml.sax.saxutils import escape
@@ -58,6 +59,20 @@ _STYLES = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>'''
 
+_STYLES_PLAIN = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="3">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>'''
+
 
 def _col(i):
     """0 -> A, 25 -> Z, 26 -> AA"""
@@ -77,7 +92,7 @@ def _cell(ref, v, style):
     return '<c r="%s" s="%d" t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>' % (ref, style, escape(str(v)))
 
 
-def write(path, rows, widths=None, sheet='Sheet1', header_height=30):
+def write(path, rows, widths=None, sheet='Sheet1', header_height=30, plain=False):
     """rows[0] baslik, gerisi veri (str ya da sayi). widths: sutun genislikleri (karakter)."""
     cols = ''
     if widths:
@@ -86,15 +101,16 @@ def write(path, rows, widths=None, sheet='Sheet1', header_height=30):
     body = []
     for r, row in enumerate(rows, 1):
         style = 2 if r == 1 else 1
-        attrs = ' ht="%g" customHeight="1"' % header_height if r == 1 else ''
+        attrs = ' ht="%g" customHeight="1"' % header_height if r == 1 and not plain else ''
         body.append('<row r="%d"%s>%s</row>' % (r, attrs, ''.join(_cell('%s%d' % (_col(i), r), v, style)
                                                                    for i, v in enumerate(row))))
     ws = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-          '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
-          '</sheetView></sheetViews>%s<sheetData>%s</sheetData></worksheet>' % (cols, ''.join(body)))
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">%s%s<sheetData>%s</sheetData>'
+          '</worksheet>' % ('' if plain else '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" '
+                            'activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>', cols, ''.join(body)))
     parts = [('[Content_Types].xml', _CT), ('_rels/.rels', _RELS), ('xl/workbook.xml', _WB % escape(sheet)),
-             ('xl/_rels/workbook.xml.rels', _WB_RELS), ('xl/styles.xml', _STYLES), ('xl/worksheets/sheet1.xml', ws)]
+             ('xl/_rels/workbook.xml.rels', _WB_RELS), ('xl/styles.xml', _STYLES_PLAIN if plain else _STYLES),
+             ('xl/worksheets/sheet1.xml', ws)]
     with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
         for name, data in parts:
             zi = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))

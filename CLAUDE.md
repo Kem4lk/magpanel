@@ -242,7 +242,9 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   doğrulandı (`wmsc.lcsc.com/ftps/wm/product/detail?productCode=C…`; arama uç noktası 403). `fab` üretir:
   JLC BOM/CPL (csv) + Robotistan `robotistan-bom.xlsx` (Comment, Designator, Footprint, RobotistanPro Part =
   LCSC, MPN, Quantity = kart başına) ve `robotistan-pnp.xlsx` (Designator, Mid X/Y `…mm`, Layer T/B, Rotation);
-  `xlsx.py` stdlib yazıcı (Robotistan örneğinin stili). Yalnız 33 SMD (hepsi üst yüz). Orijin kartın sol-alt
+  `xlsx.py` stdlib yazıcı (Robotistan örneğinin stili; `plain=True` sade Calibri). Ayrıca Türkçe
+  `bomlist.xlsx` (sayfa `Worksheet`: Fabrika Kodu = MPN, Açıklama = `SMT_PARTS` teknik açıklama + üretici,
+  Designatör, Malzeme Kılıfı, Adet = kart başına). Yalnız 33 SMD (hepsi üst yüz). Orijin kartın sol-alt
   köşesi (`PLACE_ORIGIN` = aux origin; gerber `--use-drill-file-origin`, delik `--drill-origin plot`, CPL aynı);
   `fab` aux origin yoksa durur. Gerber/delik dosyalarındaki üretim zamanı `DATE`'e sabitlenir: aynı kart → aynı
   zip (kullanıcı gereksiz yere yeniden yüklemesin). Form önerisi: Edge rails/fiducials Robotistan eklesin,
