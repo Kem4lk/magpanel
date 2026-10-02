@@ -195,11 +195,50 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   parlaklık/alkış varsayılan kapalı. Web kartı "Sensörler & kontroller" (`<details>`): canlı değerler, ses
   çubuğu+eşik çizgisi, eylem select'leri, uyku butonu. JS `node --check` + headless Chromium yüklemesi temiz.
 - **Bellek:** P4 RAM %36.6→%37.0 (+1.4 KB), flash +27 KB; P1.86 RAM %18.3. Her iki env derlendi (pio 6.2, lokal).
-- **Donanımda doğrulanacak (henüz panelde test edilmedi):** LDR yönü ("LDR ters"), mikrofon kartı 3/4 pin
-  (3 pinliyse DO→42), enkoder yönü ("Enkoder ters"), DHT11 zamanlaması (log: `Sensorler:` satırı,
+- **Donanımda doğrulanacak (henüz panelde test edilmedi):** LDR yönü ("LDR ters"; eldeki kart DO'lu →
+  2 kademe), mikrofon kartı 3 pin dijital (OUT→42), enkoder yönü ("Enkoder ters"), DHT11 zamanlaması (log: `Sensorler:` satırı,
   telemetride `d:1`), alkış eşiği. İlk testte web LOG'da `Kontrol: ... -> ...` satırlarını izle.
 - **Açık:** kasaya sensör delikleri (`enclosure/generate_case.py`) eklenmedi; iOS app `S:/C:/B:` frame'lerini
   henüz kullanmıyor (bilinmeyen metin frame'lerini yok saymalı).
+
+## KiCad taşıyıcı kart (2026-10-01, `hardware/kicad/`)
+- `gen_carrier.py` tek kaynak: `sch` → `pcb` → `route` → `fab` (`all` hepsi). KiCad 8'in python'u ile
+  çalışır (Linux `/usr/bin/python3`, macOS KiCad.app içindeki python). `sch` yalnız stdlib: `sexp.py`
+  (S-ifade okuma/yazma), `schlib.py` (KiCad sembol kütüphanesi; dönüşüm sırası: önce döndür, sonra ayna).
+- Kart v1.2, 100×63.5 mm, 2 katman. DevKit dişi soket: sağ sıra `DEVKIT_RIGHT_ROWS` (eldeki N16R8 klon,
+  2× USB-C = 1.0" / 25.4 mm; 1:1 baskıyla doğrulandı; resmi kart 0.9"). Tampon **2× CD74HCT245E DIP-20
+  soketli** (HCT şart: düz HC 5 V'ta 3.3 V girişi garanti okumaz); A pinleri DevKit adımında
+  (U2 pin1 = satır 11, U3 pin1 = satır 22, 180°), 16× 33R 0805 (R10–R25, tek sütun, her biri kendi
+  B pininin satırında; `SERIES_R` BUF_CH'den türer), LAT/LAT2/LAT3/OE 10k pull-down
+  (OE=GCLK/aktif-yüksek → düşük = karanlık), 3× IDC 2×8 HUB75E (LAT IO10/IO17/IO14), 5 V klemens + PTC
+  1.5 A + SMAJ5.0A + 470 µF; 5 V ana hat tamponların altından (alt şerit) DevKit 5V pinine sağdan girer.
+- Eldeki modüller (foto 2026-10-02), başlıklar bu sırada: LDR 16067 VCC/GND/DO, MIC 15771 OUT/GND/VCC,
+  KY-040 CLK/DT/SW/+/GND, DHT11 15579 −/OUT/+, TTP223B 17538 SIG/VCC/GND. **LDR ve MIC yalnız dijital**
+  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 100k GND.
+- Netler PCB'ye KiCad'in kendi netlist'inden yazılır (`kicad-cli sch export netlist`): yerel etiket
+  `/AD`, NC pin `unconnected-(U1-…)` + pintype `…+no_connect` → şematik↔PCB farkı 0. Net sınıfları ve
+  tasarım kuralları `.kicad_pro` JSON'una yazılır (`SaveBoard(..., True)` API'den ayarlanan kuralları
+  kaydetmiyor); `.kicad_dru`: `min_resolved_spokes 1`.
+- `route`: Freerouting 2.1.0 (Java 21; `-inc` ile net sınıfı dışlama ÇALIŞMIYOR). GND de iz olarak
+  çekilir, sonra iki katman GND dökümü + dikiş via'ları (serigrafi altına konmaz). Yalnız döküme
+  güvenince IDC GND pinleri (4/16) veri yolu izleri arasında yalıtılıyordu. Freerouting deterministik
+  değil ve ara sıra KiCad'in bağlanmamış saydığı parça bırakıyor → DRC temiz olana kadar ≤10 deneme;
+  her deneme `work/…-preroute.kicad_pcb`'den başlar.
+- **KiCad 8 SWIG tuzağı:** `board.Remove(x)` sonrası Python vekili çöp toplanırsa tip tablosu bozuluyor
+  (`board.Zones()` / `GetConnectivity()` ham `SwigPyObject` döner) → silinen öğeye referans tut
+  (`board_remove()`).
+- `fab`: ERC/DRC/parity sıfır değilse durur. Gerber zip (sabit tarih), BOM (işleve göre gruplu),
+  JLC BOM/CPL (yalnız SMD, LCSC boş), şematik PDF, **1:1 yerleşim PDF'i** (A4, yalnız ped+delik, 100 mm
+  ölçek çubuğu; kullanıcı tablette/kâğıtta gerçek parçalarla denedi), görseller (`kicad-cli pcb export svg`
+  katmanları → Chromium → PIL; headless pencere görüntüden yüksek olmalı, yoksa alt kenar kesilir).
+- **El lehimi (v1.2, kullanıcı elle lehimleyecek):** SMD'ler HandSolder ayak izi (en küçük 0805; 4×0603
+  dizi kaldırıldı), DIP soket LongPads, `.kicad_dru` kuralı `el_lehim_aralik` = courtyard arası ≥ 0.5 mm
+  (v1.1'de 13 ihlal, en darı 0.16 mm). HUB75 başlıkları `HUB_X0/HUB_PITCH` 5.1/12.8 (gövdeler arası
+  3.8 mm), DevKit altı SMD'ler `DEV_OFF` 4.5 mm, `RCOL` 39.4 (DIP courtyard'ına 0.5). D1 anodu J1 GND'sine
+  kilitli kalın iz; C2/R1 ana hatta T kol. Via'lar maskeli (gerber'de via aperturu yok). Montaj sırası
+  ve ilk açılış `hardware/kicad/README.md`.
+- Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
+  kasaya taşıyıcı ayakları + sensör delikleri; LCSC numaraları.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

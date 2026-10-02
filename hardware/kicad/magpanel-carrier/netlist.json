@@ -1,0 +1,826 @@
+{
+ "C1": {
+  "desc": "5 V giris tamponu (kablo enduktansi, tampon anahtarlama akimlari)",
+  "fields": {
+   "MPN": "Elektrolitik 470 uF 10 V, D8 P3.5 (low ESR)"
+  },
+  "footprint": "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "ef6cdfff-10d5-5ff4-a7a6-1008a9e8c6f4",
+  "value": "470uF 10V"
+ },
+ "C2": {
+  "desc": "5 V giris seramik dekuplaj",
+  "fields": {
+   "MPN": "MLCC 10 uF 16 V X5R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "80020e4c-6593-5824-9a9e-ac6cef0213cc",
+  "value": "10uF"
+ },
+ "C3": {
+  "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
+  "fields": {
+   "MPN": "MLCC 100 nF 50 V X7R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "fe74384f-c4f0-5488-923d-64cb75190291",
+  "value": "100nF"
+ },
+ "C4": {
+  "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
+  "fields": {
+   "MPN": "MLCC 100 nF 50 V X7R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "60f1c5da-1c15-5f45-aad4-d514e5eb1f9a",
+  "value": "100nF"
+ },
+ "C5": {
+  "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
+  "fields": {
+   "MPN": "MLCC 100 nF 50 V X7R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ENC_CLK",
+   "2": "GND"
+  },
+  "uuid": "40fea215-c92b-59e8-8d8f-7baad664574a",
+  "value": "100nF"
+ },
+ "C6": {
+  "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
+  "fields": {
+   "MPN": "MLCC 100 nF 50 V X7R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ENC_DT",
+   "2": "GND"
+  },
+  "uuid": "e0f2438a-d0e5-5bf0-b97a-6204db79bf3d",
+  "value": "100nF"
+ },
+ "C7": {
+  "desc": "Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)",
+  "fields": {
+   "MPN": "MLCC 100 nF 50 V X7R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ENC_SW",
+   "2": "GND"
+  },
+  "uuid": "fd305575-dcce-55bc-8519-6d7082fca286",
+  "value": "100nF"
+ },
+ "C8": {
+  "desc": "Tamponlar icin yerel 5 V yigin kapasitesi",
+  "fields": {
+   "MPN": "MLCC 10 uF 16 V X5R 0805"
+  },
+  "footprint": "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "0a18f59c-f735-508d-8f5e-629c550e1bc8",
+  "value": "10uF"
+ },
+ "D1": {
+  "desc": "TVS: ters kutup/asiri gerilimde iletir -> F1 acar",
+  "fields": {
+   "MPN": "SMAJ5.0A (400 W, 5 V TVS)"
+  },
+  "footprint": "Diode_SMD:D_SMA_Handsoldering",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "GND"
+  },
+  "uuid": "03ec07da-b46d-524a-aea9-caf03679e9db",
+  "value": "SMAJ5.0A"
+ },
+ "D2": {
+  "desc": "5 V var gostergesi",
+  "fields": {
+   "MPN": "LED 0805 yesil"
+  },
+  "footprint": "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "GND",
+   "2": "LED_PWR"
+  },
+  "uuid": "4ab36ac2-fefa-55c3-bca1-fb6f6020bf76",
+  "value": "PWR (yesil)"
+ },
+ "F1": {
+  "desc": "Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar",
+  "fields": {
+   "MPN": "Bourns MF-MSMF150-2 (1812, 1.5 A hold)"
+  },
+  "footprint": "Fuse:Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "VIN",
+   "2": "+5V"
+  },
+  "uuid": "43e15e4a-b8b1-5679-92e7-5e7bdd8fefca",
+  "value": "1.5A"
+ },
+ "H1": {
+  "desc": "M3 montaj deligi (izole, NPTH) - panel arkasina M3 aralik/miknatis",
+  "fields": {},
+  "footprint": "MountingHole:MountingHole_3.2mm_M3",
+  "in_bom": false,
+  "pins": {},
+  "uuid": "2fe04a93-d26a-5836-a5c5-2782db775f32",
+  "value": "M3"
+ },
+ "H2": {
+  "desc": "M3 montaj deligi (izole, NPTH) - panel arkasina M3 aralik/miknatis",
+  "fields": {},
+  "footprint": "MountingHole:MountingHole_3.2mm_M3",
+  "in_bom": false,
+  "pins": {},
+  "uuid": "65c17351-5803-59b5-a687-3a6fed8c2968",
+  "value": "M3"
+ },
+ "H3": {
+  "desc": "M3 montaj deligi (izole, NPTH) - panel arkasina M3 aralik/miknatis",
+  "fields": {},
+  "footprint": "MountingHole:MountingHole_3.2mm_M3",
+  "in_bom": false,
+  "pins": {},
+  "uuid": "5886da39-9402-5ec1-95f4-b2323cccbe50",
+  "value": "M3"
+ },
+ "H4": {
+  "desc": "M3 montaj deligi (izole, NPTH) - panel arkasina M3 aralik/miknatis",
+  "fields": {},
+  "footprint": "MountingHole:MountingHole_3.2mm_M3",
+  "in_bom": false,
+  "pins": {},
+  "uuid": "afd6b1e8-9810-5372-bbef-df29bc61b1b0",
+  "value": "M3"
+ },
+ "J1": {
+  "desc": "5 V DC giris (PSU). Panel gucu PSU -> panel dogrudan; bu kart <= 1 A ceker.",
+  "fields": {
+   "MPN": "Phoenix MKDS 1,5/2-5,08 (1714955) ya da esdegeri"
+  },
+  "footprint": "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
+  "in_bom": true,
+  "pins": {
+   "1": "VIN",
+   "2": "GND"
+  },
+  "uuid": "ebc724e8-da60-5f2d-ae62-0640ce2f78ca",
+  "value": "5V IN"
+ },
+ "J10": {
+  "desc": "Genisleme (UART0/I2C) - IO43, IO44, IO38",
+  "fields": {
+   "MPN": "Pin header 1x5 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "+3V3",
+   "2": "GND",
+   "3": "EXP_IO43",
+   "4": "EXP_IO44",
+   "5": "EXP_IO38"
+  },
+  "uuid": "42461b75-a0d6-562d-aaf6-81c007d14e66",
+  "value": "EXP"
+ },
+ "J2": {
+  "desc": "HUB75E panel cikisi: LAT = IO10 (P4 ve P1.86)",
+  "fields": {
+   "MPN": "Kutu baslik (box header) 2x8 2.54 mm, duz"
+  },
+  "footprint": "Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "HUB_R1",
+   "10": "HUB_ADDR_B",
+   "11": "HUB_ADDR_C",
+   "12": "HUB_ADDR_D",
+   "13": "HUB_CLK",
+   "14": "HUB_LAT",
+   "15": "HUB_OE",
+   "16": "GND",
+   "2": "HUB_G1",
+   "3": "HUB_B1",
+   "4": "GND",
+   "5": "HUB_R2",
+   "6": "HUB_G2",
+   "7": "HUB_B2",
+   "8": "HUB_ADDR_E",
+   "9": "HUB_ADDR_A"
+  },
+  "uuid": "a47ad3a2-dd9f-5ec3-9fb2-71b9b7475af7",
+  "value": "HUB75E PANEL 1"
+ },
+ "J3": {
+  "desc": "HUB75E panel cikisi: LAT2 = IO17 (yalniz coklu P1.86)",
+  "fields": {
+   "MPN": "Kutu baslik (box header) 2x8 2.54 mm, duz"
+  },
+  "footprint": "Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "HUB_R1",
+   "10": "HUB_ADDR_B",
+   "11": "HUB_ADDR_C",
+   "12": "HUB_ADDR_D",
+   "13": "HUB_CLK",
+   "14": "HUB_LAT2",
+   "15": "HUB_OE",
+   "16": "GND",
+   "2": "HUB_G1",
+   "3": "HUB_B1",
+   "4": "GND",
+   "5": "HUB_R2",
+   "6": "HUB_G2",
+   "7": "HUB_B2",
+   "8": "HUB_ADDR_E",
+   "9": "HUB_ADDR_A"
+  },
+  "uuid": "b0f68a78-be93-57b0-85ad-67de0c44ae35",
+  "value": "HUB75E PANEL 2"
+ },
+ "J4": {
+  "desc": "HUB75E panel cikisi: LAT3 = IO14 (yalniz coklu P1.86)",
+  "fields": {
+   "MPN": "Kutu baslik (box header) 2x8 2.54 mm, duz"
+  },
+  "footprint": "Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "HUB_R1",
+   "10": "HUB_ADDR_B",
+   "11": "HUB_ADDR_C",
+   "12": "HUB_ADDR_D",
+   "13": "HUB_CLK",
+   "14": "HUB_LAT3",
+   "15": "HUB_OE",
+   "16": "GND",
+   "2": "HUB_G1",
+   "3": "HUB_B1",
+   "4": "GND",
+   "5": "HUB_R2",
+   "6": "HUB_G2",
+   "7": "HUB_B2",
+   "8": "HUB_ADDR_E",
+   "9": "HUB_ADDR_A"
+  },
+  "uuid": "358e49e9-86ed-5be2-9d0f-fd995b69863d",
+  "value": "HUB75E PANEL 3"
+ },
+ "J5": {
+  "desc": "LDR karti (JSUMO 16067) - VCC/GND/DO; DO -> IO1",
+  "fields": {
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "+3V3",
+   "2": "GND",
+   "3": "LDR_OUT"
+  },
+  "uuid": "10c408dd-2a6a-506f-9216-eb762a698370",
+  "value": "LDR"
+ },
+ "J6": {
+  "desc": "Mikrofon (JSUMO 15771) - OUT/GND/VCC; OUT -> IO42",
+  "fields": {
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "MIC_DO",
+   "2": "GND",
+   "3": "+3V3"
+  },
+  "uuid": "c5e9a994-9c28-5231-a684-f09709624876",
+  "value": "MIC"
+ },
+ "J7": {
+  "desc": "Enkoder KY-040 (JSUMO) - CLK/DT/SW -> IO41/40/39",
+  "fields": {
+   "MPN": "Pin header 1x5 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "ENC_CLK",
+   "2": "ENC_DT",
+   "3": "ENC_SW",
+   "4": "+3V3",
+   "5": "GND"
+  },
+  "uuid": "6831f587-f841-5138-86ee-2b318e4d115a",
+  "value": "ENC"
+ },
+ "J8": {
+  "desc": "DHT11 (JSUMO 15579) - -/OUT/+; OUT -> IO47",
+  "fields": {
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "GND",
+   "2": "DHT_DATA",
+   "3": "+3V3"
+  },
+  "uuid": "8a20b3ed-436b-56d2-b862-0418e195635e",
+  "value": "DHT"
+ },
+ "J9": {
+  "desc": "TTP223B (JSUMO 17538) - SIG/VCC/GND; SIG -> IO21",
+  "fields": {
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "TOUCH_OUT",
+   "2": "+3V3",
+   "3": "GND"
+  },
+  "uuid": "f5153fd6-a3c9-5ddb-aee8-4912593083df",
+  "value": "TOUCH"
+ },
+ "R1": {
+  "desc": "PWR LED akim siniri (~1 mA)",
+  "fields": {
+   "MPN": "0805 2.2 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "2": "LED_PWR"
+  },
+  "uuid": "bb3ee5f0-d268-573d-aa3c-476bf5eeca3d",
+  "value": "2.2k"
+ },
+ "R10": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "R1_5V",
+   "2": "HUB_R1"
+  },
+  "uuid": "2dc06d07-cc33-5b0d-80b1-49f18a231af8",
+  "value": "33R"
+ },
+ "R11": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "G1_5V",
+   "2": "HUB_G1"
+  },
+  "uuid": "bf1be714-c972-5376-95cd-3af1ca89f206",
+  "value": "33R"
+ },
+ "R12": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "B1_5V",
+   "2": "HUB_B1"
+  },
+  "uuid": "0fdc3d07-bbd9-5ead-8ea1-5e869074035a",
+  "value": "33R"
+ },
+ "R13": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "R2_5V",
+   "2": "HUB_R2"
+  },
+  "uuid": "59d31430-affc-57f3-b599-9299446bd595",
+  "value": "33R"
+ },
+ "R14": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "G2_5V",
+   "2": "HUB_G2"
+  },
+  "uuid": "b259ae21-e9f0-5428-af2e-0e1981cf3c72",
+  "value": "33R"
+ },
+ "R15": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "B2_5V",
+   "2": "HUB_B2"
+  },
+  "uuid": "52cd25ec-d424-5f0d-94fd-4a6caee7912e",
+  "value": "33R"
+ },
+ "R16": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT2_5V",
+   "2": "HUB_LAT2"
+  },
+  "uuid": "2d3a7fb2-76be-5877-bef6-54cd7ec865b3",
+  "value": "33R"
+ },
+ "R17": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_A_5V",
+   "2": "HUB_ADDR_A"
+  },
+  "uuid": "7c823dac-7aa0-54b6-8024-f95105839aff",
+  "value": "33R"
+ },
+ "R18": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_B_5V",
+   "2": "HUB_ADDR_B"
+  },
+  "uuid": "a6260435-05eb-507a-89a2-64b4a414db81",
+  "value": "33R"
+ },
+ "R19": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_C_5V",
+   "2": "HUB_ADDR_C"
+  },
+  "uuid": "462ea84c-beaf-59cc-9898-863d9c944d1d",
+  "value": "33R"
+ },
+ "R2": {
+  "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
+  "fields": {
+   "MPN": "0805 10 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT",
+   "2": "GND"
+  },
+  "uuid": "1c82d232-4df9-5685-9111-9dcf4fd7a7bb",
+  "value": "10k"
+ },
+ "R20": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_D_5V",
+   "2": "HUB_ADDR_D"
+  },
+  "uuid": "cfa22091-b968-578e-97cc-bce79b566e4b",
+  "value": "33R"
+ },
+ "R21": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT_5V",
+   "2": "HUB_LAT"
+  },
+  "uuid": "dfb977e1-9267-55bf-99bd-ae48de98d975",
+  "value": "33R"
+ },
+ "R22": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "OE_5V",
+   "2": "HUB_OE"
+  },
+  "uuid": "7c61a4e1-6d8a-5c32-982c-0d3610e60ee4",
+  "value": "33R"
+ },
+ "R23": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "CLK_5V",
+   "2": "HUB_CLK"
+  },
+  "uuid": "3be1cde0-3b34-551d-98d1-382237a9667c",
+  "value": "33R"
+ },
+ "R24": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "ADDR_E_5V",
+   "2": "HUB_ADDR_E"
+  },
+  "uuid": "9a4a22fe-4bf9-5daa-8717-a192fa0f0a7e",
+  "value": "33R"
+ },
+ "R25": {
+  "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
+  "fields": {
+   "MPN": "0805 33 Ohm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT3_5V",
+   "2": "HUB_LAT3"
+  },
+  "uuid": "3c4227db-d796-5402-8a1c-04ccc37c1186",
+  "value": "33R"
+ },
+ "R3": {
+  "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
+  "fields": {
+   "MPN": "0805 10 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT2",
+   "2": "GND"
+  },
+  "uuid": "57fcf82d-2e73-5c38-9860-6cf2ba9b8dca",
+  "value": "10k"
+ },
+ "R4": {
+  "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
+  "fields": {
+   "MPN": "0805 10 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "LAT3",
+   "2": "GND"
+  },
+  "uuid": "39b81fa2-3b14-566d-bc98-a9b977ba5645",
+  "value": "10k"
+ },
+ "R5": {
+  "desc": "Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik",
+  "fields": {
+   "MPN": "0805 10 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "OE",
+   "2": "GND"
+  },
+  "uuid": "061f79bb-24cd-5b2d-8b22-3efe64ee9657",
+  "value": "10k"
+ },
+ "R6": {
+  "desc": "DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)",
+  "fields": {
+   "MPN": "0805 10 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "+3V3",
+   "2": "DHT_DATA"
+  },
+  "uuid": "b50a3807-8422-5a33-ab45-aa289f9f846d",
+  "value": "10k"
+ },
+ "R7": {
+  "desc": "IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital",
+  "fields": {
+   "MPN": "0805 100 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder",
+  "in_bom": true,
+  "pins": {
+   "1": "MIC_AO",
+   "2": "GND"
+  },
+  "uuid": "cc1daf9d-4546-5829-89a3-ca5cac38af26",
+  "value": "100k"
+ },
+ "U1": {
+  "desc": "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in.",
+  "fields": {
+   "MPN": "ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)"
+  },
+  "footprint": "MagPanel:ESP32-S3-DevKitC-1_Socket",
+  "in_bom": true,
+  "pins": {
+   "1": "+3V3",
+   "10": "LAT2",
+   "11": "ADDR_A",
+   "12": "ADDR_B",
+   "13": "ADDR_C",
+   "14": null,
+   "15": "ADDR_D",
+   "16": "LAT",
+   "17": "OE",
+   "18": "CLK",
+   "19": "ADDR_E",
+   "2": "+3V3",
+   "20": "LAT3",
+   "21": "+5V",
+   "22": "GND",
+   "23": "GND",
+   "24": "EXP_IO43",
+   "25": "EXP_IO44",
+   "26": "LDR_OUT",
+   "27": "MIC_AO",
+   "28": "MIC_DO",
+   "29": "ENC_CLK",
+   "3": null,
+   "30": "ENC_DT",
+   "31": "ENC_SW",
+   "32": "EXP_IO38",
+   "33": null,
+   "34": null,
+   "35": null,
+   "36": null,
+   "37": null,
+   "38": null,
+   "39": "DHT_DATA",
+   "4": "R1",
+   "40": "TOUCH_OUT",
+   "41": null,
+   "42": null,
+   "43": "GND",
+   "44": "GND",
+   "5": "G1",
+   "6": "B1",
+   "7": "R2",
+   "8": "G2",
+   "9": "B2"
+  },
+  "uuid": "53a5ebf1-6823-5bee-b8b8-386204c96a74",
+  "value": "ESP32-S3-DevKitC-1"
+ },
+ "U2": {
+  "desc": "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND",
+  "fields": {
+   "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
+  },
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket_LongPads",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "10": "GND",
+   "11": "R1_5V",
+   "12": "G1_5V",
+   "13": "B1_5V",
+   "14": "R2_5V",
+   "15": "G2_5V",
+   "16": "B2_5V",
+   "17": "LAT2_5V",
+   "18": "ADDR_A_5V",
+   "19": "GND",
+   "2": "ADDR_A",
+   "20": "+5V",
+   "3": "LAT2",
+   "4": "B2",
+   "5": "G2",
+   "6": "R2",
+   "7": "B1",
+   "8": "G1",
+   "9": "R1"
+  },
+  "uuid": "798d51da-6b0b-595e-a7d3-3f1f5275d9b8",
+  "value": "74HCT245"
+ },
+ "U3": {
+  "desc": "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND",
+  "fields": {
+   "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
+  },
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket_LongPads",
+  "in_bom": true,
+  "pins": {
+   "1": "+5V",
+   "10": "GND",
+   "11": "ADDR_B_5V",
+   "12": "ADDR_C_5V",
+   "13": "ADDR_D_5V",
+   "14": "LAT_5V",
+   "15": "OE_5V",
+   "16": "CLK_5V",
+   "17": "ADDR_E_5V",
+   "18": "LAT3_5V",
+   "19": "GND",
+   "2": "LAT3",
+   "20": "+5V",
+   "3": "ADDR_E",
+   "4": "CLK",
+   "5": "OE",
+   "6": "LAT",
+   "7": "ADDR_D",
+   "8": "ADDR_C",
+   "9": "ADDR_B"
+  },
+  "uuid": "e584837a-e45b-5650-b6b9-56ba181d4305",
+  "value": "74HCT245"
+ }
+}

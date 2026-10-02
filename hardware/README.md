@@ -10,6 +10,13 @@ ile birebir aynı olmalı.
 
 Vektör: [`schematic.svg`](schematic.svg) · Üretici: [`gen_schematic.py`](gen_schematic.py)
 
+## KiCad taşıyıcı kart (şematik + PCB)
+Aynı bağlantıların üretilebilir hâli: DevKit soketi, 2× 74HCT245 (DIP-20) seviye dönüştürücü,
+3× HUB75E çıkışı (LAT panel başına), 5 V giriş koruması ve sensör başlıkları. KiCad 8
+projesi, gerber/BOM/CPL dosyaları ve üretici [`kicad/`](kicad/README.md) klasöründe.
+
+![MagPanel taşıyıcı kart](kicad/img/pcb-top.png)
+
 ## Pin tablosu (ESP32-S3-DevKitC-1)
 
 ### HUB75E (değişmedi — `include/app_constants.hpp`)
@@ -30,16 +37,20 @@ hattını paylaşır; **2. modülün LAT'ı GPIO17, 3. modülün LAT'ı GPIO14**
 ### Sensörler (`include/sensors.h`; `-DSENS_PIN_*` ile değiştirilebilir)
 | Modül (JSUMO kodu) | Modül pini | GPIO | Mod | Not |
 |---|---|---|---|---|
-| LDR Sensor Board (16067) | AO | **1** (ADC1_CH0) | analog | ışık %; oto parlaklık |
-| Microphone Sound Sensor (15771) | AO | **2** (ADC1_CH1) | analog | ses zarfı; VU + çift alkış |
-| Microphone Sound Sensor | DO | **42** | giriş, pull-up | isteğe bağlı; 3 pinli kartta tek çıkış buraya |
+| LDR Sensor Board (16067) | DO | **1** (ADC1_CH0) | analog okuma | kart yalnız dijital: oto parlaklık iki kademe |
+| Microphone Sound Sensor (15771) | OUT | **42** | giriş, pull-up | kart yalnız dijital: kesme sayımı, VU + çift alkış |
+| (analog mikrofon girişi) | — | **2** (ADC1_CH1) | analog | eldeki kartta yok; boşta kalmasın (taşıyıcıda R7 100 kΩ GND) |
 | Mechanic Encoder Module KY-040 | CLK (A) | **41** | giriş, pull-up | kesme, tam-adım tablo |
 | KY-040 | DT (B) | **40** | giriş, pull-up | |
 | KY-040 | SW | **39** | giriş, pull-up | aktif düşük; kısa/uzun basma |
-| DHT11 Temperature & Humidity Board (15579) | DATA/OUT | **47** | open-drain + pull-up | 3 sn'de bir okuma |
-| TTP223B Digital Touch Sensor (17538) | I/O (SIG) | **21** | giriş, pull-down | aktif yüksek, anlık mod |
+| DHT11 Temperature & Humidity Board (15579) | OUT | **47** | open-drain + pull-up | 3 sn'de bir okuma |
+| TTP223B Digital Touch Sensor (17538) | SIG | **21** | giriş, pull-down | aktif yüksek, anlık mod |
 | hepsi | VCC / + | **3V3** | | 5 V'a BAĞLAMA (GPIO 5 V toleranslı değil) |
 | hepsi | GND / − | GND | | |
+
+Eldeki modüllerin pin sırası (kart baskısı, 2026-10-02 fotoğrafları): LDR **VCC GND DO**,
+mikrofon **OUT GND VCC**, KY-040 **CLK DT SW + GND**, DHT11 **− OUT +**, TTP223B **SIG VCC GND**.
+KiCad taşıyıcı kartındaki başlıklar aynı sırada; düz kablo çaprazlamaz.
 
 **Neden bu pinler:** HUB75 ESP'nin sol başlığını (3–18) kullanır; sensörlerin hepsi sağ
 başlığa düşer → şemada kablolar çaprazlaşmaz, kablolama kolay. Analog girişler zorunlu
@@ -65,14 +76,19 @@ karanlıkta daha da düşürür.
   Kasa **içine** koyma: LED paneli ısınır, oda sıcaklığı yanlış çıkar → üst kenardaki
   havalandırma yuvasına, dış havada. DHT22/AM2302 takılırsa `-DSENS_DHT22=1`.
 - **KY-040:** CLK/DT kart üstünde 10 kΩ pull-up; SW için ESP dahili pull-up. Titreme için
-  CLK/DT/SW–GND 100 nF önerilir (yazılım tablosu zaten sıçrama toleranslı). Yön ters
+  CLK/DT/SW–GND 100 nF önerilir (yazılım tablosu zaten sıçrama toleranslı; KiCad
+  taşıyıcı kartında C5–C7 olarak var). Yön ters
   gelirse web'den "Enkoder ters" ya da CLK↔DT değiştir. Mil kasa yan duvarından dışarı,
   düğme takılır.
 - **LDR kartı:** panelin **kendi ışığını görmemeli** (geri besleme → oto parlaklık salınımı):
-  üst kenarda öne/yukarı bakan 3–4 mm delik + küçük ışık siperi. Kart ışıkta düşen
-  gerilim veriyorsa web'den "LDR ters" işaretle (canlı "% ışık" değerine bak).
-- **Mikrofon kartı:** 4 pinliyse AO → GPIO2 (asıl) + DO → GPIO42 (isteğe bağlı);
-  3 pinliyse tek çıkışı GPIO42'ye (DO) bağla — firmware DO tetiklerini "yüksek ses" sayar.
+  üst kenarda öne/yukarı bakan 3–4 mm delik + küçük ışık siperi. Eldeki kart 3 pinli ve
+  yalnız karşılaştırıcı çıkışı (DO) veriyor: firmware GPIO1'i okur, sonuç 0 ya da %100 olur.
+  Oto parlaklık böylece iki kademe çalışır; geçiş eşiği kart üstündeki trimpotla ayarlanır.
+  Aydınlıkta parlaklık düşüyorsa web'den "LDR ters" işaretle. Kademesiz ayar için AO'lu
+  (4 pinli) LDR kartı ya da çıplak LDR + 10 kΩ bölücü GPIO1'e bağlanmalı.
+- **Mikrofon kartı:** eldeki kart 3 pinli (OUT, GND, VCC) ve yalnız dijital: OUT → GPIO42.
+  Firmware DO tetiklerini "yüksek ses" sayar; VU göstergesi açık/kapalı çalışır.
+  GPIO2 (analog mikrofon girişi) boşta kalırsa gürültü okur: taşıyıcı kartta R7 (100 kΩ) GND'ye çeker.
   Kart potansiyometresi + web'deki "Alkış eşiği" birlikte ayarlanır (ses çubuğu alkışta
   eşik çizgisini geçmeli, konuşmada geçmemeli). Kasada 2–3 mm ses deliği yeter.
 
@@ -106,10 +122,8 @@ python3 -c "from PIL import Image; Image.open('/tmp/s.png').crop((0,0,1700,1190)
 ```
 
 ## Açık sorular / doğrulanacaklar
-1. Mikrofon ve LDR kartlarının pin sayısı (3 mü 4 mü?) — şema ikisini de kapsar, kart
-   yazısını doğrula.
-2. DHT11 kartı pin sırası (+ / OUT / −) karttan karta değişir — kart yazısına göre bağla.
-3. LDR yönü (ışıkta artan mı azalan mı) → web'de "LDR ters".
-4. Kasaya sensör delikleri eklenecek mi (generate_case.py)?
-5. Enkoder/dokunmatik varsayılan eylemleri: basma = uyku/uyan, uzun basma = sonraki
+1. LDR yönü (ışıkta artan mı azalan mı) → web'de "LDR ters".
+2. Kademesiz oto parlaklık istenirse AO'lu LDR kartı ya da çıplak LDR gerekir (eldeki kart dijital).
+3. Kasaya sensör delikleri eklenecek mi (generate_case.py)?
+4. Enkoder/dokunmatik varsayılan eylemleri: basma = uyku/uyan, uzun basma = sonraki
    uygulama, dokunmatik = uyku/uyan, çift alkış = kapalı. Web'den değiştirilebilir.

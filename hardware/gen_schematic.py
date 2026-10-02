@@ -46,14 +46,13 @@ HUB75 = [  # (ad, gpio, hub75 pin, renk, istege bagli aciklama)
 SENSORS = [
   ("U2", "LDR Sensor Board (JSUMO 16067)", [
       ("VCC", "vcc", None, None),
-      ("AO",  "sig", "1",  "ADC1_CH0 - isik (0..3.1 V)"),
-      ("GND", "gnd", None, None)],
+      ("GND", "gnd", None, None),
+      ("DO",  "sig", "1",  "dijital cikis, ADC1 ile okunur")],
    "LDR panelin kendi isigini GORMEMELI (oto-parlaklik salinir):\nust kenarda one/yukari bakan 3-4 mm delik, isik siperi."),
   ("U3", "Microphone Sound Sensor (JSUMO 15771)", [
-      ("VCC", "vcc", None, None),
-      ("AO",  "sig", "2",  "ADC1_CH1 - ses zarfi"),
-      ("DO",  "opt", "42", "komparator (istege bagli; 3 pinli kartta tek cikis)"),
-      ("GND", "gnd", None, None)],
+      ("OUT", "sig", "42", "dijital cikis, kesme ile sayilir"),
+      ("GND", "gnd", None, None),
+      ("VCC", "vcc", None, None)],
    "Kart potansiyometresi + web'deki 'Alkis esigi' birlikte ayarlanir;\nkasada 2-3 mm ses deligi yeterli."),
   ("U4", "Mechanic Encoder Module KY-040 (JSUMO)", [
       ("CLK", "sig", "41", "A fazi (kart ustu 10 k pull-up)"),
@@ -63,13 +62,13 @@ SENSORS = [
       ("GND", "gnd", None, None)],
    "Titreme icin CLK/DT/SW - GND arasina 100 nF onerilir\n(yazilim tablosu zaten toleransli). Mil kasa yan duvarindan disari."),
   ("U5", "DHT11 Temperature & Humidity Board (JSUMO 15579)", [
-      ("+",    "vcc", None, None),
-      ("DATA", "sig", "47", "1-wire benzeri; kart ustu 10 k pull-up"),
-      ("-",    "gnd", None, None)],
+      ("-",    "gnd", None, None),
+      ("OUT",  "sig", "47", "kart ustu 10 k pull-up"),
+      ("+",    "vcc", None, None)],
    "Kasa ICINE koyma (LED isisi olcumu bozar): ust kenardaki\nhavalandirma yuvasina, dis havada."),
   ("U6", "TTP223B Digital Touch Sensor (JSUMO 17538)", [
+      ("SIG", "sig", "21", "aktif YUKSEK; dahili pull-down"),
       ("VCC", "vcc", None, None),
-      ("I/O", "sig", "21", "aktif YUKSEK, anlik (A/B pedleri bos); dahili pull-down"),
       ("GND", "gnd", None, None)],
    "Ped kasa duvarinin IC yuzune yapistirilir (<= 3 mm plastikten\nalgilar): on yuz temiz kalir, gorunur dugme yok."),
 ]
@@ -229,8 +228,9 @@ for (ref, title, pins, note) in SENSORS:
         line(SENS_X0-STUB, yy, SENS_X0, yy, "#1b5e20", 1.6)
         text(SENS_X0+10, yy+4, pn, 12, "start", "#1b5e20", "bold")
         if pnote: text(SENS_X0+58, yy+4, pnote, 9.5, "start", "#555")
-        if kind == "vcc": vcc(SENS_X0-STUB, yy)
-        elif kind == "gnd": gnd(SENS_X0-STUB, yy)
+        # guc pinleri yatay net etiketi: modul pin sirasi ne olursa olsun komsu sinyal hatlarina degmez
+        if kind == "vcc": text(SENS_X0-STUB-4, yy+4, "3V3", 11, "end", "#c1121f", "bold")
+        elif kind == "gnd": text(SENS_X0-STUB-4, yy+4, "GND", 11, "end", "#000", "bold")
         else:
             nets.append((gpio, SENS_X0-STUB, yy, "#1b5e20" if kind=="sig" else "#6b8f71", None if kind=="sig" else "6,5"))
     for li, ln in enumerate(note.split("\n")):
@@ -270,18 +270,18 @@ rect(nx, ny, W-80, 180, "#fff", "#333", 1.4, 6)
 text(nx+12, ny+20, "NOTLAR", 12, "start", "#111", "bold", SANS)
 NOTES = [
  "1. Tüm sensörler ESP'nin 3V3 pininden beslenir. ESP32-S3 GPIO'ları 5 V toleranslı DEĞİLDİR; sensörleri 5 V'a bağlama.",
- "2. Analog çıkışlar (LDR AO, mikrofon AO) yalnız ADC1 = GPIO1..10. ADC2 (GPIO11..20) WiFi açıkken okunamaz.",
+ "2. LDR kartı (16067) yalnız dijital: DO → GPIO1 (ADC1) analog okunur, 0/%100 → oto parlaklık iki kademe. ADC2 WiFi'de kullanılamaz.",
  "3. Ortak toprak zorunlu: PSU −, panel GND ve ESP GND aynı düğüm. Panel güç kablosu kalın ve kısa; HUB75 şeridinde ≥ 2 GND.",
  "4. DHT11 kartında 10 kΩ pull-up var; çıplak sensörde DATA–3V3 arasına 4.7–10 kΩ ekle. Okuma 3 sn'de bir, firmware kütüphanesiz.",
  "5. TTP223B: A/B pedleri boş → anlık mod, aktif YÜKSEK. Ped kasa duvarının iç yüzüne yapıştırılırsa ≤ 3 mm plastikten algılar.",
  "6. KY-040: CLK/DT kart üstünde 10 kΩ pull-up; SW için ESP dahili pull-up. Yön ters gelirse web'den 'Enkoder ters' ya da CLK↔DT.",
  "7. LDR panel ışığını görmemeli (oto-parlaklık geri besleme → salınım); mikrofon ve LDR için ön/üst kenarda küçük delik.",
- "8. Mikrofon kartı 4 pinliyse AO→GPIO2 (asıl) + DO→GPIO42 (isteğe bağlı); 3 pinliyse tek çıkışı GPIO42'ye (DO) bağla.",
+ "8. Mikrofon kartı (15771) 3 pinli, yalnız dijital: OUT → GPIO42. GPIO2 (analog mikrofon girişi) boşta: 100 kΩ ile GND'ye çek.",
  "9. GPIO 33–37 OPI PSRAM, 19/20 USB, 0/45/46 strapping, 43/44 UART0: sensör için kullanma. 38/48 = bazı kartlarda RGB LED.",
  "10. Boş bırakılan sensör zararsızdır: dokunmatik pull-down, enkoder pull-up, DHT 'yok' gösterir; oto-parlaklık ve alkış varsayılan kapalı.",
  "11. Güç: P4 modül tepe ~30 W (tam beyaz, parlaklık 255) → 3 modül ≤ 90 W; P1.86 ≈ 31 W/modül. Firmware varsayılanı (110/255) bunu ~yarıya indirir.",
  "12. LAT2/LAT3 (kesikli): yalnız çoklu P1.86 — 2./3. modülün HUB75 pin 14'ü. R/G/B, CLK, OE, A–E tüm modüllere paralel; tek P4/P1.86'da boş.",
- "13. Modül pin sırası (soldan, kart yazısını doğrula): KY-040 GND·+·SW·DT·CLK | TTP223B GND·VCC·I/O | DHT11 +·OUT·− | LDR/Mic 3p VCC·GND·AO(DO), 4p AO·G·+·DO.",
+ "13. Modül pin sırası (eldeki kartların yazısı): KY-040 CLK·DT·SW·+·GND | TTP223B SIG·VCC·GND | DHT11 −·OUT·+ | LDR VCC·GND·DO | Mikrofon OUT·GND·VCC.",
 ]
 for r, s in enumerate(NOTES):
     col, row = (0, r) if r < 7 else (1, r-7)
