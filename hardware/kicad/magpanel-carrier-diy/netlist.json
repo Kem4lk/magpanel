@@ -10,7 +10,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "ef6cdfff-10d5-5ff4-a7a6-1008a9e8c6f4",
+  "uuid": "d7639c53-7fcb-57a8-a878-71973f1477ac",
   "value": "470uF 10V"
  },
  "C2": {
@@ -26,7 +26,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "80020e4c-6593-5824-9a9e-ac6cef0213cc",
+  "uuid": "242e6ff1-4a82-51bb-927c-becd3528a5c3",
   "value": "10uF"
  },
  "C3": {
@@ -42,7 +42,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "fe74384f-c4f0-5488-923d-64cb75190291",
+  "uuid": "853ad4b6-1a52-5c6b-afc7-6a2563e24d69",
   "value": "100nF"
  },
  "C4": {
@@ -58,7 +58,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "60f1c5da-1c15-5f45-aad4-d514e5eb1f9a",
+  "uuid": "5d0c9f2e-cca9-5570-b065-b65b6b3005a3",
   "value": "100nF"
  },
  "C5": {
@@ -74,7 +74,7 @@
    "1": "ENC_CLK",
    "2": "GND"
   },
-  "uuid": "40fea215-c92b-59e8-8d8f-7baad664574a",
+  "uuid": "a5037dc4-2c01-5032-8bca-20f0dd3fe7f2",
   "value": "100nF"
  },
  "C6": {
@@ -90,7 +90,7 @@
    "1": "ENC_DT",
    "2": "GND"
   },
-  "uuid": "e0f2438a-d0e5-5bf0-b97a-6204db79bf3d",
+  "uuid": "6592140c-318f-57ec-9d92-7f652547ca7d",
   "value": "100nF"
  },
  "C7": {
@@ -106,7 +106,7 @@
    "1": "ENC_SW",
    "2": "GND"
   },
-  "uuid": "fd305575-dcce-55bc-8519-6d7082fca286",
+  "uuid": "ed7eebbd-7c57-53b6-bb05-dff28ac18338",
   "value": "100nF"
  },
  "C8": {
@@ -122,7 +122,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "0a18f59c-f735-508d-8f5e-629c550e1bc8",
+  "uuid": "5c752e57-020a-58db-842d-1ceb6193a0f9",
   "value": "10uF"
  },
  "D1": {
@@ -138,7 +138,7 @@
    "1": "+5V",
    "2": "GND"
   },
-  "uuid": "03ec07da-b46d-524a-aea9-caf03679e9db",
+  "uuid": "df57571d-78c6-51dc-81d3-a806549895f1",
   "value": "SMAJ5.0A"
  },
  "D2": {
@@ -154,7 +154,7 @@
    "1": "GND",
    "2": "LED_PWR"
   },
-  "uuid": "4ab36ac2-fefa-55c3-bca1-fb6f6020bf76",
+  "uuid": "3be17812-7b61-58f5-8e72-d95d3d38ff97",
   "value": "PWR (yesil)"
  },
  "F1": {
@@ -170,7 +170,7 @@
    "1": "VIN",
    "2": "+5V"
   },
-  "uuid": "43e15e4a-b8b1-5679-92e7-5e7bdd8fefca",
+  "uuid": "88b966f4-4cc0-5d8d-b68a-c1418a580ee6",
   "value": "1.5A"
  },
  "H1": {
@@ -179,7 +179,7 @@
   "footprint": "MountingHole:MountingHole_3.2mm_M3",
   "in_bom": false,
   "pins": {},
-  "uuid": "2fe04a93-d26a-5836-a5c5-2782db775f32",
+  "uuid": "0114b9a4-ae8b-5457-abfb-33bd76e2211c",
   "value": "M3"
  },
  "H2": {
@@ -188,7 +188,7 @@
   "footprint": "MountingHole:MountingHole_3.2mm_M3",
   "in_bom": false,
   "pins": {},
-  "uuid": "65c17351-5803-59b5-a687-3a6fed8c2968",
+  "uuid": "fa9845df-cd9b-5f0a-939f-64e3ce6b95df",
   "value": "M3"
  },
  "H3": {
@@ -197,7 +197,7 @@
   "footprint": "MountingHole:MountingHole_3.2mm_M3",
   "in_bom": false,
   "pins": {},
-  "uuid": "5886da39-9402-5ec1-95f4-b2323cccbe50",
+  "uuid": "7e355e07-ee1c-5f5e-9028-69c6798939af",
   "value": "M3"
  },
  "H4": {
@@ -206,7 +206,7 @@
   "footprint": "MountingHole:MountingHole_3.2mm_M3",
   "in_bom": false,
   "pins": {},
-  "uuid": "afd6b1e8-9810-5372-bbef-df29bc61b1b0",
+  "uuid": "df406151-32c1-5dfe-9cd8-586605de1f06",
   "value": "M3"
  },
  "J1": {
@@ -220,7 +220,7 @@
    "1": "VIN",
    "2": "GND"
   },
-  "uuid": "ebc724e8-da60-5f2d-ae62-0640ce2f78ca",
+  "uuid": "baa39f85-1d1b-559d-867b-1e68d70f7538",
   "value": "5V IN"
  },
  "J10": {
@@ -237,7 +237,7 @@
    "4": "EXP_IO44",
    "5": "EXP_IO38"
   },
-  "uuid": "42461b75-a0d6-562d-aaf6-81c007d14e66",
+  "uuid": "df3b82cd-0004-5633-81aa-eea049d37105",
   "value": "EXP"
  },
  "J2": {
@@ -265,7 +265,7 @@
    "8": "HUB_ADDR_E",
    "9": "HUB_ADDR_A"
   },
-  "uuid": "a47ad3a2-dd9f-5ec3-9fb2-71b9b7475af7",
+  "uuid": "86e2267a-fbf3-55fc-a077-a84e34c020ad",
   "value": "HUB75E PANEL 1"
  },
  "J3": {
@@ -293,7 +293,7 @@
    "8": "HUB_ADDR_E",
    "9": "HUB_ADDR_A"
   },
-  "uuid": "b0f68a78-be93-57b0-85ad-67de0c44ae35",
+  "uuid": "41cc1b44-5fee-5538-a0ee-7b16a66d174e",
   "value": "HUB75E PANEL 2"
  },
  "J4": {
@@ -321,7 +321,7 @@
    "8": "HUB_ADDR_E",
    "9": "HUB_ADDR_A"
   },
-  "uuid": "358e49e9-86ed-5be2-9d0f-fd995b69863d",
+  "uuid": "3e15e7b1-175b-56a8-9cf8-c109e3255bbd",
   "value": "HUB75E PANEL 3"
  },
  "J5": {
@@ -336,7 +336,7 @@
    "2": "GND",
    "3": "LDR_OUT"
   },
-  "uuid": "10c408dd-2a6a-506f-9216-eb762a698370",
+  "uuid": "abbee78b-0be9-51e4-b801-d241a8ab3a99",
   "value": "LDR"
  },
  "J6": {
@@ -351,7 +351,7 @@
    "2": "GND",
    "3": "+3V3"
   },
-  "uuid": "c5e9a994-9c28-5231-a684-f09709624876",
+  "uuid": "bd9cad02-24f2-5564-a236-1f8c71b29d8e",
   "value": "MIC"
  },
  "J7": {
@@ -368,7 +368,7 @@
    "4": "+3V3",
    "5": "GND"
   },
-  "uuid": "6831f587-f841-5138-86ee-2b318e4d115a",
+  "uuid": "704db454-49a6-5c9a-96e3-a55c537b87a8",
   "value": "ENC"
  },
  "J8": {
@@ -383,7 +383,7 @@
    "2": "DHT_DATA",
    "3": "+3V3"
   },
-  "uuid": "8a20b3ed-436b-56d2-b862-0418e195635e",
+  "uuid": "4971c980-4386-57de-95dd-cd71bb5273fa",
   "value": "DHT"
  },
  "J9": {
@@ -398,7 +398,7 @@
    "2": "+3V3",
    "3": "GND"
   },
-  "uuid": "f5153fd6-a3c9-5ddb-aee8-4912593083df",
+  "uuid": "efd49f1c-0db1-548a-9a8a-492ef5187910",
   "value": "TOUCH"
  },
  "R1": {
@@ -414,7 +414,7 @@
    "1": "+5V",
    "2": "LED_PWR"
   },
-  "uuid": "bb3ee5f0-d268-573d-aa3c-476bf5eeca3d",
+  "uuid": "d7853296-875d-51ab-90f6-585d13156f45",
   "value": "2.2k"
  },
  "R10": {
@@ -430,7 +430,7 @@
    "1": "R1_5V",
    "2": "HUB_R1"
   },
-  "uuid": "2dc06d07-cc33-5b0d-80b1-49f18a231af8",
+  "uuid": "35d31741-d2c9-5cab-b7e4-e9019c26bd19",
   "value": "33R"
  },
  "R11": {
@@ -446,7 +446,7 @@
    "1": "G1_5V",
    "2": "HUB_G1"
   },
-  "uuid": "bf1be714-c972-5376-95cd-3af1ca89f206",
+  "uuid": "75628e4c-f636-53aa-bbdd-508be53bfd99",
   "value": "33R"
  },
  "R12": {
@@ -462,7 +462,7 @@
    "1": "B1_5V",
    "2": "HUB_B1"
   },
-  "uuid": "0fdc3d07-bbd9-5ead-8ea1-5e869074035a",
+  "uuid": "d31fd350-6c23-55e1-aa86-73281e5ad9b6",
   "value": "33R"
  },
  "R13": {
@@ -478,7 +478,7 @@
    "1": "R2_5V",
    "2": "HUB_R2"
   },
-  "uuid": "59d31430-affc-57f3-b599-9299446bd595",
+  "uuid": "1dbca8da-9508-56dd-918c-3653aebd4bc5",
   "value": "33R"
  },
  "R14": {
@@ -494,7 +494,7 @@
    "1": "G2_5V",
    "2": "HUB_G2"
   },
-  "uuid": "b259ae21-e9f0-5428-af2e-0e1981cf3c72",
+  "uuid": "b5270423-923d-5a2c-8dfd-ab9f6777dbb8",
   "value": "33R"
  },
  "R15": {
@@ -510,7 +510,7 @@
    "1": "B2_5V",
    "2": "HUB_B2"
   },
-  "uuid": "52cd25ec-d424-5f0d-94fd-4a6caee7912e",
+  "uuid": "f4f45c73-5b04-5922-bf4e-9e9fb792cda5",
   "value": "33R"
  },
  "R16": {
@@ -526,7 +526,7 @@
    "1": "LAT2_5V",
    "2": "HUB_LAT2"
   },
-  "uuid": "2d3a7fb2-76be-5877-bef6-54cd7ec865b3",
+  "uuid": "44086402-3064-5c1d-9a3c-fedd19085773",
   "value": "33R"
  },
  "R17": {
@@ -542,7 +542,7 @@
    "1": "ADDR_A_5V",
    "2": "HUB_ADDR_A"
   },
-  "uuid": "7c823dac-7aa0-54b6-8024-f95105839aff",
+  "uuid": "e3bfd6fa-3bc8-5ace-8594-006e4742da4a",
   "value": "33R"
  },
  "R18": {
@@ -558,7 +558,7 @@
    "1": "ADDR_B_5V",
    "2": "HUB_ADDR_B"
   },
-  "uuid": "a6260435-05eb-507a-89a2-64b4a414db81",
+  "uuid": "d516b47c-2d90-5a0f-b03a-690e43ae686e",
   "value": "33R"
  },
  "R19": {
@@ -574,7 +574,7 @@
    "1": "ADDR_C_5V",
    "2": "HUB_ADDR_C"
   },
-  "uuid": "462ea84c-beaf-59cc-9898-863d9c944d1d",
+  "uuid": "e95be399-2e50-516b-908e-bd0c95bd1461",
   "value": "33R"
  },
  "R2": {
@@ -590,7 +590,7 @@
    "1": "LAT",
    "2": "GND"
   },
-  "uuid": "1c82d232-4df9-5685-9111-9dcf4fd7a7bb",
+  "uuid": "f83fb0c8-9d18-54a4-8f1d-e2db98329308",
   "value": "10k"
  },
  "R20": {
@@ -606,7 +606,7 @@
    "1": "ADDR_D_5V",
    "2": "HUB_ADDR_D"
   },
-  "uuid": "cfa22091-b968-578e-97cc-bce79b566e4b",
+  "uuid": "8771fe0c-1e89-59cc-91f4-6e2fb0236a29",
   "value": "33R"
  },
  "R21": {
@@ -622,7 +622,7 @@
    "1": "LAT_5V",
    "2": "HUB_LAT"
   },
-  "uuid": "dfb977e1-9267-55bf-99bd-ae48de98d975",
+  "uuid": "3927bb32-6ca7-5bbd-bd8c-a80a26b34c36",
   "value": "33R"
  },
  "R22": {
@@ -638,7 +638,7 @@
    "1": "OE_5V",
    "2": "HUB_OE"
   },
-  "uuid": "7c61a4e1-6d8a-5c32-982c-0d3610e60ee4",
+  "uuid": "5ff52f15-4080-50b7-9816-87f7971f05ba",
   "value": "33R"
  },
  "R23": {
@@ -654,7 +654,7 @@
    "1": "CLK_5V",
    "2": "HUB_CLK"
   },
-  "uuid": "3be1cde0-3b34-551d-98d1-382237a9667c",
+  "uuid": "211c19c4-310a-5035-8951-58da956e0efa",
   "value": "33R"
  },
  "R24": {
@@ -670,7 +670,7 @@
    "1": "ADDR_E_5V",
    "2": "HUB_ADDR_E"
   },
-  "uuid": "9a4a22fe-4bf9-5daa-8717-a192fa0f0a7e",
+  "uuid": "1fedb831-8392-5a40-8216-0315d51562ec",
   "value": "33R"
  },
  "R25": {
@@ -686,7 +686,7 @@
    "1": "LAT3_5V",
    "2": "HUB_LAT3"
   },
-  "uuid": "3c4227db-d796-5402-8a1c-04ccc37c1186",
+  "uuid": "eab59ad1-64f8-5473-8882-11cfa5e49d60",
   "value": "33R"
  },
  "R3": {
@@ -702,7 +702,7 @@
    "1": "LAT2",
    "2": "GND"
   },
-  "uuid": "57fcf82d-2e73-5c38-9860-6cf2ba9b8dca",
+  "uuid": "4b16854f-454b-5f49-9aa0-a7e66b7a5b63",
   "value": "10k"
  },
  "R4": {
@@ -718,7 +718,7 @@
    "1": "LAT3",
    "2": "GND"
   },
-  "uuid": "39b81fa2-3b14-566d-bc98-a9b977ba5645",
+  "uuid": "2b8701e9-dc3c-50b8-b2da-c8502ffca699",
   "value": "10k"
  },
  "R5": {
@@ -734,7 +734,7 @@
    "1": "OE",
    "2": "GND"
   },
-  "uuid": "061f79bb-24cd-5b2d-8b22-3efe64ee9657",
+  "uuid": "9fb7508d-1aff-58e9-b2b0-993e900eb483",
   "value": "10k"
  },
  "R6": {
@@ -750,7 +750,7 @@
    "1": "+3V3",
    "2": "DHT_DATA"
   },
-  "uuid": "b50a3807-8422-5a33-ab45-aa289f9f846d",
+  "uuid": "232d8a75-d47b-5393-8828-4fe2f067db9c",
   "value": "10k"
  },
  "R7": {
@@ -766,7 +766,7 @@
    "1": "MIC_AO",
    "2": "GND"
   },
-  "uuid": "cc1daf9d-4546-5829-89a3-ca5cac38af26",
+  "uuid": "9febb985-9307-5e8a-adb3-c71b27eb2263",
   "value": "10k"
  },
  "U1": {
@@ -822,7 +822,7 @@
    "8": "G2",
    "9": "B2"
   },
-  "uuid": "53a5ebf1-6823-5bee-b8b8-386204c96a74",
+  "uuid": "7999ab82-d62c-56c3-8185-c75b0916615b",
   "value": "ESP32-S3-DevKitC-1"
  },
  "U2": {
@@ -854,7 +854,7 @@
    "8": "G1",
    "9": "R1"
   },
-  "uuid": "798d51da-6b0b-595e-a7d3-3f1f5275d9b8",
+  "uuid": "0f02f2dd-d1ef-5867-be56-7fce5d8d5d2d",
   "value": "74HCT245"
  },
  "U3": {
@@ -886,7 +886,7 @@
    "8": "ADDR_C",
    "9": "ADDR_B"
   },
-  "uuid": "e584837a-e45b-5650-b6b9-56ba181d4305",
+  "uuid": "995a6eab-d927-5c14-acbf-076509e98fab",
   "value": "74HCT245"
  }
 }

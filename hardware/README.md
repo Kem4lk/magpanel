@@ -39,7 +39,7 @@ hattını paylaşır; **2. modülün LAT'ı GPIO17, 3. modülün LAT'ı GPIO14**
 |---|---|---|---|---|
 | LDR Sensor Board (16067) | DO | **1** (ADC1_CH0) | analog okuma | kart yalnız dijital: oto parlaklık iki kademe |
 | Microphone Sound Sensor (15771) | OUT | **42** | giriş, pull-up | kart yalnız dijital: kesme sayımı, VU + çift alkış |
-| (analog mikrofon girişi) | — | **2** (ADC1_CH1) | analog | eldeki kartta yok; boşta kalmasın (taşıyıcıda R7 100 kΩ GND) |
+| (analog mikrofon girişi) | — | **2** (ADC1_CH1) | analog | eldeki kartta yok; boşta kalmasın (taşıyıcıda R7 10 kΩ GND) |
 | Mechanic Encoder Module KY-040 | CLK (A) | **41** | giriş, pull-up | kesme, tam-adım tablo |
 | KY-040 | DT (B) | **40** | giriş, pull-up | |
 | KY-040 | SW | **39** | giriş, pull-up | aktif düşük; kısa/uzun basma |
@@ -88,7 +88,7 @@ karanlıkta daha da düşürür.
   (4 pinli) LDR kartı ya da çıplak LDR + 10 kΩ bölücü GPIO1'e bağlanmalı.
 - **Mikrofon kartı:** eldeki kart 3 pinli (OUT, GND, VCC) ve yalnız dijital: OUT → GPIO42.
   Firmware DO tetiklerini "yüksek ses" sayar; VU göstergesi açık/kapalı çalışır.
-  GPIO2 (analog mikrofon girişi) boşta kalırsa gürültü okur: taşıyıcı kartta R7 (100 kΩ) GND'ye çeker.
+  GPIO2 (analog mikrofon girişi) boşta kalırsa gürültü okur: taşıyıcı kartta R7 (10 kΩ) GND'ye çeker.
   Kart potansiyometresi + web'deki "Alkış eşiği" birlikte ayarlanır (ses çubuğu alkışta
   eşik çizgisini geçmeli, konuşmada geçmemeli). Kasada 2–3 mm ses deliği yeter.
 
