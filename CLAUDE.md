@@ -195,8 +195,8 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   parlaklık/alkış varsayılan kapalı. Web kartı "Sensörler & kontroller" (`<details>`): canlı değerler, ses
   çubuğu+eşik çizgisi, eylem select'leri, uyku butonu. JS `node --check` + headless Chromium yüklemesi temiz.
 - **Bellek:** P4 RAM %36.6→%37.0 (+1.4 KB), flash +27 KB; P1.86 RAM %18.3. Her iki env derlendi (pio 6.2, lokal).
-- **Donanımda doğrulanacak (henüz panelde test edilmedi):** LDR yönü ("LDR ters"), mikrofon kartı 3/4 pin
-  (3 pinliyse DO→42), enkoder yönü ("Enkoder ters"), DHT11 zamanlaması (log: `Sensorler:` satırı,
+- **Donanımda doğrulanacak (henüz panelde test edilmedi):** LDR yönü ("LDR ters"; eldeki kart DO'lu →
+  2 kademe), mikrofon kartı 3 pin dijital (OUT→42), enkoder yönü ("Enkoder ters"), DHT11 zamanlaması (log: `Sensorler:` satırı,
   telemetride `d:1`), alkış eşiği. İlk testte web LOG'da `Kontrol: ... -> ...` satırlarını izle.
 - **Açık:** kasaya sensör delikleri (`enclosure/generate_case.py`) eklenmedi; iOS app `S:/C:/B:` frame'lerini
   henüz kullanmıyor (bilinmeyen metin frame'lerini yok saymalı).
@@ -205,10 +205,15 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - `gen_carrier.py` tek kaynak: `sch` → `pcb` → `route` → `fab` (`all` hepsi). KiCad 8'in python'u ile
   çalışır (Linux `/usr/bin/python3`, macOS KiCad.app içindeki python). `sch` yalnız stdlib: `sexp.py`
   (S-ifade okuma/yazma), `schlib.py` (KiCad sembol kütüphanesi; dönüşüm sırası: önce döndür, sonra ayna).
-- Kart 100×63.5 mm, 2 katman. DevKit dişi soket (sağ sıra çift: 0.9" resmi / 1.0" klon, aynı pad no),
-  2×74AHCT245 (kanal sırası DevKit J1 pin sırası → kesişimsiz), 4×33R dizi, LAT/LAT2/LAT3/OE 10k
-  pull-down (OE=GCLK/aktif-yüksek → düşük = karanlık), 3× IDC 2×8 HUB75E (LAT IO10/IO17/IO14),
-  5 V klemens + PTC 1.5 A + SMAJ5.0A + 470 µF, sensör başlıkları J5–J10 (`SENSOR_HDRS`).
+- Kart v1.1, 100×63.5 mm, 2 katman. DevKit dişi soket: sağ sıra `DEVKIT_RIGHT_ROWS` (eldeki N16R8 klon,
+  2× USB-C = 1.0" / 25.4 mm; 1:1 baskıyla doğrulandı; resmi kart 0.9"). Tampon **2× CD74HCT245E DIP-20
+  soketli** (HCT şart: düz HC 5 V'ta 3.3 V girişi garanti okumaz); A pinleri DevKit adımında
+  (U2 pin1 = satır 11, U3 pin1 = satır 22, 180°), 4×33R dizi, LAT/LAT2/LAT3/OE 10k pull-down
+  (OE=GCLK/aktif-yüksek → düşük = karanlık), 3× IDC 2×8 HUB75E (LAT IO10/IO17/IO14), 5 V klemens + PTC
+  1.5 A + SMAJ5.0A + 470 µF; 5 V ana hat tamponların altından (alt şerit) DevKit 5V pinine sağdan girer.
+- Eldeki modüller (foto 2026-10-02), başlıklar bu sırada: LDR 16067 VCC/GND/DO, MIC 15771 OUT/GND/VCC,
+  KY-040 CLK/DT/SW/+/GND, DHT11 15579 −/OUT/+, TTP223B 17538 SIG/VCC/GND. **LDR ve MIC yalnız dijital**
+  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 100k GND.
 - Netler PCB'ye KiCad'in kendi netlist'inden yazılır (`kicad-cli sch export netlist`): yerel etiket
   `/AD`, NC pin `unconnected-(U1-…)` + pintype `…+no_connect` → şematik↔PCB farkı 0. Net sınıfları ve
   tasarım kuralları `.kicad_pro` JSON'una yazılır (`SaveBoard(..., True)` API'den ayarlanan kuralları
@@ -222,10 +227,11 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   (`board.Zones()` / `GetConnectivity()` ham `SwigPyObject` döner) → silinen öğeye referans tut
   (`board_remove()`).
 - `fab`: ERC/DRC/parity sıfır değilse durur. Gerber zip (sabit tarih), BOM (işleve göre gruplu),
-  JLC BOM/CPL (yalnız SMD, LCSC boş), şematik PDF, görseller (`kicad-cli pcb export svg` katmanları →
-  Chromium → PIL birleştirme; headless pencere görüntüden yüksek olmalı, yoksa alt kenar kesilir).
-- Açık: DevKit resmi/klon sıra seçimi, sensör modül pin sıraları (kart yazısına göre), kasaya taşıyıcı
-  ayakları + sensör delikleri, LCSC numaraları.
+  JLC BOM/CPL (yalnız SMD, LCSC boş), şematik PDF, **1:1 yerleşim PDF'i** (A4, yalnız ped+delik, 100 mm
+  ölçek çubuğu; kullanıcı tablette/kâğıtta gerçek parçalarla denedi), görseller (`kicad-cli pcb export svg`
+  katmanları → Chromium → PIL; headless pencere görüntüden yüksek olmalı, yoksa alt kenar kesilir).
+- Açık: pasifler SMD varsayıldı (0805, 4×0603 dizi, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
+  kasaya taşıyıcı ayakları + sensör delikleri; LCSC numaraları.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

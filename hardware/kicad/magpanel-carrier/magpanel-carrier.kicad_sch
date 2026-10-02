@@ -6,10 +6,10 @@
 	(paper "A3")
 	(title_block
 		(title "MagPanel Carrier - ESP32-S3 + 3x HUB75E + sensorler")
-		(date "2026-10-01")
-		(rev "1.0")
+		(date "2026-10-02")
+		(rev "1.1")
 		(company "MagPanel (github.com/Kem4lk/magpanel)")
-		(comment 1 "Seviye donusturucu: 2x 74AHCT245 (3.3 V -> 5 V), seri 33R, LAT/OE pull-down")
+		(comment 1 "Seviye donusturucu: 2x 74HCT245 DIP (3.3 V -> 5 V), seri 33R, LAT/OE pull-down")
 		(comment 2 "Pinler: include/app_constants.hpp, include/panel_sm16380.h, include/sensors.h")
 		(comment 3 "hardware/kicad/gen_carrier.py ile uretildi - elle duzenleme yerine ureticiyi degistir")
 	)
@@ -611,7 +611,7 @@
 				(at 0 0 0)
 				(effects (font (size 1.27 1.27)) (hide yes))
 			)
-			(property "Description" "ESP32-S3-DevKitC-1 (N16R8/N8R8) gelistirme karti; 2x22 disi soket. Sag soket 0.9in (resmi) ya da 1.0in (klon) sirasina takilir."
+			(property "Description" "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in."
 				(at 0 0 0)
 				(effects (font (size 1.27 1.27)) (hide yes))
 			)
@@ -1553,84 +1553,6 @@
 				)
 			)
 		)
-		(symbol "Connector_Generic:Conn_01x04"
-			(pin_names (offset 1.016) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "J" (at 0 5.08 0) (effects (font (size 1.27 1.27))))
-			(property "Value" "Conn_01x04" (at 0 -7.62 0) (effects (font (size 1.27 1.27))))
-			(property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes)))
-			(property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes)))
-			(property "Description" "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"
-				(at 0 0 0)
-				(effects (font (size 1.27 1.27)) (hide yes))
-			)
-			(property "ki_keywords" "connector"
-				(at 0 0 0)
-				(effects (font (size 1.27 1.27)) (hide yes))
-			)
-			(property "ki_fp_filters" "Connector*:*_1x??_*"
-				(at 0 0 0)
-				(effects (font (size 1.27 1.27)) (hide yes))
-			)
-			(symbol "Conn_01x04_1_1"
-				(rectangle
-					(start -1.27 -4.953)
-					(end 0 -5.207)
-					(stroke (width 0.1524) (type default))
-					(fill (type none))
-				)
-				(rectangle
-					(start -1.27 -2.413)
-					(end 0 -2.667)
-					(stroke (width 0.1524) (type default))
-					(fill (type none))
-				)
-				(rectangle
-					(start -1.27 0.127)
-					(end 0 -0.127)
-					(stroke (width 0.1524) (type default))
-					(fill (type none))
-				)
-				(rectangle
-					(start -1.27 2.667)
-					(end 0 2.413)
-					(stroke (width 0.1524) (type default))
-					(fill (type none))
-				)
-				(rectangle
-					(start -1.27 3.81)
-					(end 1.27 -6.35)
-					(stroke (width 0.254) (type default))
-					(fill (type background))
-				)
-				(pin passive line
-					(at -5.08 2.54 0)
-					(length 3.81)
-					(name "Pin_1" (effects (font (size 1.27 1.27))))
-					(number "1" (effects (font (size 1.27 1.27))))
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 3.81)
-					(name "Pin_2" (effects (font (size 1.27 1.27))))
-					(number "2" (effects (font (size 1.27 1.27))))
-				)
-				(pin passive line
-					(at -5.08 -2.54 0)
-					(length 3.81)
-					(name "Pin_3" (effects (font (size 1.27 1.27))))
-					(number "3" (effects (font (size 1.27 1.27))))
-				)
-				(pin passive line
-					(at -5.08 -5.08 0)
-					(length 3.81)
-					(name "Pin_4" (effects (font (size 1.27 1.27))))
-					(number "4" (effects (font (size 1.27 1.27))))
-				)
-			)
-		)
 		(symbol "Connector_Generic:Conn_01x05"
 			(pin_names (offset 1.016) hide)
 			(exclude_from_sim no)
@@ -2193,11 +2115,11 @@
 		(stroke (width 0) (type default))
 		(uuid "358d583e-df70-5147-a750-8c2014eeec01")
 	)
-	(label "LDR_AO"
+	(label "LDR_OUT"
 		(at 96.52 125.73 0)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "4f9750de-d771-5727-86f7-4a4cada7f205")
+		(uuid "2f9d5bb4-088b-55a4-b643-89273dd6ef8f")
 	)
 	(wire
 		(pts (xy 91.44 128.27) (xy 96.52 128.27))
@@ -2295,7 +2217,7 @@
 	)
 	(no_connect (at 91.44 163.83) (uuid "4ddfe737-92cf-5657-b56f-cb2d229d81c2"))
 	(no_connect (at 91.44 166.37) (uuid "436b9656-1af5-5c7c-88c0-64df62959e79"))
-	(text "Sag soket iki sirali: 0.9in (resmi Espressif) / 1.0in (N16R8 klonlari).\nAnten (ust) kart kenarindan tasar; USB (alt) kart kenarinda.\nKullanilmayan: IO0/45/46 strapping, IO35-37 OPI PSRAM, IO19/20 USB, IO48 (klon RGB LED)."
+	(text "Sag soket 1.0in (25.4 mm; YD-ESP32-S3 tipi N16R8 klon). Resmi kart: 0.9in.\nAnten (ust) kart kenarindan tasar; USB (alt) kart kenarinda.\nKullanilmayan: IO0/45/46 strapping, IO35-37 OPI PSRAM, IO19/20 USB, IO48 (klon RGB LED)."
 		(exclude_from_sim no)
 		(at 17.78 194.31 0)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
@@ -2312,7 +2234,7 @@
 		(fill (type none))
 		(uuid "ba28e3d6-a633-5dac-ac85-4067b252d989")
 	)
-	(text "3  SEVIYE DONUSTURUCU 3.3 V -> 5 V (2x 74AHCT245)"
+	(text "3  SEVIYE DONUSTURUCU 3.3 V -> 5 V (2x 74HCT245)"
 		(exclude_from_sim no)
 		(at 146.05 19.05 0)
 		(effects (font (size 2 2) (bold yes)) (justify left bottom))
@@ -3657,19 +3579,19 @@
 		(stroke (width 0) (type default))
 		(uuid "a9b7a546-a191-5b65-9c0d-14fcb4169925")
 	)
-	(label "LDR_AO"
+	(label "LDR_OUT"
 		(at 35.56 231.14 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "396fb9df-8fa5-5779-abfc-7dafb047ca82")
+		(uuid "596be0cd-f559-5f2a-9345-e05de6e0fe34")
 	)
-	(text "LDR Sensor Board (JSUMO 16067)"
+	(text "LDR karti (JSUMO 16067)"
 		(exclude_from_sim no)
 		(at 22.86 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
 		(uuid "e5d9d96d-c162-560d-82d0-f8a31c555271")
 	)
-	(text "AO -> IO1 (ADC1_CH0)"
+	(text "VCC/GND/DO; DO -> IO1"
 		(exclude_from_sim no)
 		(at 22.86 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
@@ -3680,11 +3602,11 @@
 		(stroke (width 0) (type default))
 		(uuid "1649d995-cd2c-556b-996b-59cd5d6820dc")
 	)
-	(label "MIC_AO"
+	(label "MIC_DO"
 		(at 78.74 226.06 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "36e96f8c-eb53-5636-b88f-4108acc4cb96")
+		(uuid "24f5059d-c956-5e5a-a3cc-502fd737bcb5")
 	)
 	(wire
 		(pts (xy 86.36 228.6) (xy 66.04 228.6))
@@ -3696,237 +3618,237 @@
 		(stroke (width 0) (type default))
 		(uuid "a4e4ed06-fcea-5ac2-9248-bf1a572550ef")
 	)
-	(wire
-		(pts (xy 86.36 233.68) (xy 78.74 233.68))
-		(stroke (width 0) (type default))
-		(uuid "bb54babf-aa40-5dba-8e35-514324ceae2d")
-	)
-	(label "MIC_DO"
-		(at 78.74 233.68 180)
-		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "8021f469-4f22-5598-8b6a-89fbbfb94ceb")
-	)
-	(text "Microphone Sound Sensor (JSUMO 15771)"
+	(text "Mikrofon (JSUMO 15771)"
 		(exclude_from_sim no)
 		(at 66.04 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "264dae61-ecdc-5a5c-8176-da3ca2615e12")
+		(uuid "7cf44bff-4297-5127-a042-4d122a685d11")
 	)
-	(text "AO -> IO2, DO -> IO42"
+	(text "OUT/GND/VCC; OUT -> IO42"
 		(exclude_from_sim no)
 		(at 66.04 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "5a413a99-65ab-55a0-89ef-af5a743d84a0")
+		(uuid "4176bac0-ace0-5540-814e-b47296729a7d")
 	)
 	(wire
 		(pts (xy 129.54 223.52) (xy 121.92 223.52))
 		(stroke (width 0) (type default))
-		(uuid "3d045e13-a70c-5c23-9398-9db34bc8b205")
+		(uuid "baa76fb6-f515-5d59-8212-0140cae373f8")
 	)
 	(label "ENC_CLK"
 		(at 121.92 223.52 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "3b14de92-b2b5-5b7c-b4ce-6819c4c63de4")
+		(uuid "0d155415-e431-5196-9240-a9d847e2e36e")
 	)
 	(wire
 		(pts (xy 129.54 226.06) (xy 121.92 226.06))
 		(stroke (width 0) (type default))
-		(uuid "fff5612a-e603-5a55-870f-8cbb188abd32")
+		(uuid "3d045e13-a70c-5c23-9398-9db34bc8b205")
 	)
 	(label "ENC_DT"
 		(at 121.92 226.06 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "e4489d9e-ec72-59b8-860b-d785cdcf726a")
+		(uuid "51a37010-f686-5997-b896-63a06742062a")
 	)
 	(wire
 		(pts (xy 129.54 228.6) (xy 121.92 228.6))
 		(stroke (width 0) (type default))
-		(uuid "1a810219-07bf-5720-b209-9f8ed4e3cfd4")
+		(uuid "fff5612a-e603-5a55-870f-8cbb188abd32")
 	)
 	(label "ENC_SW"
 		(at 121.92 228.6 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "2fef5759-c5ca-5f78-b84f-77f2c82ab834")
+		(uuid "db9c75d9-7a11-5d3f-a51c-59603a0c66a2")
 	)
 	(wire
 		(pts (xy 129.54 231.14) (xy 109.22 231.14))
 		(stroke (width 0) (type default))
-		(uuid "13bc0500-09c3-5c17-b38e-31aa0b438d33")
+		(uuid "1a810219-07bf-5720-b209-9f8ed4e3cfd4")
 	)
 	(wire
 		(pts (xy 129.54 233.68) (xy 109.22 233.68))
 		(stroke (width 0) (type default))
-		(uuid "f7b2dc87-7a34-5635-9144-9a7225c89973")
+		(uuid "40994cef-87f6-5955-be3b-d4d2fa329838")
 	)
-	(text "KY-040 Mechanic Encoder"
+	(text "Enkoder KY-040 (JSUMO)"
 		(exclude_from_sim no)
 		(at 109.22 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "6ab4bb8b-7f8c-5aca-92c4-d29066ca07ab")
+		(uuid "7a34d985-4707-5e41-8e84-8179d3d44a27")
 	)
-	(text "CLK/DT/SW -> IO41/IO40/IO39"
+	(text "CLK/DT/SW -> IO41/40/39"
 		(exclude_from_sim no)
 		(at 109.22 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "cb101002-bf0a-53d2-a6e4-d5d2ce7b0676")
+		(uuid "35187ad2-0d89-547f-9e70-4c5f8f5941fd")
 	)
 	(wire
 		(pts (xy 172.72 226.06) (xy 152.4 226.06))
 		(stroke (width 0) (type default))
-		(uuid "b03c8bec-dc12-56e6-8e9c-65a0fea4f760")
+		(uuid "47d2da4e-f2ae-5a4d-a000-05c002b6bc50")
 	)
 	(wire
 		(pts (xy 172.72 228.6) (xy 165.1 228.6))
 		(stroke (width 0) (type default))
-		(uuid "f8c7b327-2dde-5b16-b8ed-714df08476b2")
+		(uuid "c74c31b9-c015-582e-a42b-572aa874fb5e")
 	)
 	(label "DHT_DATA"
 		(at 165.1 228.6 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "90bf8c0e-a3b3-537a-9b11-784f6c0917bb")
+		(uuid "c4a1d69e-d602-56c6-a363-089719ae08fe")
 	)
 	(wire
 		(pts (xy 172.72 231.14) (xy 152.4 231.14))
 		(stroke (width 0) (type default))
-		(uuid "57981ae2-3187-53e2-ba28-f8a08287aebb")
+		(uuid "f8c7b327-2dde-5b16-b8ed-714df08476b2")
 	)
-	(text "DHT11 Temperature & Humidity (JSUMO 15579)"
+	(text "DHT11 (JSUMO 15579)"
 		(exclude_from_sim no)
 		(at 152.4 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "6685124a-5abf-5c8e-8486-d6f8c9a3b474")
+		(uuid "613be0c8-fa3e-5af9-bb9e-a99f3cb02dc6")
 	)
-	(text "DATA -> IO47"
+	(text "-/OUT/+; OUT -> IO47"
 		(exclude_from_sim no)
 		(at 152.4 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "759d6d4f-7804-50ae-bde0-4d573b1b376a")
+		(uuid "82313c61-8e16-5717-8eb5-734f9c3e35ca")
 	)
 	(wire
-		(pts (xy 215.9 226.06) (xy 195.58 226.06))
+		(pts (xy 215.9 226.06) (xy 208.28 226.06))
 		(stroke (width 0) (type default))
-		(uuid "f3523595-ee41-5e4e-bf39-7c643f1c8f1f")
+		(uuid "037ba306-dff4-5660-9aba-5126f30cb009")
+	)
+	(label "TOUCH_OUT"
+		(at 208.28 226.06 180)
+		(fields_autoplaced yes)
+		(effects (font (size 1.27 1.27)) (justify right bottom))
+		(uuid "bab5544b-ed68-59e0-8811-be9c0cc1745e")
 	)
 	(wire
 		(pts (xy 215.9 228.6) (xy 195.58 228.6))
 		(stroke (width 0) (type default))
-		(uuid "90793aeb-b78c-5303-aca2-eb9df7f223a8")
+		(uuid "f3523595-ee41-5e4e-bf39-7c643f1c8f1f")
 	)
 	(wire
-		(pts (xy 215.9 231.14) (xy 208.28 231.14))
+		(pts (xy 215.9 231.14) (xy 195.58 231.14))
 		(stroke (width 0) (type default))
-		(uuid "a4801fd7-7c01-5e46-86e4-5a2cb6bed8e7")
+		(uuid "90793aeb-b78c-5303-aca2-eb9df7f223a8")
 	)
-	(label "TOUCH_OUT"
-		(at 208.28 231.14 180)
-		(fields_autoplaced yes)
-		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "5eeb3d76-550e-577e-8f6a-ba5f82779329")
-	)
-	(text "TTP223B Digital Touch (JSUMO 17538)"
+	(text "TTP223B (JSUMO 17538)"
 		(exclude_from_sim no)
 		(at 195.58 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "d61af60f-d342-5897-9817-3d78c6423c60")
+		(uuid "ff6ce9d4-a89d-5d46-b4ca-31a7af0a05ba")
 	)
-	(text "OUT -> IO21"
+	(text "SIG/VCC/GND; SIG -> IO21"
 		(exclude_from_sim no)
 		(at 195.58 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "1ec92624-02db-563f-8c3c-5969e4aebef2")
+		(uuid "919b8436-54fc-5e8f-9f8d-8aa87924301d")
 	)
 	(wire
 		(pts (xy 259.08 223.52) (xy 238.76 223.52))
 		(stroke (width 0) (type default))
-		(uuid "28167da2-86d1-5f89-ac04-3cdfc44c8fa8")
+		(uuid "fa80606c-c4c2-5cbf-ab2d-105b4779a491")
 	)
 	(wire
 		(pts (xy 259.08 226.06) (xy 238.76 226.06))
 		(stroke (width 0) (type default))
-		(uuid "b5a6e65e-2642-5d6d-8f9a-f95fad193260")
+		(uuid "f8a8394f-f4ad-5e62-9c05-1cc3859fca89")
 	)
 	(wire
 		(pts (xy 259.08 228.6) (xy 251.46 228.6))
 		(stroke (width 0) (type default))
-		(uuid "b29d681d-588c-579e-b7cc-b1611cf75535")
+		(uuid "28167da2-86d1-5f89-ac04-3cdfc44c8fa8")
 	)
 	(label "EXP_IO43"
 		(at 251.46 228.6 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "64fd3bc8-a78c-5f0e-878c-acb344650c40")
+		(uuid "5d1a370d-c154-5535-85ca-cb5803661e15")
 	)
 	(wire
 		(pts (xy 259.08 231.14) (xy 251.46 231.14))
 		(stroke (width 0) (type default))
-		(uuid "bc36b947-09bf-57a0-a05b-70e3baf5538a")
+		(uuid "b29d681d-588c-579e-b7cc-b1611cf75535")
 	)
 	(label "EXP_IO44"
 		(at 251.46 231.14 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "58f63939-5bd6-523b-8d9a-3222ea9d202b")
+		(uuid "3bb6bd88-5671-50fc-8858-4e15f8a1c702")
 	)
 	(wire
 		(pts (xy 259.08 233.68) (xy 251.46 233.68))
 		(stroke (width 0) (type default))
-		(uuid "2a9ee0e0-0915-50a9-9d7f-83d059de052c")
+		(uuid "bc36b947-09bf-57a0-a05b-70e3baf5538a")
 	)
 	(label "EXP_IO38"
 		(at 251.46 233.68 180)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
-		(uuid "88257625-fcd5-5dd1-93bd-dd71b3e4921c")
+		(uuid "08b284d9-a8d2-555d-b389-1781ef2923eb")
 	)
-	(text "Genisleme (UART0/ileride I2C)"
+	(text "Genisleme (UART0/I2C)"
 		(exclude_from_sim no)
 		(at 238.76 246.38 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "a21c16a5-356c-5deb-94a9-894b950b7700")
+		(uuid "60d6e7a5-5c36-52f8-a079-4375c74242ee")
 	)
-	(text "IO43, IO44, IO38 (v1.1 RGB LED)"
+	(text "IO43, IO44, IO38"
 		(exclude_from_sim no)
 		(at 238.76 249.682 0)
 		(effects (font (size 1 1)) (justify left bottom))
-		(uuid "906b68ff-651e-5ff8-8756-dcc8894ec3c3")
+		(uuid "273af908-61a1-5751-8db6-477b5e9aece8")
 	)
 	(wire
 		(pts (xy 106.68 267.97) (xy 106.68 265.43))
 		(stroke (width 0) (type default))
-		(uuid "a97535cb-5b24-53eb-bd2e-8a06e5bcf062")
+		(uuid "8a9e9aa5-8725-5d21-a0b7-30809dace997")
 	)
 	(label "ENC_CLK"
 		(at 106.68 265.43 90)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "dfecca3a-8aea-508d-9e16-8ce551c382d1")
+		(uuid "610866a9-dc47-5338-8dd5-0d2fd9530f48")
 	)
 	(wire
 		(pts (xy 121.92 267.97) (xy 121.92 265.43))
 		(stroke (width 0) (type default))
-		(uuid "2fca33c9-7fda-50d1-8ac4-0c682f224498")
+		(uuid "a97535cb-5b24-53eb-bd2e-8a06e5bcf062")
 	)
 	(label "ENC_DT"
 		(at 121.92 265.43 90)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "d6dff81e-2e30-5323-8af2-48a0ce9f2727")
+		(uuid "1ae26721-8bf9-52b9-968a-e057faffa800")
 	)
 	(wire
 		(pts (xy 137.16 267.97) (xy 137.16 265.43))
 		(stroke (width 0) (type default))
-		(uuid "e23f0c42-992f-5c3b-b84e-be9ce1270f68")
+		(uuid "2fca33c9-7fda-50d1-8ac4-0c682f224498")
 	)
 	(label "ENC_SW"
 		(at 137.16 265.43 90)
 		(fields_autoplaced yes)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
-		(uuid "4b2f4f88-8181-50bc-8277-cdb89ccc0890")
+		(uuid "4739ae36-78b9-5fef-bc3d-781bbcdca393")
+	)
+	(wire
+		(pts (xy 76.2 262.89) (xy 76.2 260.35))
+		(stroke (width 0) (type default))
+		(uuid "e23f0c42-992f-5c3b-b84e-be9ce1270f68")
+	)
+	(label "MIC_AO"
+		(at 76.2 260.35 0)
+		(fields_autoplaced yes)
+		(effects (font (size 1.27 1.27)) (justify left bottom))
+		(uuid "058c464b-9c5f-5485-90a6-894687346f24")
 	)
 	(wire
 		(pts (xy 158.75 271.78) (xy 156.21 271.78))
@@ -3944,7 +3866,7 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "6508c334-01ee-5579-b01a-eb37311cbac2")
 	)
-	(text "Pin sirasi yaygin modul baskisini izler; PCB uzerinde her pin etiketli.\nBaglanmamis sensor zararsiz (firmware: dokunmatik pull-down, enkoder pull-up)."
+	(text "Pin sirasi eldeki modullerin baskisiyla ayni; PCB uzerinde her pin etiketli.\nLDR ve mikrofon modulleri yalniz dijital cikisli. Baglanmamis sensor zararsiz."
 		(exclude_from_sim no)
 		(at 193.04 264.16 0)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
@@ -4502,11 +4424,11 @@
 			(at 76.2 144.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "ESP32-S3-DevKitC-1 (N16R8/N8R8) gelistirme karti; 2x22 disi soket. Sag soket 0.9in (resmi) ya da 1.0in (klon) sirasina takilir."
+		(property "Description" "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in."
 			(at 76.2 144.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "ESP32-S3-DevKitC-1-N8R8 / N16R8 klon + 2x 1x22 disi soket (2.54 mm)"
+		(property "MPN" "ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)"
 			(at 76.2 144.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -4747,23 +4669,23 @@
 			(at 205.74 36.83 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Value" "74AHCT245"
+		(property "Value" "74HCT245"
 			(at 205.74 80.01 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Footprint" "Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm"
+		(property "Footprint" "Package_DIP:DIP-20_W7.62mm_Socket"
 			(at 203.2 58.42 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74ahct245.pdf"
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/cd74hct245.pdf"
 			(at 203.2 58.42 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Octal bus transceiver, TTL girisli (3.3 V mantik -> 5 V); DIR=+5V (A->B), /OE=GND"
+		(property "Description" "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND"
 			(at 203.2 58.42 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "SN74AHCT245DWR (SOIC-20W)"
+		(property "MPN" "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
 			(at 203.2 58.42 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -4944,7 +4866,7 @@
 			(at 248.92 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "74AHCT245 VCC dekuplaj (pin 20 yaninda)"
+		(property "Description" "74HCT245 VCC dekuplaj (pin 20 yaninda)"
 			(at 248.92 43.18 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5039,23 +4961,23 @@
 			(at 205.74 120.65 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Value" "74AHCT245"
+		(property "Value" "74HCT245"
 			(at 205.74 163.83 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Footprint" "Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm"
+		(property "Footprint" "Package_DIP:DIP-20_W7.62mm_Socket"
 			(at 203.2 142.24 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74ahct245.pdf"
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/cd74hct245.pdf"
 			(at 203.2 142.24 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Octal bus transceiver, TTL girisli (3.3 V mantik -> 5 V); DIR=+5V (A->B), /OE=GND"
+		(property "Description" "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND"
 			(at 203.2 142.24 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "SN74AHCT245DWR (SOIC-20W)"
+		(property "MPN" "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
 			(at 203.2 142.24 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -5245,7 +5167,7 @@
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
 		(property "Datasheet" "~" (at 248.92 127 0) (effects (font (size 1.27 1.27)) (hide yes)))
-		(property "Description" "74AHCT245 VCC dekuplaj (pin 20 yaninda)"
+		(property "Description" "74HCT245 VCC dekuplaj (pin 20 yaninda)"
 			(at 248.92 127 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6288,7 +6210,7 @@
 			(at 48.26 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "LDR Sensor Board (JSUMO 16067) - AO -> IO1 (ADC1_CH0)"
+		(property "Description" "LDR karti (JSUMO 16067) - VCC/GND/DO; DO -> IO1"
 			(at 48.26 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6372,7 +6294,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x04")
+		(lib_id "Connector_Generic:Conn_01x03")
 		(at 91.44 228.6 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -6388,7 +6310,7 @@
 			(at 93.98 229.87 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical"
 			(at 91.44 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6396,18 +6318,17 @@
 			(at 91.44 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Microphone Sound Sensor (JSUMO 15771) - AO -> IO2, DO -> IO42"
+		(property "Description" "Mikrofon (JSUMO 15771) - OUT/GND/VCC; OUT -> IO42"
 			(at 91.44 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "MPN" "Pin header 1x4 2.54 mm erkek (Dupont)"
+		(property "MPN" "Pin header 1x3 2.54 mm erkek (Dupont)"
 			(at 91.44 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
 		(pin "1" (uuid "56155aac-f5e7-5c58-a590-ed9169a93868"))
 		(pin "2" (uuid "169f8ecf-192e-530d-b88d-d58e7f9e2655"))
 		(pin "3" (uuid "fde49324-a287-52e8-a6ee-a482a3930467"))
-		(pin "4" (uuid "f5c3c963-c79e-5c1c-a904-4d34a6bbb6f1"))
 		(instances
 			(project "magpanel-carrier"
 				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "J6") (unit 1))
@@ -6505,7 +6426,7 @@
 			(at 134.62 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "KY-040 Mechanic Encoder - CLK/DT/SW -> IO41/IO40/IO39"
+		(property "Description" "Enkoder KY-040 (JSUMO) - CLK/DT/SW -> IO41/40/39"
 			(at 134.62 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6621,7 +6542,7 @@
 			(at 177.8 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "DHT11 Temperature & Humidity (JSUMO 15579) - DATA -> IO47"
+		(property "Description" "DHT11 (JSUMO 15579) - -/OUT/+; OUT -> IO47"
 			(at 177.8 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6639,8 +6560,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3V3")
-		(at 152.4 226.06 90)
+		(lib_id "power:GND")
+		(at 152.4 226.06 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -6648,12 +6569,12 @@
 		(dnp no)
 		(uuid "589e8b70-4863-57dc-aa17-5107b33dbd55")
 		(property "Reference" "#PWR042"
-			(at 156.21 226.06 90)
+			(at 146.05 226.06 90)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Value" "+3V3"
+		(property "Value" "GND"
 			(at 149.1 226.06 90)
-			(effects (font (size 1.27 1.27)) (justify left))
+			(effects (font (size 1.27 1.27)) (justify right))
 		)
 		(property "Footprint" ""
 			(at 152.4 226.06 0)
@@ -6663,7 +6584,7 @@
 			(at 152.4 226.06 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 152.4 226.06 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6675,8 +6596,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 152.4 231.14 270)
+		(lib_id "power:+3V3")
+		(at 152.4 231.14 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -6684,12 +6605,12 @@
 		(dnp no)
 		(uuid "09b7e1bf-5ddb-5abd-be72-bf3b2edcd487")
 		(property "Reference" "#PWR043"
-			(at 146.05 231.14 90)
+			(at 156.21 231.14 90)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Value" "GND"
+		(property "Value" "+3V3"
 			(at 149.1 231.14 90)
-			(effects (font (size 1.27 1.27)) (justify right))
+			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Footprint" ""
 			(at 152.4 231.14 0)
@@ -6699,7 +6620,7 @@
 			(at 152.4 231.14 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
 			(at 152.4 231.14 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6735,7 +6656,7 @@
 			(at 220.98 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "TTP223B Digital Touch (JSUMO 17538) - OUT -> IO21"
+		(property "Description" "TTP223B (JSUMO 17538) - SIG/VCC/GND; SIG -> IO21"
 			(at 220.98 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6753,42 +6674,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 195.58 226.06 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(dnp no)
-		(uuid "479a3696-65ed-5f73-aece-400c9172be0f")
-		(property "Reference" "#PWR044"
-			(at 189.23 226.06 90)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Value" "GND"
-			(at 192.28 226.06 90)
-			(effects (font (size 1.27 1.27)) (justify right))
-		)
-		(property "Footprint" ""
-			(at 195.58 226.06 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Datasheet" ""
-			(at 195.58 226.06 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 195.58 226.06 0)
-			(effects (font (size 1.27 1.27)) (hide yes))
-		)
-		(pin "1" (uuid "4b447f4a-3207-548f-addb-647ccb59b7b2"))
-		(instances
-			(project "magpanel-carrier"
-				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "#PWR044") (unit 1))
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+3V3")
 		(at 195.58 228.6 90)
 		(unit 1)
@@ -6796,8 +6681,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "06950da0-a581-5053-9dc7-1cb0584564dc")
-		(property "Reference" "#PWR045"
+		(uuid "479a3696-65ed-5f73-aece-400c9172be0f")
+		(property "Reference" "#PWR044"
 			(at 199.39 228.6 90)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -6815,6 +6700,42 @@
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
 			(at 195.58 228.6 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(pin "1" (uuid "4b447f4a-3207-548f-addb-647ccb59b7b2"))
+		(instances
+			(project "magpanel-carrier"
+				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "#PWR044") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 195.58 231.14 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "06950da0-a581-5053-9dc7-1cb0584564dc")
+		(property "Reference" "#PWR045"
+			(at 189.23 231.14 90)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Value" "GND"
+			(at 192.28 231.14 90)
+			(effects (font (size 1.27 1.27)) (justify right))
+		)
+		(property "Footprint" ""
+			(at 195.58 231.14 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Datasheet" ""
+			(at 195.58 231.14 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 195.58 231.14 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
 		(pin "1" (uuid "43919b31-1965-5054-a439-e2676ff07695"))
@@ -6849,7 +6770,7 @@
 			(at 264.16 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Description" "Genisleme (UART0/ileride I2C) - IO43, IO44, IO38 (v1.1 RGB LED)"
+		(property "Description" "Genisleme (UART0/I2C) - IO43, IO44, IO38"
 			(at 264.16 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7164,6 +7085,71 @@
 	)
 	(symbol
 		(lib_id "Device:R")
+		(at 76.2 266.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "cc1daf9d-4546-5829-89a3-ca5cac38af26")
+		(property "Reference" "R7"
+			(at 78.74 265.43 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" "100k"
+			(at 78.74 267.97 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
+			(at 76.2 266.7 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Datasheet" "~" (at 76.2 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Description" "IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital"
+			(at 76.2 266.7 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "MPN" "0805 100 kOhm 1%"
+			(at 76.2 266.7 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(pin "1" (uuid "9fdbdab6-d9a1-5c97-b15b-05f04aaa9493"))
+		(pin "2" (uuid "8fa6beb3-1dfb-5d47-882b-c5d99bce51e2"))
+		(instances
+			(project "magpanel-carrier"
+				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "R7") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 76.2 270.51 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "770b6959-d361-5eeb-b779-5b7bfdc5286a")
+		(property "Reference" "#PWR051"
+			(at 76.2 276.86 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(property "Value" "GND" (at 76.2 274.32 0) (effects (font (size 1.27 1.27))))
+		(property "Footprint" "" (at 76.2 270.51 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "" (at 76.2 270.51 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 76.2 270.51 0)
+			(effects (font (size 1.27 1.27)) (hide yes))
+		)
+		(pin "1" (uuid "86d2f82e-b25a-5261-9eec-ae7ee23d797c"))
+		(instances
+			(project "magpanel-carrier"
+				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "#PWR051") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
 		(at 162.56 271.78 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -7205,8 +7191,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "770b6959-d361-5eeb-b779-5b7bfdc5286a")
-		(property "Reference" "#PWR051"
+		(uuid "b82ac9b3-7ca8-5acf-84c3-e60c7e752c86")
+		(property "Reference" "#PWR052"
 			(at 160.02 271.78 90)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
@@ -7226,10 +7212,10 @@
 			(at 156.21 271.78 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(pin "1" (uuid "86d2f82e-b25a-5261-9eec-ae7ee23d797c"))
+		(pin "1" (uuid "d79868f9-c6a3-5348-b30e-9dfffb46e1b9"))
 		(instances
 			(project "magpanel-carrier"
-				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "#PWR051") (unit 1))
+				(path "/fb3d2263-e4f0-5831-a0f3-bf96c35e2511" (reference "#PWR052") (unit 1))
 			)
 		)
 	)

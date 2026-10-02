@@ -25,18 +25,18 @@ beş JSUMO modülü ESP'nin SAĞ başlığına takılır (hepsi 3V3 ile beslenir
 
 | Modül | Pin | GPIO |
 |-------|-----|------|
-| LDR Sensor Board | AO | 1 (ADC1) |
-| Microphone Sound Sensor | AO / DO | 2 (ADC1) / 42 (isteğe bağlı) |
+| LDR Sensor Board (3 pin, dijital) | DO | 1 (ADC1) |
+| Microphone Sound Sensor (3 pin, dijital) | OUT | 42 |
 | KY-040 Mechanic Encoder | CLK / DT / SW | 41 / 40 / 39 |
-| DHT11 Temperature & Humidity | DATA | 47 |
-| TTP223B Digital Touch | I/O | 21 |
+| DHT11 Temperature & Humidity | OUT | 47 |
+| TTP223B Digital Touch | SIG | 21 |
 
 Firmware tarafı (`include/sensors.h`, `include/sensor_logic.h`): enkoder = parlaklık,
 enkoder/dokunmatik/çift alkış → uyku-uyan / sonraki uygulama / sonraki galeri / oto parlaklık
 (web UI "Sensörler & kontroller" kartından eşlenir, NVS'te kalır); LDR ile oto parlaklık;
 "Oda" (sıcaklık/nem/ışık/saat) ve "Ses" (VU) uygulamaları; 1 Hz `S:` telemetri + `/api/sensors`.
 
-**KiCad taşıyıcı kart:** ESP32-S3-DevKitC-1 soketi, 2× 74AHCT245 (3.3 → 5 V), üç HUB75E
+**KiCad taşıyıcı kart:** ESP32-S3-DevKitC-1 soketi, 2× 74HCT245 DIP-20 (3.3 → 5 V), üç HUB75E
 çıkışı ve sensör başlıkları olan 2 katmanlı PCB. Şematik, PCB, gerber ve BOM koddan üretilir:
 [hardware/kicad/README.md](hardware/kicad/README.md).
 

@@ -28,7 +28,7 @@
   "value": "10uF"
  },
  "C3": {
-  "desc": "74AHCT245 VCC dekuplaj (pin 20 yaninda)",
+  "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
@@ -42,7 +42,7 @@
   "value": "100nF"
  },
  "C4": {
-  "desc": "74AHCT245 VCC dekuplaj (pin 20 yaninda)",
+  "desc": "74HCT245 VCC dekuplaj (pin 20 yaninda)",
   "fields": {
    "MPN": "MLCC 100 nF 50 V X7R 0805"
   },
@@ -204,7 +204,7 @@
   "value": "5V IN"
  },
  "J10": {
-  "desc": "Genisleme (UART0/ileride I2C) - IO43, IO44, IO38 (v1.1 RGB LED)",
+  "desc": "Genisleme (UART0/I2C) - IO43, IO44, IO38",
   "fields": {
    "MPN": "Pin header 1x5 2.54 mm erkek (Dupont)"
   },
@@ -305,7 +305,7 @@
   "value": "HUB75E PANEL 3"
  },
  "J5": {
-  "desc": "LDR Sensor Board (JSUMO 16067) - AO -> IO1 (ADC1_CH0)",
+  "desc": "LDR karti (JSUMO 16067) - VCC/GND/DO; DO -> IO1",
   "fields": {
    "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
   },
@@ -314,29 +314,28 @@
   "pins": {
    "1": "+3V3",
    "2": "GND",
-   "3": "LDR_AO"
+   "3": "LDR_OUT"
   },
   "uuid": "10c408dd-2a6a-506f-9216-eb762a698370",
   "value": "LDR"
  },
  "J6": {
-  "desc": "Microphone Sound Sensor (JSUMO 15771) - AO -> IO2, DO -> IO42",
+  "desc": "Mikrofon (JSUMO 15771) - OUT/GND/VCC; OUT -> IO42",
   "fields": {
-   "MPN": "Pin header 1x4 2.54 mm erkek (Dupont)"
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
   },
-  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
   "in_bom": true,
   "pins": {
-   "1": "MIC_AO",
+   "1": "MIC_DO",
    "2": "GND",
-   "3": "+3V3",
-   "4": "MIC_DO"
+   "3": "+3V3"
   },
   "uuid": "c5e9a994-9c28-5231-a684-f09709624876",
   "value": "MIC"
  },
  "J7": {
-  "desc": "KY-040 Mechanic Encoder - CLK/DT/SW -> IO41/IO40/IO39",
+  "desc": "Enkoder KY-040 (JSUMO) - CLK/DT/SW -> IO41/40/39",
   "fields": {
    "MPN": "Pin header 1x5 2.54 mm erkek (Dupont)"
   },
@@ -353,22 +352,7 @@
   "value": "ENC"
  },
  "J8": {
-  "desc": "DHT11 Temperature & Humidity (JSUMO 15579) - DATA -> IO47",
-  "fields": {
-   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
-  },
-  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
-  "in_bom": true,
-  "pins": {
-   "1": "+3V3",
-   "2": "DHT_DATA",
-   "3": "GND"
-  },
-  "uuid": "8a20b3ed-436b-56d2-b862-0418e195635e",
-  "value": "DHT"
- },
- "J9": {
-  "desc": "TTP223B Digital Touch (JSUMO 17538) - OUT -> IO21",
+  "desc": "DHT11 (JSUMO 15579) - -/OUT/+; OUT -> IO47",
   "fields": {
    "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
   },
@@ -376,8 +360,23 @@
   "in_bom": true,
   "pins": {
    "1": "GND",
+   "2": "DHT_DATA",
+   "3": "+3V3"
+  },
+  "uuid": "8a20b3ed-436b-56d2-b862-0418e195635e",
+  "value": "DHT"
+ },
+ "J9": {
+  "desc": "TTP223B (JSUMO 17538) - SIG/VCC/GND; SIG -> IO21",
+  "fields": {
+   "MPN": "Pin header 1x3 2.54 mm erkek (Dupont)"
+  },
+  "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+  "in_bom": true,
+  "pins": {
+   "1": "TOUCH_OUT",
    "2": "+3V3",
-   "3": "TOUCH_OUT"
+   "3": "GND"
   },
   "uuid": "f5153fd6-a3c9-5ddb-aee8-4912593083df",
   "value": "TOUCH"
@@ -466,6 +465,20 @@
   "uuid": "b50a3807-8422-5a33-ab45-aa289f9f846d",
   "value": "10k"
  },
+ "R7": {
+  "desc": "IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital",
+  "fields": {
+   "MPN": "0805 100 kOhm 1%"
+  },
+  "footprint": "Resistor_SMD:R_0805_2012Metric",
+  "in_bom": true,
+  "pins": {
+   "1": "MIC_AO",
+   "2": "GND"
+  },
+  "uuid": "cc1daf9d-4546-5829-89a3-ca5cac38af26",
+  "value": "100k"
+ },
  "RN1": {
   "desc": "Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir",
   "fields": {
@@ -547,9 +560,9 @@
   "value": "4x33R"
  },
  "U1": {
-  "desc": "ESP32-S3-DevKitC-1 (N16R8/N8R8) gelistirme karti; 2x22 disi soket. Sag soket 0.9in (resmi) ya da 1.0in (klon) sirasina takilir.",
+  "desc": "ESP32-S3-DevKitC-1 uyumlu gelistirme karti (eldeki: N16R8 klon, 2x USB-C); 2x22 disi soket. Sag sira 1.0in (25.4 mm); resmi Espressif karti 0.9in.",
   "fields": {
-   "MPN": "ESP32-S3-DevKitC-1-N8R8 / N16R8 klon + 2x 1x22 disi soket (2.54 mm)"
+   "MPN": "ESP32-S3 N16R8 klon (YD-ESP32-S3 tipi, siralar arasi 1.0in) + 2x 1x22 disi soket (2.54 mm)"
   },
   "footprint": "MagPanel:ESP32-S3-DevKitC-1_Socket",
   "in_bom": true,
@@ -572,7 +585,7 @@
    "23": "GND",
    "24": "EXP_IO43",
    "25": "EXP_IO44",
-   "26": "LDR_AO",
+   "26": "LDR_OUT",
    "27": "MIC_AO",
    "28": "MIC_DO",
    "29": "ENC_CLK",
@@ -603,11 +616,11 @@
   "value": "ESP32-S3-DevKitC-1"
  },
  "U2": {
-  "desc": "Octal bus transceiver, TTL girisli (3.3 V mantik -> 5 V); DIR=+5V (A->B), /OE=GND",
+  "desc": "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND",
   "fields": {
-   "MPN": "SN74AHCT245DWR (SOIC-20W)"
+   "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
   },
-  "footprint": "Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm",
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -632,14 +645,14 @@
    "9": "R1"
   },
   "uuid": "798d51da-6b0b-595e-a7d3-3f1f5275d9b8",
-  "value": "74AHCT245"
+  "value": "74HCT245"
  },
  "U3": {
-  "desc": "Octal bus transceiver, TTL girisli (3.3 V mantik -> 5 V); DIR=+5V (A->B), /OE=GND",
+  "desc": "Octal bus transceiver, HCT = TTL girisli (3.3 V mantik 5 V beslemede gecerli); DIR=+5V (A->B), /OE=GND",
   "fields": {
-   "MPN": "SN74AHCT245DWR (SOIC-20W)"
+   "MPN": "CD74HCT245E (PDIP-20) + 20 pin DIP soket"
   },
-  "footprint": "Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm",
+  "footprint": "Package_DIP:DIP-20_W7.62mm_Socket",
   "in_bom": true,
   "pins": {
    "1": "+5V",
@@ -664,6 +677,6 @@
    "9": "ADDR_B"
   },
   "uuid": "e584837a-e45b-5650-b6b9-56ba181d4305",
-  "value": "74AHCT245"
+  "value": "74HCT245"
  }
 }

@@ -28,6 +28,7 @@ gerber üretilmez.
 | `fab/magpanel-carrier-bom.csv` | tam malzeme listesi |
 | `fab/magpanel-carrier-jlc-bom.csv`, `fab/magpanel-carrier-jlc-cpl.csv` | JLCPCB SMT montajı (yalnız SMD) |
 | `fab/magpanel-carrier-schematic.pdf` | şematik (A3) |
+| `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
 | `img/` | şematik ve kart görselleri |
 
 Şematik: [`img/schematic.png`](img/schematic.png) · Alt yüz: [`img/pcb-bottom.png`](img/pcb-bottom.png)
@@ -37,12 +38,14 @@ gerber üretilmez.
    geçer. Ters kutupta D1 iletir ve F1 açar. Ardından 470 µF + 10 µF ile DevKit'in **5V**
    pinine ve tamponlara gider. Panel gücü bu karttan geçmez: PSU'dan panele kalın kablo.
    Kartın kendi tüketimi 1 A'in altındadır.
-2. **DevKit soketi U1.** İki adet 1×22 dişi soket. Sağ sıra iki konumludur: 0.9" (22.86 mm,
-   resmi Espressif) ve 1.0" (25.40 mm, yaygın N16R8 klonları). Kartına uyan sıraya soket
-   lehimle, diğeri boş kalır; iki sıra aynı netlere bağlıdır. Anten kartın üst kenarından
-   dışarı taşar, USB alt kenardadır.
-3. **Seviye dönüştürücü.** İki 74AHCT245, 3.3 V mantığı 5 V'a çevirir (DIR = 5 V, /OE = GND).
-   Kanal sırası DevKit sol başlığının pin sırasını izler, böylece izler kesişmez.
+2. **DevKit soketi U1.** İki adet 1×22 dişi soket. Sağ sıra 1.0" (25.40 mm) uzakta: eldeki
+   N16R8 klonu (2× USB-C) 1:1 baskı testinde bu sıraya oturdu. Resmi Espressif kartı 0.9"
+   (22.86 mm) kullanır; onun için `DEVKIT_RIGHT_ROWS` değiştirilip yeniden üretilir. Anten
+   kartın üst kenarından dışarı taşar, USB alt kenardadır.
+3. **Seviye dönüştürücü.** İki CD74HCT245E (DIP-20, soketli), 3.3 V mantığı 5 V'a çevirir
+   (DIR = 5 V, /OE = GND). HCT girişleri TTL eşiklidir, 3.3 V yüksek seviyeyi 5 V beslemede
+   güvenle okur; düz 74HC245 bu iş için uygun değildir. A pinleri DevKit pinleriyle aynı
+   2.54 mm adımda, bir iki satır kayarak kısa ve kesişmeyen izlerle bağlanır.
    LAT, LAT2, LAT3 ve OE'de 10 kΩ pull-down var: açılışta GPIO'lar sürülmezken panel karanlık
    kalır. P4'te OE hattı GCLK taşır, P1.86'da aktif-yüksek OE darbesi.
 4. **HUB75E çıkışları J2–J4.** 4×33 Ω seri direnç dizileri (RN1–RN4) kablo yansımalarını
@@ -54,9 +57,22 @@ gerber üretilmez.
    | J3 PANEL 2 | IO17 | yalnız çoklu P1.86 |
    | J4 PANEL 3 | IO14 | yalnız çoklu P1.86 |
 
-5. **Sensör başlıkları (3.3 V).** J5 LDR, J6 MIC, J7 ENC, J8 DHT, J9 TOUCH ve J10 genişleme
-   (IO43, IO44, IO38). Pinler `include/sensors.h` ile aynıdır ve her pin serigrafide yazılıdır.
-   C5–C7 enkoder için RC filtre, R6 DHT11 veri hattı pull-up'ıdır.
+5. **Sensör başlıkları (3.3 V).** Pin sırası eldeki JSUMO modüllerinin baskısıyla aynıdır,
+   düz kablo çaprazlamaz. GPIO'lar `include/sensors.h` ile aynıdır, her pin serigrafide yazılıdır.
+
+   | Başlık | Modül baskısı | Kart sırası | GPIO |
+   |---|---|---|---|
+   | J5 LDR | VCC GND DO | 3V3, GND, DO | DO → IO1 |
+   | J6 MIC | OUT GND VCC | DO, GND, 3V3 | OUT → IO42 |
+   | J7 ENC | CLK DT SW + GND | CLK, DT, SW, 3V3, GND | IO41 / IO40 / IO39 |
+   | J8 DHT | − OUT + | GND, DAT, 3V3 | OUT → IO47 |
+   | J9 TOUCH | SIG VCC GND | OUT, 3V3, GND | SIG → IO21 |
+   | J10 EXP | | 3V3, GND, IO43, IO44, IO38 | genişleme |
+
+   LDR ve mikrofon modülleri yalnız dijital çıkışlıdır. LDR'nin DO'su IO1'den okunur ve oto
+   parlaklık iki kademe çalışır. Mikrofonun OUT'u IO42 kesmesine gider. Analog mikrofon girişi
+   IO2 boşta gürültü okumasın diye R7 (100 kΩ) onu GND'ye çeker. C5–C7 enkoder için RC filtre,
+   R6 DHT11 veri hattı pull-up'ıdır.
 
 GPIO tablosu ve modül notları: [`../README.md`](../README.md).
 
@@ -82,28 +98,19 @@ $PY gen_carrier.py all     # hepsi sırayla
 
 ## Sipariş ve montaj
 - **PCB:** `fab/magpanel-carrier-gerber.zip` yükle. 2 katman, 1.6 mm, HASL ya da ENIG.
+- **Önce 1:1 test:** `fab/magpanel-carrier-1to1.pdf` dosyasını yazıcıda %100 ölçekle bas,
+  alttaki 100 mm çizgiyi cetvelle doğrula, gerçek parçaları deliklere oturt.
 - **SMT montaj (isteğe bağlı):** `jlc-bom` ve `jlc-cpl` dosyaları. LCSC numaraları boştur,
-  sipariş ekranında değer ve MPN'e göre eşleştir. Önizlemede U2/U3 (SOIC-20W), D1, D2 ve
-  dizi dirençlerin dönüşünü kontrol et; JLC kütüphanesi bazen 90° ya da 180° farklıdır.
-- **Elle lehim:** 0805 pasifler, SOIC-20W, 1812 PTC ve SMA diyot kolaydır. 4×0603 dizi direnç
-  ince uç ister. Delikli parçalar: üç kutu başlık, altı pin başlık, klemens, elektrolitik ve
-  iki 1×22 dişi soket.
+  sipariş ekranında değer ve MPN'e göre eşleştir. Önizlemede D1, D2 ve dizi dirençlerin
+  dönüşünü kontrol et; JLC kütüphanesi bazen 90° ya da 180° farklıdır.
+- **Elle lehim:** 0805 pasifler, 1812 PTC ve SMA diyot kolaydır. 4×0603 dizi direnç ince uç
+  ister. Delikli parçalar: iki 20 pin DIP soket, üç kutu başlık, altı pin başlık, klemens,
+  elektrolitik ve iki 1×22 dişi soket.
 
 ## Açık sorular
-1. DevKit resmi kart mı (0.9") yoksa klon mu (1.0")? Soketi lehimlemeden önce iki başlık
-   arasını ölç.
-2. Sensör modüllerinin pin sırası yaygın baskıya göre seçildi:
-
-   | Başlık | Sıra |
-   |---|---|
-   | J5 LDR | 3V3, GND, AO |
-   | J6 MIC | AO, GND, 3V3, DO |
-   | J7 ENC | CLK, DT, SW, 3V3, GND |
-   | J8 DHT | 3V3, DAT, GND |
-   | J9 TOUCH | GND, 3V3, OUT |
-
-   Modülündeki yazı farklıysa jumper'ı yazıya göre bağla ya da `SENSOR_HDRS` tablosunu
-   değiştirip yeniden üret.
+1. Pasifler SMD varsayıldı: 0805 direnç ve kondansatör, 4×0603 dizi direnç, 1812 PTC, SMA TVS.
+   Elinde delikli parçalar varsa ayak izleri `FP` tablosundan değiştirilip yeniden üretilir.
+2. 5 V klemens 5.08 mm adımlı, elektrolitik 8 mm çaplı ve 3.5 mm bacak aralıklı varsayıldı.
 3. Kasa: `enclosure/generate_case.py` henüz bu kart için ayak ve sensör deliği içermiyor.
    Montaj delikleri köşelerden 3.5 mm içeride.
 4. Yönlendirme otomatiktir ve 10–20 MHz HUB75 için yeterlidir. KiCad'de elle güzelleştirme
