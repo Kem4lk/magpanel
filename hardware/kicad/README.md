@@ -20,6 +20,10 @@ tabloları düzelt ve yeniden üret. KiCad'de elle yapılan değişiklik bir son
 Doğrulama satırı `fab` aşamasında her seferinde yeniden kontrol edilir. Biri sıfır değilse
 gerber üretilmez.
 
+**Evde yapmak için** aynı şematiğin çift yüz ev yapımı sürümü var: kaplamasız delik, SMD'ler
+altta, 33 telli via, Elegoo Saturn 3 ile negatif dry film pozlaması. Yazıcıya hazır `.goo`
+dosyaları ve adım adım anlatım: [`DIY.md`](DIY.md).
+
 ## Dosyalar
 | Yol | İçerik |
 |---|---|
@@ -32,6 +36,7 @@ gerber üretilmez.
 | `fab/magpanel-carrier-bomlist.xlsx` | Türkçe BOM şablonu: Fabrika Kodu, Açıklama, Designatör, Malzeme Kılıfı, Adet (yalnız SMD) |
 | `fab/magpanel-carrier-schematic.pdf` | şematik (A3) |
 | `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
+| `magpanel-carrier-diy/`, `fab-diy/` | ev yapımı çift yüz sürüm, bkz. [`DIY.md`](DIY.md) |
 | `img/` | şematik ve kart görselleri |
 
 Şematik: [`img/schematic.png`](img/schematic.png) · Alt yüz: [`img/pcb-bottom.png`](img/pcb-bottom.png)
@@ -93,11 +98,13 @@ $PY gen_carrier.py pcb     # yerleşim, kart çerçevesi, kilitli 5 V ana hat, S
 $PY gen_carrier.py route   # Freerouting 2.1.0 + GND dökümü + dikiş via'ları
 $PY gen_carrier.py fab     # ERC/DRC kapısı + gerber/delik/BOM/CPL/PDF + görseller
 $PY gen_carrier.py all     # hepsi sırayla
+$PY gen_carrier.py --diy all   # ev yapımı sürüm: magpanel-carrier-diy/ ve fab-diy/ (DIY.md)
 ```
 
 - `route` Freerouting jar'ını yoksa `work/` altına indirir (yaklaşık 67 MB).
 - Freerouting deterministik değildir: her çalıştırma farklı ama eşdeğer bir yönlendirme
-  verir. Aşama, DRC temiz çıkana kadar en çok 10 kez dener.
+  verir. Aşama, DRC temiz çıkana kadar en çok 10 kez dener. Freerouting bağlantıyı tamam
+  sayıp KiCad kopuk görürse mevcut izlerle bir tamamlama turu daha çalışır.
 - `work/` ara dosyalar içindir ve git'e girmez.
 
 ## Sipariş ve montaj

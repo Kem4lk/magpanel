@@ -253,6 +253,36 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
   kasaya taşıyıcı ayakları + sensör delikleri; delikli parçalar için LCSC yok (elle lehim).
 
+## Ev yapımı çift yüz kart (2026-10-02, `gen_carrier.py --diy`, `hardware/kicad/DIY.md`)
+- Kullanıcı kartı kendi **Elegoo Saturn 3**'ü ile **negatif dry film** pozlayarak yapacak (çift yüz seçti).
+  Aynı şematik, ayrı proje `magpanel-carrier-diy/`, çıktılar `fab-diy/`; fabrika dosyalarına dokunmaz.
+  `set_variant_diy()` tabloları değiştirir: SMD'ler alt yüze (Flip **board.Add'den sonra**: KiCad 8'de kartsız
+  Flip segfault), delikli pedlerin bakırı yalnız B.Cu+B.Mask (kaplamasız delik → ustten lehim yok), üstte her
+  deliğe yasak bölge (r = delik/2 + 0.35), via 1.6/0.8 (elle tel), GND dökümü yalnız altta, dikiş via'sı yok.
+- Kurallar: sinyal 0.25/0.2 (fabrikayla aynı), güç/GND sınıfları 0.3 aralık. **0.3/0.25 ile 40–45 via**
+  çıkıyordu: 3 HUB75 başlığı aynı yönde, ortak hatlar 2.54 adımlı pinlerin 0.84 mm arasından geçmek zorunda.
+  Oval IDC pedi (1.7×1.5) denemesi Freerouting'i takıp bıraktı. Son durum **33 via**, üst iz 373 mm,
+  DRC 0/0/0. 12 via HUB başlık gövdelerinin altında (önce lehimle, üstü yassı).
+- **Freerouting 2.1.0 tuzakları:** CLI `-mp` (ve `--router.max_passes`) uygulanmıyor; ayar dosyasında 9999 →
+  tamamlayamayınca sonsuz geçiş. `--router.job_timeout=HH:MM:SS` çalışıyor ve o ana kadarki SES'i yazıyor
+  (ana 4 dk, tamamlama 2 dk). Via maliyeti ≥80 çoğu denemeyi takıyor → 50 (varsayılan). SES'te üst katman
+  parçaları eksik kalabiliyor (FR "0 incomplete" der, KiCad kopuk görür) → route_once mevcut izlerle DSN'i
+  yeniden verip ≤3 **tamamlama turu** çalıştırır. DIY route: 6 deneme, DRC temizlerden en az vialı kalır.
+  **Deney betiklerinde** kartı `.kicad_pro`'su yanında yükle: yoksa net sınıfları varsayılana düşer (0.2/0.6 via).
+- **Pozlama (UVtools 7.0.1 ile komut satırında doğrulandı):** `Hizalama.gbr` kart kenarından 0.5 mm dışarıda
+  3 mm ışıklı bant; kart bandın ortasına eşit boşlukla oturtulur. UVtools `Mirror` görüntüyü **içerik sınır
+  kutusunun ortasından** aynalar → çerçeve simetrik + `fab` iki bakır katmanın kutusunun kart ortasında
+  olduğunu denetler (üstte kenar şeritleri yasak). Delik dosyası UVtools'ta **varsayılan karanlık** çizilir:
+  PTH.drl Size scale 0.4, Invert polarity KAPALI → pedde matkap merkez noktası. Anchor MiddleCenter, Merge
+  açık, Invert color kapalı (negatif film). Saturn 3 profili `display_mirror_x = 1`: kayıtlı görüntü yukarıdan
+  olduğu gibi görünür → alt Mirror kapalı, üst açık; doğrulama: kâğıtla provada iki yazı da TERS ve aynı köşede.
+- `fab-diy/saturn3/*.goo` (UVtoolsCmd varsa, `UVTOOLS_CMD=`): taban dosya SL1 arşivinden (Saturn 3 ekran
+  değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure). `pozlama-testi.goo` 6
+  katmanlı basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo başlığındaki tarih DATE'e sabitlenir.
+  alt/ust süresi 30 s yer tutucu (`DIY_EXPOSURE=`).
+- Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
+  doğrulanacak.
+
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
 firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).
