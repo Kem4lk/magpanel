@@ -2101,8 +2101,15 @@ def fab_diy_sheets(brd):
 # --- Elegoo Saturn 3 / 3 Ultra pozlama dosyalari (.goo). UVtools 7 komut satiri (UVtoolsCmd) varsa uretilir ---
 UVTOOLS = os.environ.get('UVTOOLS_CMD') or shutil.which('UVtoolsCmd')
 SATURN3 = {'display_width': 218.88, 'display_height': 122.88, 'display_pixels_x': 11520, 'display_pixels_y': 5120}
-DIY_EXPOSURE = float(os.environ.get('DIY_EXPOSURE', 30))   # s, yer tutucu: pozlama testinden sonra degistirilir
+# Yazici basliktaki makine adini kendi adiyla karsilastirabiliyor (yanlis model -> format hatasi). Ekran iki modelde
+# ayni; duz Saturn 3 icin GOO_MACHINE='ELEGOO Saturn 3'.
+GOO_MACHINE = os.environ.get('GOO_MACHINE', 'ELEGOO Saturn 3 Ultra')
+GOO_MACHINE_Z = 260 if 'Ultra' in GOO_MACHINE else 250
 DIY_TEST = (6, 10)            # pozlama testi: 6 serit, serit basina 10 s -> 10, 20 ... 60 s
+DIY_PLACE = 120               # s: her dosyanin ilk katmani yalniz cerceveyi yakar, kart bu surede yerlestirilir
+# bakir dosyalari: testteki her sure icin bir dosya (alt-10s.goo ...); DIY_EXPOSURE=25 ya da 25,35 ile baska sureler
+DIY_TIMES = ([float(t) for t in os.environ['DIY_EXPOSURE'].split(',')] if os.environ.get('DIY_EXPOSURE')
+             else [(k + 1) * DIY_TEST[1] for k in range(DIY_TEST[0])])
 
 def uvtools(*args):
     r = subprocess.run([UVTOOLS] + [str(a) for a in args], capture_output=True, text=True)
@@ -2114,24 +2121,31 @@ def goo_fix(path, exposure_total, layers):
     pozlama toplami + katman basina 8 s (kalkma/inme) yazilir. Basliktaki uretim zamani -> DATE (saglama yok)."""
     uvtools('set-properties', path, 'PrintTime=%d' % round(exposure_total + 8 * layers))
     import re
+    import struct
     data = bytearray(path.read_bytes())
     m = re.search(rb'\d{4}-\d\d-\d\d \d\d:\d\d:\d\d', bytes(data[:512]))
     if m:
         data[m.start():m.end()] = (DATE + ' 00:00:00').encode()
+    # hacim / agirlik / fiyat tahmini (bilgi alani) de oynuyor (fiyat 0 ya da 0.005) -> 0. V3.0 basligi sabit
+    # boyutlu: alanlar 195450'de, katman tanimlari 195477'de baslar (adresi 195470'te yazili)
+    if data[:4] == b'V3.0' and struct.unpack_from('>I', data, 195470)[0] == 195477:
+        struct.pack_into('>3f', data, 195450, 0, 0, 0)
     path.write_bytes(bytes(data))
 
-def saturn3_goo(path, layers, exposure):
-    """Ekran cozunurlugundeki katman goruntulerinden (PIL 'L') Saturn 3 .goo dosyasi. UVtools PrusaSlicer SL1
-    arsivini okuyup Goo'ya cevirir; ekran degerleri UVtools'un Saturn 3 profiliyle ayni (display_mirror_x = 1)."""
+def saturn3_goo(path, layers, exposure, first=None):
+    """Ekran cozunurlugundeki katman goruntulerinden (PIL 'L') .goo dosyasi. UVtools PrusaSlicer SL1 arsivini okuyup
+    Goo'ya cevirir; ekran degerleri UVtools'un Saturn 3 / 3 Ultra profilleriyle ayni (display_mirror_x = 1).
+    Ilk katman (alt katman) first saniye, digerleri exposure saniye."""
     import io
     import zipfile
+    first = exposure if first is None else first
     sl1 = WORK / (path.stem + '.sl1')
     cfg = ('action = print\njobDir = magpanel\nexpTime = %g\nexpTimeFirst = %g\nlayerHeight = 0.05\nnumFade = 0\n'
-           'numFast = %d\nnumSlow = 0\nprinterModel = SL1\nprinterProfile = Elegoo Saturn 3\nprinterVariant = default\n'
-           % (exposure, exposure, len(layers)))
+           'numFast = %d\nnumSlow = 0\nprinterModel = SL1\nprinterProfile = %s\nprinterVariant = default\n'
+           % (exposure, first, len(layers), GOO_MACHINE))
     ini = ''.join('%s = %s\n' % kv for kv in SATURN3.items()) + (
-        'display_orientation = landscape\ndisplay_mirror_x = 1\ndisplay_mirror_y = 0\nmax_print_height = 250\n'
-        'printer_model = SL1\nprinter_settings_id = Elegoo Saturn 3\n')
+        'display_orientation = landscape\ndisplay_mirror_x = 1\ndisplay_mirror_y = 0\nmax_print_height = %d\n'
+        'printer_model = SL1\nprinter_settings_id = %s\n' % (GOO_MACHINE_Z, GOO_MACHINE))
     with zipfile.ZipFile(sl1, 'w', zipfile.ZIP_DEFLATED) as z:
         z.writestr('config.ini', cfg)
         z.writestr('prusaslicer.ini', ini)
@@ -2139,19 +2153,21 @@ def saturn3_goo(path, layers, exposure):
             b = io.BytesIO()
             im.save(b, 'PNG')
             z.writestr('magpanel%05d.png' % k, b.getvalue())
-    uvtools('convert', sl1, 'GooFile', path)
+    uvtools('convert', sl1, 'GooFile', path)       # makine adi printerProfile'dan, MachineZ max_print_height'tan
     uvtools('set-properties', path, 'BottomLayerCount=1', 'TransitionLayerCount=0',
-            'BottomExposureTime=%g' % exposure, 'ExposureTime=%g' % exposure)
-    goo_fix(path, len(layers) * exposure, len(layers))
+            'BottomExposureTime=%g' % first, 'ExposureTime=%g' % exposure)
+    goo_fix(path, first + (len(layers) - 1) * exposure, len(layers))
 
-def pcb_exposure_goo(base, out, files, mirror, exposure):
-    """UVtools 'PCB exposure' islemi (ayarlar DIY.md tablosuyla ayni). files: [(yol, kart_dis_hatti, boyut_olcegi)].
-    Delik dosyasi varsayilan olarak karanlik cizilir: kucultulunce pedin ortasinda bakirsiz merkez noktasi kalir."""
+def pcb_exposure_image(base, files, mirror, name):
+    """UVtools 'PCB exposure' islemi (ayarlar DIY.md tablosuyla ayni) -> ekran goruntusu (PIL 'L').
+    files: [(yol, kart_dis_hatti, boyut_olcegi)]. Delik dosyasi varsayilan olarak karanlik cizilir: kucultulunce
+    pedin ortasinda bakirsiz merkez noktasi kalir."""
     from xml.sax.saxutils import escape
+    from PIL import Image
     items = ''.join('<PCBExposureFile><FilePath>%s</FilePath><InvertPolarity>false</InvertPolarity>'
                     '<IsBoardOutline>%s</IsBoardOutline><SizeScale>%g</SizeScale></PCBExposureFile>'
                     % (escape(str(f)), str(outline).lower(), scale) for f, outline, scale in files)
-    op = WORK / (out.stem + '.uvtop')
+    op = WORK / (name + '.uvtop')
     op.write_text('<?xml version="1.0" encoding="utf-8"?>\n<OperationPCBExposure '
                   'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">'
                   '<Files>%s</Files><MergeFiles>true</MergeFiles><LayerHeight>0.05</LayerHeight>'
@@ -2159,17 +2175,21 @@ def pcb_exposure_goo(base, out, files, mirror, exposure):
                   '<OffsetX>0</OffsetX><OffsetY>0</OffsetY><Mirror>%s</Mirror><InvertColor>false</InvertColor>'
                   '<EnableAntiAliasing>false</EnableAntiAliasing><FlipVertically>true</FlipVertically>'
                   '<Anchor>MiddleCenter</Anchor><FillPlate>false</FillPlate></OperationPCBExposure>\n'
-                  % (items, exposure, str(mirror).lower()))
-    uvtools('run', base, op, '-o', out)
-    goo_fix(out, exposure, 1)
+                  % (items, DIY_PLACE, str(mirror).lower()))
+    tmp, ex = WORK / (name + '-pcb.goo'), WORK / (name + '-pcb')
+    uvtools('run', base, op, '-o', tmp)
+    shutil.rmtree(ex, ignore_errors=True)
+    uvtools('extract', tmp, ex)
+    return Image.open(ex / 'layer0.png').convert('L')
 
 SEG7 = {'0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg',
         '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'}
 
 def exposure_test_layers():
-    """Pozlama testi: ekran ortasinda DIY_TEST[0] serit. Katman k seritleri k..son yakar, serit k toplam (k+1) adim
-    isik alir. Her seritte sure etiketi (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk
-    (iki yonde: ekran pikseli 19 x 24 um) ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
+    """Pozlama testi: ekran ortasinda DIY_TEST[0] serit. Ilk katman yalniz yerlestirme cercevesi (serit bu sirada
+    konur). Sonraki katman k seritleri k..son yakar, serit k toplam (k+1) adim isik alir. Her seritte sure etiketi
+    (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk (iki yonde: ekran pikseli 19 x 24 um)
+    ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
     from PIL import Image, ImageDraw
     n, step = DIY_TEST
     W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
@@ -2210,7 +2230,7 @@ def exposure_test_layers():
             rect(d, bx + 9.5, y0 + 15.0 + (m + 0.5) * 2.54 - 0.125, bx + 15.0, y0 + 15.0 + (m + 0.5) * 2.54 + 0.125)
 
     layers = []
-    for i in range(n):
+    for i in range(-1, n):                               # -1: yalniz cerceve
         im = Image.new('L', (W, H), 0)
         d = ImageDraw.Draw(im)
         g, f = 2.5, DIY_FRAME[1]                          # yerlestirme cercevesi: ~100 x 28 mm serit sigar
@@ -2218,30 +2238,42 @@ def exposure_test_layers():
         rect(d, x0 - g - f, y0 + bh + g, x0 + n * bw + g + f, y0 + bh + g + f)
         rect(d, x0 - g - f, y0 - g, x0 - g, y0 + bh + g)
         rect(d, x0 + n * bw + g, y0 - g, x0 + n * bw + g + f, y0 + bh + g)
-        for k in range(i, n):
+        for k in range(max(i, 0), n if i >= 0 else 0):
             band(d, k)
         layers.append(im)
     return layers
 
 def fab_saturn3(gd):
-    """fab-diy/saturn3/: cerceve.goo (yerlestirme), alt.goo, ust.goo, pozlama-testi.goo. UVtoolsCmd yoksa atlanir."""
+    """FAB/saturn3/: pozlama-testi.goo, cerceve.goo, alt-<s>s.goo (cift yuzde ust-<s>s.goo da), DIY_TIMES'taki her
+    sure icin. Her dosyanin ilk katmani DIY_PLACE saniye yalniz cerceveyi yakar: kart o sirada yerlestirilir, bakir
+    pozlamasi kendiliginden baslar (durdurup yeni dosya baslatirken kart kaymaz). UVtoolsCmd yoksa atlanir."""
     if not UVTOOLS:
         print('saturn3: UVtoolsCmd bulunamadi (UVTOOLS_CMD=... ile verilebilir), .goo dosyalari atlandi')
         return
     out = FAB / 'saturn3'
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
-    from PIL import Image
+    from PIL import Image, ImageChops
+    W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
     base = WORK / 'saturn3-base.goo'
-    saturn3_goo(base, [Image.new('L', (SATURN3['display_pixels_x'], SATURN3['display_pixels_y']), 0)], DIY_EXPOSURE)
+    saturn3_goo(base, [Image.new('L', (W, H), 0)], DIY_PLACE)
     f = lambda suffix: gd / (PROJ + suffix)
     outline, frame = (f('-Edge_Cuts.gko'), True, 1), (f('-Hizalama.gbr'), False, 1)
-    pcb_exposure_goo(base, out / 'cerceve.goo', [outline, frame], False, 120)
-    pcb_exposure_goo(base, out / 'alt.goo', [outline, (f('-B_Cu.gbl'), False, 1), frame, (f('-PTH.drl'), False, 0.4)],
-                     False, DIY_EXPOSURE)
+    place = pcb_exposure_image(base, [outline, frame], False, 'cerceve')
+    x0, y0, x1, y1 = place.getbbox()
+    if abs(x0 + x1 - W) > 2 or abs(y0 + y1 - H) > 2:
+        raise RuntimeError('cerceve ekranin ortasinda degil: %s' % ((x0, y0, x1, y1),))
+    saturn3_goo(out / 'cerceve.goo', [place], DIY_PLACE)
+    sides = [('alt', [outline, (f('-B_Cu.gbl'), False, 1), frame, (f('-PTH.drl'), False, 0.4)], False)]
     if not SS:                                     # tek yuz: yalniz alt bakir
-        pcb_exposure_goo(base, out / 'ust.goo', [outline, (f('-F_Cu.gtl'), False, 1), frame], True, DIY_EXPOSURE)
-    saturn3_goo(out / 'pozlama-testi.goo', exposure_test_layers(), DIY_TEST[1])
+        sides.append(('ust', [outline, (f('-F_Cu.gtl'), False, 1), frame], True))
+    for name, files, mirror in sides:
+        img = pcb_exposure_image(base, files, mirror, name)
+        if ImageChops.subtract(place, img).getbbox():   # aynali ust dahil cerceve ayni yerde olmali
+            raise RuntimeError('%s: cerceve yerlestirme katmaniyla ayni yerde degil' % name)
+        for t in DIY_TIMES:
+            saturn3_goo(out / ('%s-%gs.goo' % (name, t)), [place, img], t, first=DIY_PLACE)
+    saturn3_goo(out / 'pozlama-testi.goo', exposure_test_layers(), DIY_TEST[1], first=DIY_PLACE)
     return sorted(p.name for p in out.iterdir())
 
 def copper_bbox(board, layer):
@@ -2434,7 +2466,8 @@ def stage_fab_ss():
           % (len(wires), len(used), len(vias), sum(ss_cut(d) for *_, d in wires), FAB.name, PROJ))
     goo = fab_saturn3(WORK / 'gerber')
     if goo:
-        print('saturn3: %s -> %s/saturn3/ (alt %g s, yer tutucu)' % (', '.join(goo), FAB.name, DIY_EXPOSURE))
+        print('saturn3: %s -> %s/saturn3/ (%s, ilk katman %d s yerlestirme)' % (', '.join(goo), FAB.name, GOO_MACHINE,
+                                                                                  DIY_PLACE))
     if find_chrome() is None:
         print('gorseller atlandi: Chromium/Chrome bulunamadi (CHROME=... ile verilebilir)')
         return
@@ -2478,7 +2511,8 @@ def stage_fab_diy():
     print('delikler:', ', '.join('%g mm x %d' % (d, n) for d, n in sorted(holes.items())))
     goo = fab_saturn3(WORK / 'gerber')
     if goo:
-        print('saturn3: %s -> %s/saturn3/ (alt/ust %g s, yer tutucu)' % (', '.join(goo), FAB.name, DIY_EXPOSURE))
+        print('saturn3: %s -> %s/saturn3/ (%s, ilk katman %d s yerlestirme)' % (', '.join(goo), FAB.name, GOO_MACHINE,
+                                                                                  DIY_PLACE))
     if find_chrome() is None:
         print('gorseller atlandi: Chromium/Chrome bulunamadi (CHROME=... ile verilebilir)')
         return

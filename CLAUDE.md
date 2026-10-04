@@ -254,7 +254,7 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   kasaya taşıyıcı ayakları + sensör delikleri; delikli parçalar için LCSC yok (elle lehim).
 
 ## Ev yapımı çift yüz kart (2026-10-02, `gen_carrier.py --diy`, `hardware/kicad/DIY.md`)
-- Kullanıcı kartı kendi **Elegoo Saturn 3**'ü ile **negatif dry film** pozlayarak yapacak (çift yüz seçti).
+- Kullanıcı kartı kendi **Elegoo Saturn 3 Ultra**'sı ile **negatif dry film** pozlayarak yapacak (çift yüz seçti).
   Aynı şematik, ayrı proje `magpanel-carrier-diy/`, çıktılar `fab-diy/`; fabrika dosyalarına dokunmaz.
   `set_variant_diy()` tabloları değiştirir: SMD'ler alt yüze (Flip **board.Add'den sonra**: KiCad 8'de kartsız
   Flip segfault), delikli pedlerin bakırı yalnız B.Cu+B.Mask (kaplamasız delik → ustten lehim yok), üstte her
@@ -277,10 +277,19 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   açık, Invert color kapalı (negatif film). Saturn 3 profili `display_mirror_x = 1`: kayıtlı görüntü yukarıdan
   olduğu gibi görünür → alt Mirror kapalı, üst açık; doğrulama: kâğıtla provada iki yazı da TERS ve aynı köşede.
 - `fab-diy/saturn3/*.goo` (UVtoolsCmd varsa, `UVTOOLS_CMD=`): taban dosya SL1 arşivinden (Saturn 3 ekran
-  değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure). `pozlama-testi.goo` 6
-  katmanlı basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo başlığındaki tarih DATE'e, tahmini baskı
-  süresi pozlama + 8 s/katman'a sabitlenir (UVtools'un kendi hesabı çalıştırmadan çalıştırmaya oynuyor: 337/330 s).
-  alt/ust süresi 30 s yer tutucu (`DIY_EXPOSURE=`).
+  değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure) → `extract` ile katman
+  PNG'si → yeni SL1 → Goo. `pozlama-testi.goo` basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo
+  başlığındaki tarih DATE'e, tahmini baskı süresi pozlama + 8 s/katman'a sabitlenir (UVtools'un kendi hesabı
+  çalıştırmadan çalıştırmaya oynuyor: 337/330 s).
+- **Saturn 3 Ultra (2026-10-04, kullanıcının yazıcısı):** Elegoo yazıcı başka modelin dosyasını format hatasıyla
+  reddedebiliyor → makine adı `GOO_MACHINE` = `ELEGOO Saturn 3 Ultra` (yazıcının SDCP'de bildirdiği ad),
+  MachineZ 260; ekran düz Saturn 3 ile aynı (UVtools profilleri yalnız model adı ve yükseklikte farklı).
+  Ad SL1'in `printerProfile`/`printer_settings_id`'sinden gelir: `set-properties MachineName=` "File was partial
+  decoded, a full encode is not possible" hatası veriyor. **Her dosyanın ilk katmanı `DIY_PLACE` = 120 s yalnız
+  çerçeve** (alt katman pozlaması): kart o sırada yerleştirilir, bakır kendiliğinden pozlanır (durdur/başlat
+  yok). Bakır dosyaları testteki her süre için: `alt-10s.goo` … `alt-60s.goo` (çift yüzde `ust-…` da);
+  `DIY_EXPOSURE=25,35` başka süreler. `fab` çerçevenin ekran ortasında ve bakır katmanındakiyle aynı olduğunu
+  denetler. Kullanıcı yazıcıda ELEGOO SatelLite açtı: gerek yok, `.goo` USB bellekten basılır.
 - Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
   doğrulanacak.
 
@@ -311,8 +320,8 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - Belirlenimcilik: montaj PDF'lerine eklenen çizimler rastgele UUID alıyordu, KiCad çizim sırası UUID'ye göre →
   `KIID.SeedGenerator` (fab_diy_sheets, fab_print); kicad-cli PDF tarihi `pdf_fix_date` ile DATE'e.
   Tel haritası PDF'i renk azaltmasız (yeşil tel kayboluyordu); tellerin bölgesi otomatik 2x büyütülür.
-- Pozlama dosyaları `fab-ss/saturn3/`: cerceve, alt, pozlama-testi (üst yok). UVtools katman görüntüsünde çerçeve
-  157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
+- Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-10s … alt-60s, cerceve (üst yok). UVtools katman
+  görüntüsünde çerçeve 157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

@@ -1,4 +1,4 @@
-# Tek yüz kart, 150 × 100 mm: Elegoo Saturn 3 + negatif dry film
+# Tek yüz kart, 150 × 100 mm: Elegoo Saturn 3 Ultra + negatif dry film
 
 Aynı şematiğin tek yüz plaketle yapılan sürümü. Bakır yalnız alt yüzde, kart 150 × 100 mm.
 Ayrı KiCad projesidir (`magpanel-carrier-ss/`), çıktılar `fab-ss/` altındadır. Hepsi
@@ -62,8 +62,8 @@ pedin hiçbiri bir parçanın altında kalmaz. W2 ise J2 başlığının gövdes
 | Dosya | İçerik |
 |---|---|
 | `fab-ss/saturn3/pozlama-testi.goo` | 6 şeritli süre testi, 10–60 s |
-| `fab-ss/saturn3/cerceve.goo` | yalnız hizalama çerçevesi, plaketi yerleştirmek için, 120 s |
-| `fab-ss/saturn3/alt.goo` | bakır + çerçeve + pedlerde matkap merkez noktası, 30 s yer tutucu |
+| `fab-ss/saturn3/alt-10s.goo` … `alt-60s.goo` | bakır + çerçeve + pedlerde matkap merkez noktası, adındaki süre kadar |
+| `fab-ss/saturn3/cerceve.goo` | yalnız hizalama çerçevesi, 120 s. Yerleştirmeyi denemek için, şart değil |
 | `fab-ss/magpanel-carrier-ss-gerber.zip` | B_Cu, Edge_Cuts (`.gko`), Hizalama, PTH/NPTH delik, B_Mask |
 | `fab-ss/magpanel-carrier-ss-teller.pdf` | A4, %100 ölçek: alttan bakış tel haritası, tel listesi, tellerin olduğu bölge büyük |
 | `fab-ss/magpanel-carrier-ss-teller.csv` | tel listesi: uçların koordinatı (alttan bakış, sol-alt köşeden), mesafe, kesim |
@@ -72,7 +72,15 @@ pedin hiçbiri bir parçanın altında kalmaz. W2 ise J2 başlığının gövdes
 | `fab-ss/magpanel-carrier-ss-bom.csv` | malzeme listesi, çift yüz kartla aynı parçalar |
 | `img/ss-bottom.png`, `img/ss-top.png` | görseller |
 
-Kendi pozlama dosyanı UVtools ile yaparsan [DIY.md](DIY.md)'deki tablo geçerli. `alt.goo` için
+Her `.goo` dosyasının ilk 2 dakikasında yalnız hizalama çerçevesi yanar. Plaket bu sürede
+yerleştirilir, pozlama sonra kendiliğinden başlar. Bakır dosyası testteki altı süre için ayrı ayrı
+var: testte en iyi şerit hangisiyse aynı süreli dosyayı bas.
+
+Dosyalar Saturn 3 Ultra içindir, başlıktaki makine adı `ELEGOO Saturn 3 Ultra`. Yazıcı başka
+modelin dosyasını format hatasıyla reddedebilir. Ekran iki modelde aynıdır. Düz Saturn 3 için
+dosyaları `GOO_MACHINE='ELEGOO Saturn 3'` ile yeniden üret (aşağıda).
+
+Kendi pozlama dosyanı UVtools ile yaparsan [DIY.md](DIY.md)'deki tablo geçerli. Alt bakır için
 Edge_Cuts.gko, B_Cu.gbl, Hizalama.gbr ve PTH.drl dosyalarını ekle, Mirror kapalı kalsın.
 
 ## Yapım
@@ -81,11 +89,13 @@ Edge_Cuts.gko, B_Cu.gbl, Hizalama.gbr ve PTH.drl dosyalarını ekle, Mirror kapa
 1. **Plaket** 150 × 100 mm tek yüz. Eldeki plaket bu ölçüdeyse kesmek gerekmez. Kenarları
    zımparala, bakırı temizle.
 2. **Pozlama testi** aynı: `fab-ss/saturn3/pozlama-testi.goo`.
-3. **Kâğıtla prova.** `alt.goo`'da kart adı ve pin adları **ters** görünmeli: bakır yüz ekrana
-   bakar, yukarıdan kartın sırtını görürsün. Çerçeve 157 × 107 mm, ekranın ortasındadır. Ekran
+3. **Kâğıtla prova.** Ekrana beyaz kâğıt koy, `alt-10s.goo`'yu bas: 2 dakika çerçeve, sonra
+   10 s desen. Desende kart adı ve pin adları **ters** görünmeli: bakır yüz ekrana bakar,
+   yukarıdan kartın sırtını görürsün. Çerçeve 157 × 107 mm, ekranın ortasındadır. Ekran
    218.88 × 122.88 mm, yanlarda 31 mm, üstte ve altta 8 mm kalır.
-4. **Pozlama.** Tek yüze film lamine et. `cerceve.goo` ile plaketi çerçevenin ortasına koy,
-   üstüne cam ve hafif ağırlık. Kartı oynatmadan `alt.goo`'yu bas. Kart çevrilmez.
+4. **Pozlama.** Tek yüze film lamine et. Testte seçtiğin sürenin dosyasını başlat, örneğin
+   `alt-30s.goo`. İlk 2 dakika yalnız çerçeve yanar: plaketi film yüzü aşağıda çerçevenin
+   ortasına koy, üstüne cam ve hafif ağırlık. Sonra bakır kendiliğinden pozlanır. Kart çevrilmez.
 5. **Banyo, aşındırma, film sökme** aynı. Kontrolde pin adları bakır yüzde düz okunmalı.
 6. **Delme.** Bakır yüzden, pedlerin ortasından del:
 
@@ -114,7 +124,7 @@ PWR LED'i (D2) bakır yüzdedir. Kart DevKit dışarı bakacak şekilde takılı
 | ERC | 0 bulgu |
 | DRC | 0 ihlal, 0 bağlanmamış, 0 şematik farkı |
 | Teller | KiCad bağlantı denetimi: üst katman silinip teller iz olarak eklenince 0 bağlanmamış |
-| Pozlama dosyaları | UVtools 7.0.1 katman görüntüsünde çerçeve 157.0 × 107.0 mm, ekranın ortasında |
+| Pozlama dosyaları | UVtools 7.0.1 katman görüntüsünde çerçeve 157.0 × 107.0 mm, ekranın ortasında. Yerleştirme katmanının çerçevesi bakır katmanındakiyle piksel piksel aynı |
 
 Kartın kendisi henüz yapılıp denenmedi. Pozlama süresini önce test şeridiyle bul.
 
@@ -126,6 +136,9 @@ $PY gen_carrier.py --ss pcb     # yerleşim, sabit HUB75 şeridi ve 3 tel, pin a
 $PY gen_carrier.py --ss route   # Freerouting, 6 deneme: DRC temiz olanlardan en az telli kalır
 UVTOOLS_CMD=/yol/UVtoolsCmd $PY gen_carrier.py --ss fab
 ```
+
+- Başka pozlama süreleri: `DIY_EXPOSURE=25` ya da `DIY_EXPOSURE=25,35` ile `fab`. Düz Saturn 3:
+  `GOO_MACHINE='ELEGOO Saturn 3'`.
 
 - Freerouting bazen "tamam" der ama çıktı dosyasına birkaç ağı hiç yazmaz. KiCad bunları kopuk
   görür. `route` önce tamamlama turu çalıştırır, yine kopuk kalan denemeyi eler.
