@@ -278,10 +278,18 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   olduğu gibi görünür → alt Mirror kapalı, üst açık; doğrulama: kâğıtla provada iki yazı da TERS ve aynı köşede.
 - `fab-diy/saturn3/*.goo` (UVtoolsCmd varsa, `UVTOOLS_CMD=`): taban dosya SL1 arşivinden (Saturn 3 ekran
   değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure). `pozlama-testi.goo` 6
-  katmanlı basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo başlığındaki tarih DATE'e sabitlenir.
+  katmanlı basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo başlığındaki tarih DATE'e, tahmini baskı
+  süresi pozlama + 8 s/katman'a sabitlenir (UVtools'un kendi hesabı çalıştırmadan çalıştırmaya oynuyor: 337/330 s).
   alt/ust süresi 30 s yer tutucu (`DIY_EXPOSURE=`).
 - Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
   doğrulanacak.
+- **Tek yüz (`--ss fab`, 2026-10-04):** aynı DIY kartı; yalnız alt bakır pozlanır (`fab-diy/saturn3/alt.goo`),
+  üst katmandaki köprüler bakır yüzde yalıtımlı tel. `ss_wires`: üst izlerle bağlı via grupları, grup içinde düz
+  mesafeyle MST (havada T yok). `ss_minimize`: kart kopyasında üst bakır silinip teller iz olarak eklenir,
+  KiCad bağlantısı 0 olmalı; alttan zaten bağlı pedleri birleştiren tel çıkarılır (20 → **19 tel**, 550 mm).
+  Çıktı `fab-ss/`: teller.csv + A4 %100 tel haritası (alttan bakış, HUB 2x, liste; PIL, `ui_font` DejaVu/Arial)
+  + `img/ss-bottom.png`. Bileşen yüzünde klasik tel köprü denendi (üst katmana gövde courtyard yasakları):
+  HUB başlık gövdeleri arası 3.8 mm, Freerouting 9–17 kopukla takıldı → vazgeçildi.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

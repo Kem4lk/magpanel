@@ -39,6 +39,7 @@ OUT = HERE / PROJ
 REV = '1.2'
 DATE = '2026-10-02'
 DIY = False      # --diy: ev yapimi cift yuz surum (dry film + MSLA ekran pozlama); set_variant_diy() tablolari degistirir
+SS = False       # --ss: tek yuz: DIY kartinin alt bakiri + ust kopruler bakir yuzde yalitimli tel (fab-ss/)
 G = 2.54                                     # sematik izgara (100 mil)
 
 # =============================================================================
@@ -992,6 +993,16 @@ def set_variant_diy():
                   'min_via_diameter': DIY_VIA[0], 'min_through_hole_diameter': 0.8, 'min_hole_to_hole': 0.5,
                   'min_hole_clearance': 0.3, 'min_via_annular_width': 0.3})   # via 0.5, delikli ped >= 0.35
 
+def set_variant_ss():
+    """Tek yuz: DIY kartinin kendisi (ayni proje, ayni yonlendirme). Yalniz alt yuz pozlanir; ust katmandaki
+    kopruler bakir yuzde yalitimli tel olur, uclari via pedlerine lehimlenir. Tel bakir yuzde serbest yoldan
+    gidebilir: ust katman yolunu izlemesi gerekmez, parca govdeleri de engel degil. Farkli olan yalniz 'fab':
+    tel listesi ve alttan bakis tel haritasi fab-ss/ altina; bakir ve pozlama dosyalari fab-diy/ ile ortak."""
+    global SS, FAB
+    set_variant_diy()
+    SS = True
+    FAB = HERE / 'fab-ss'
+
 def circle_pts(cx, cy, r, n=24):
     """Cembere disaridan teget cokgen (yasak bolge gercek cemberden kucuk kalmasin)."""
     R = r / math.cos(math.pi / n)
@@ -1632,10 +1643,23 @@ def fab_bom_cpl(board, smt=True):
 RENDER_COL = {'fr4_masked': (22, 84, 48, 255), 'cu_masked': (38, 118, 66, 255), 'fr4_bare': (196, 176, 122, 255),
               'finish': (214, 172, 82, 255), 'silk': (244, 244, 240, 255),
               'fr4_diy': (204, 190, 142, 255), 'cu_diy': (196, 112, 58, 255)}   # DIY: maskesiz, serigrafisiz
+RENDER_WIRES = [(220, 40, 40, 255), (40, 110, 230, 255), (30, 170, 80, 255), (240, 170, 20, 255), (160, 70, 200, 255)]
 
-def board_render(brd, side, out_png, width=4000, final=1800):
+def ui_font(size, bold=False):
+    """Turkce harfli TrueType yazi tipi (DejaVu, Arial). Bulunamazsa Pillow'un varsayilani (Turkce harf yok)."""
+    from PIL import ImageFont
+    names = ('DejaVuSans-Bold.ttf', 'Arial Bold.ttf', 'arialbd.ttf') if bold else ('DejaVuSans.ttf', 'Arial.ttf', 'arial.ttf')
+    for d in ('/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/TTF', '/Library/Fonts',
+              '/System/Library/Fonts/Supplemental', 'C:/Windows/Fonts'):
+        for n in names:
+            if (Path(d) / n).exists():
+                return ImageFont.truetype(str(Path(d) / n), size)
+    return ImageFont.load_default(size=size)
+
+def board_render(brd, side, out_png, width=4000, final=1800, wires=None, sheet=None):
     """Katman SVG'lerinden (kicad-cli) gercekci 2B kart gorseli: alt taraf aynalanir (alttan bakis).
-    DIY: lehim maskesi ve serigrafi yok, ciplak FR4 uzerinde bakir."""
+    DIY: lehim maskesi ve serigrafi yok, ciplak FR4 uzerinde bakir. wires (tek yuz): via pedleri arasi teller,
+    numarali; sheet: ayni gorselden A4 yatay, %100 olcekli PDF (tel listesiyle)."""
     from PIL import Image, ImageChops, ImageDraw
     import pcbnew
     pcb = OUT / (PROJ + '.kicad_pcb')
@@ -1679,10 +1703,40 @@ def board_render(brd, side, out_png, width=4000, final=1800):
         paint(RENDER_COL['fr4_bare'], mul(m['mask'], board))
         paint(RENDER_COL['finish'], mul(mul(m['mask'], m['cu']), board))
         paint(RENDER_COL['silk'], mul(mul(m['silk'], ImageChops.invert(m['mask'])), board))
+    if wires:
+        wd = ImageDraw.Draw(img)
+        for k, (_, a, b, _) in enumerate(wires):
+            col = RENDER_WIRES[k % len(RENDER_WIRES)]
+            pa, pb = px(*a), px(*b)
+            wd.line((pa, pb), fill=(30, 30, 30, 255), width=int(1.0 * sx))     # yalitimli tel: koyu kenar
+            wd.line((pa, pb), fill=col, width=int(0.7 * sx))
+            for q in (pa, pb):
+                wd.ellipse((q[0] - 0.9 * sx, q[1] - 0.9 * sx, q[0] + 0.9 * sx, q[1] + 0.9 * sx), outline=col,
+                           width=int(0.3 * sx))
     img.putalpha(mul(mul(img.getchannel('A'), board), ImageChops.invert(holes)))
     if side == 'bottom':
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    if wires:                                           # numaralar aynalama sonrasi: duz okunsun
+        wd = ImageDraw.Draw(img)
+        f, sw = ui_font(int(2.0 * sx), bold=True), int(0.35 * sx)
+        boxes = []                                      # yerlesen etiketler: ust uste binmesin
+        for k, (_, a, b, _) in enumerate(wires, 1):
+            (ax, ay), (bx, by) = px(*a), px(*b)
+            if side == 'bottom':
+                ax, bx = W - 1 - ax, W - 1 - bx
+            n = math.hypot(bx - ax, by - ay) or 1.0
+            nx, ny = (ay - by) / n, (bx - ax) / n        # tele dik birim vektor
+            for t, off in [(t, o) for t in (0.5, 0.3, 0.7, 0.15, 0.85) for o in (0, 1.8, -1.8, 3.4, -3.4)] + [(0.5, 0)]:
+                x, y = ax + t * (bx - ax) + off * sx * nx, ay + t * (by - ay) + off * sx * ny
+                bb = wd.textbbox((x, y), 'W%d' % k, font=f, anchor='mm', stroke_width=sw)
+                if not any(bb[0] < c[2] and c[0] < bb[2] and bb[1] < c[3] and c[1] < bb[3] for c in boxes):
+                    break
+            boxes.append(bb)
+            wd.text((x, y), 'W%d' % k, font=f, fill=(255, 255, 255, 255), anchor='mm', stroke_width=sw,
+                    stroke_fill=(20, 20, 20, 255))
     img = img.crop(img.getbbox())
+    if sheet:
+        ss_sheet(img, (BOARD_W + 0.1) / img.size[0], wires, sheet)
     img = img.resize((final, int(round(final * img.size[1] / img.size[0]))), Image.LANCZOS)
     img.quantize(colors=96, method=Image.Quantize.FASTOCTREE).save(out_png, optimize=True)   # az renk -> kucuk PNG
     return img.size
@@ -1790,8 +1844,10 @@ def uvtools(*args):
     if r.returncode:
         raise RuntimeError('UVtoolsCmd %s:\n%s' % (args[0], (r.stdout + r.stderr)[-2000:]))
 
-def goo_fix_date(path):
-    """Goo basligindaki uretim zamani -> DATE (ayni kart -> ayni dosya). Basligin saglama toplami yok."""
+def goo_fix(path, exposure_total, layers):
+    """Ayni kart -> ayni dosya. UVtools'un tahmini baski suresi calistirmadan calistirmaya oynuyor (337/330 s):
+    pozlama toplami + katman basina 8 s (kalkma/inme) yazilir. Basliktaki uretim zamani -> DATE (saglama yok)."""
+    uvtools('set-properties', path, 'PrintTime=%d' % round(exposure_total + 8 * layers))
     import re
     data = bytearray(path.read_bytes())
     m = re.search(rb'\d{4}-\d\d-\d\d \d\d:\d\d:\d\d', bytes(data[:512]))
@@ -1821,7 +1877,7 @@ def saturn3_goo(path, layers, exposure):
     uvtools('convert', sl1, 'GooFile', path)
     uvtools('set-properties', path, 'BottomLayerCount=1', 'TransitionLayerCount=0',
             'BottomExposureTime=%g' % exposure, 'ExposureTime=%g' % exposure)
-    goo_fix_date(path)
+    goo_fix(path, len(layers) * exposure, len(layers))
 
 def pcb_exposure_goo(base, out, files, mirror, exposure):
     """UVtools 'PCB exposure' islemi (ayarlar DIY.md tablosuyla ayni). files: [(yol, kart_dis_hatti, boyut_olcegi)].
@@ -1840,7 +1896,7 @@ def pcb_exposure_goo(base, out, files, mirror, exposure):
                   '<Anchor>MiddleCenter</Anchor><FillPlate>false</FillPlate></OperationPCBExposure>\n'
                   % (items, exposure, str(mirror).lower()))
     uvtools('run', base, op, '-o', out)
-    goo_fix_date(out)
+    goo_fix(out, exposure, 1)
 
 SEG7 = {'0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg',
         '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'}
@@ -1936,6 +1992,164 @@ def copper_bbox(board, layer):
     y1 = max(pcbnew.ToMM(b.GetBottom()) for b in boxes) - ORIGIN[1]
     return x0, y0, x1, y1
 
+def ss_wires(board):
+    """Tek yuz tel listesi. Ust katman izleriyle birbirine bagli via'lar bir grup; grup icinde via'lar arasi duz
+    mesafeyle minimum kapsayan agac, her kenar bir tel (havada T birlesimi yok, tel serbest yoldan gider).
+    Donus: [(net, uc A, uc B, duz mesafe mm)], uclar yerel mm (y asagi); sira alttan bakista soldan saga."""
+    import pcbnew
+    mmxy = lambda p: (pcbnew.ToMM(p.x) - ORIGIN[0], pcbnew.ToMM(p.y) - ORIGIN[1])
+    segs = [(mmxy(t.GetStart()), mmxy(t.GetEnd()), t.GetNetname()) for t in board.GetTracks()
+            if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu]
+    parent = list(range(len(segs)))
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    def near(q, a, b):                                 # nokta-dogru parcasi uzakligi
+        (x0, y0), (x1, y1) = a, b
+        L2 = (x1 - x0) ** 2 + (y1 - y0) ** 2
+        t = 0 if L2 == 0 else max(0, min(1, ((q[0] - x0) * (x1 - x0) + (q[1] - y0) * (y1 - y0)) / L2))
+        return math.dist(q, (x0 + t * (x1 - x0), y0 + t * (y1 - y0)))
+    for i, (a, b, n) in enumerate(segs):               # ayni netin birbirine degen parcalari birlesir
+        for j in range(i):
+            if segs[j][2] == n and min(near(a, *segs[j][:2]), near(b, *segs[j][:2]),
+                                       near(segs[j][0], a, b), near(segs[j][1], a, b)) < 0.01:
+                parent[find(i)] = find(j)
+    groups = collections.defaultdict(list)             # kok parca -> via konumlari
+    for v in board.GetTracks():
+        if v.GetClass() == 'PCB_VIA':
+            q = mmxy(v.GetPosition())
+            hit = [i for i, (a, b, n) in enumerate(segs) if n == v.GetNetname() and near(q, a, b) < 0.01]
+            if hit:
+                groups[find(hit[0])].append(q)
+    wires = []
+    for root, g in groups.items():
+        inside = {g[0]}
+        while len(inside) < len(g):
+            d, a, b = min((math.dist(a, b), a, b) for a in inside for b in g if b not in inside)
+            wires.append((segs[root][2], a, b, d))
+            inside.add(b)
+    wires.sort(key=lambda w: (round(BOARD_W - (w[1][0] + w[2][0]) / 2, 1), (w[1][1] + w[2][1]) / 2))
+    return wires
+
+def ss_minimize(wires):
+    """KiCad baglantisiyla dogrulama: kartin kopyasinda ust bakir silinir, teller duz iz olarak eklenir; baglanmamis
+    0 olmali. Alttan zaten bagli via'lari birlestiren gereksiz teller uzundan kisaya denenip cikarilir."""
+    import pcbnew
+    tmp = WORK / 'sscheck'
+    tmp.mkdir(parents=True, exist_ok=True)
+    for ext in ('.kicad_pcb', '.kicad_pro', '.kicad_dru'):
+        shutil.copyfile(OUT / (PROJ + ext), tmp / (PROJ + ext))
+    b = pcbnew.LoadBoard(str(tmp / (PROJ + '.kicad_pcb')))
+    for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu]:
+        board_remove(b, t)
+    items = []
+    for n, a, c, _ in wires:
+        tr = pcbnew.PCB_TRACK(b)
+        tr.SetStart(V(*a)); tr.SetEnd(V(*c)); tr.SetLayer(pcbnew.F_Cu); tr.SetWidth(mm(0.2))
+        tr.SetNet(b.FindNet(n))
+        b.Add(tr)
+        items.append(tr)
+    def unconnected():
+        b.BuildConnectivity()
+        return b.GetConnectivity().GetUnconnectedCount(False)
+    if unconnected():
+        raise RuntimeError('teller baglantiyi tamamlamiyor: %d baglanmamis' % unconnected())
+    keep = [True] * len(wires)
+    for i in sorted(range(len(wires)), key=lambda i: -wires[i][3]):
+        board_remove(b, items[i])
+        if unconnected():
+            b.Add(items[i])                        # gerekliymis
+        else:
+            keep[i] = False
+    return [w for w, k in zip(wires, keep) if k]
+
+SS_ZOOM = (54.0, 4.0, 100.0, 44.0)   # tel haritasinda 2x buyutulen bolge: alttan bakista HUB75 basliklari (mm)
+
+def ss_cut(d):
+    """Kesim boyu (mm): tel duz gitmez (x1.3), iki ucta soyma ve lehim payi 10 mm; 5 mm'ye yuvarlak."""
+    return int(5 * math.ceil((1.3 * d + 10) / 5))
+
+def ss_sheet(img, mm_per_px, wires, out_pdf):
+    """A4 yatay, %100 olcekli tel haritasi (300 dpi): solda alttan bakis kart gorseli, sagda tel listesi."""
+    import time
+    from PIL import Image, ImageDraw
+    dpi = 300
+    k = dpi / 25.4                                     # px/mm
+    page = Image.new('RGB', (round(297 * k), round(210 * k)), (255, 255, 255))
+    bw = round(img.size[0] * mm_per_px * k)
+    board = img.resize((bw, round(bw * img.size[1] / img.size[0])), Image.LANCZOS)
+    x0, y0 = round(14 * k), round(34 * k)
+    page.paste(board, (x0, y0), board)
+    d = ImageDraw.Draw(page)
+    d.text((x0, round(12 * k)), 'MagPanel Carrier v%s tek yüz - BAKIR YÜZ, alttan bakış: %d tel köprü' % (REV, len(wires)),
+           font=ui_font(round(4.2 * k), bold=True), fill=(0, 0, 0))
+    d.text((x0, round(20 * k)), 'Teller bakır yüzde, yalıtımlı. Uçlar via pedlerine lehimlenir. Çizgi yalnız hangi '
+           'iki pedi bağlayacağını gösterir: teli pedlerin üstünden geçirmeden istediğin yoldan götür.',
+           font=ui_font(round(2.6 * k)), fill=(60, 60, 60))
+    yb = y0 + board.size[1] + round(6 * k)             # 100 mm olcek cubugu
+    d.line((x0, yb, x0 + round(100 * k), yb), fill=(0, 0, 0), width=round(0.3 * k))
+    for i in range(11):
+        h = (3 if i % 5 == 0 else 1.8) * k
+        d.line((x0 + round(10 * i * k), yb - h, x0 + round(10 * i * k), yb), fill=(0, 0, 0), width=round(0.3 * k))
+    d.text((x0, yb + round(2 * k)), '100 mm: yazdırınca cetvelle doğrula (ölçek %100)', font=ui_font(round(2.6 * k)),
+           fill=(0, 0, 0))
+    zx0, zy0, zx1, zy1 = SS_ZOOM                         # HUB bolgesi 2x: alttan bakis mm
+    zoom = img.crop((round(zx0 / mm_per_px), round(zy0 / mm_per_px), round(zx1 / mm_per_px), round(zy1 / mm_per_px)))
+    zw = round((zx1 - zx0) * 2 * k)
+    zoom = zoom.resize((zw, round(zw * zoom.size[1] / zoom.size[0])), Image.LANCZOS)
+    zx, zy = x0, round(120 * k)
+    page.paste(zoom, (zx, zy), zoom)
+    d.rectangle((zx, zy, zx + zoom.size[0], zy + zoom.size[1]), outline=(0, 0, 0), width=round(0.25 * k))
+    sc = board.size[0] / img.size[0]                    # 1:1 gorselde buyutulen bolgenin cercevesi
+    d.rectangle((x0 + round(zx0 / mm_per_px * sc), y0 + round(zy0 / mm_per_px * sc),
+                 x0 + round(zx1 / mm_per_px * sc), y0 + round(zy1 / mm_per_px * sc)), outline=(0, 0, 0),
+                width=round(0.25 * k))
+    d.text((zx, zy - round(5 * k)), 'HUB75 bölgesi, 2 kat büyük (ölçek dışı)', font=ui_font(round(2.8 * k), bold=True),
+           fill=(0, 0, 0))
+    tx, ty, row = round(130 * k), y0, 4.5 * k          # tel listesi
+    fb, fr = ui_font(round(3.0 * k), bold=True), ui_font(round(3.0 * k))
+    for c, h in ((0, 'Tel'), (16, 'Net'), (52, 'Düz'), (70, 'Kesim')):
+        d.text((tx + round(c * k), ty), h, font=fb, fill=(0, 0, 0))
+    for i, (n, a, b, dist) in enumerate(wires, 1):
+        y = ty + round(i * row)
+        col = RENDER_WIRES[(i - 1) % len(RENDER_WIRES)][:3]
+        d.rectangle((tx - round(5 * k), y + round(0.6 * k), tx - round(2 * k), y + round(2.6 * k)), fill=col)
+        for c, v in ((0, 'W%d' % i), (16, n.lstrip('/')), (52, '%.0f mm' % dist), (70, '%d mm' % ss_cut(dist))):
+            d.text((tx + round(c * k), y), v, font=fr, fill=(0, 0, 0))
+    when = time.strptime(DATE, '%Y-%m-%d')            # Pillow PDF tarihi struct_time ister (ayni kart -> ayni dosya)
+    page.quantize(colors=64, method=Image.Quantize.MEDIANCUT).convert('RGB').save(
+        out_pdf, 'PDF', resolution=dpi, title='MagPanel Carrier tek yuz tel haritasi', creationDate=when, modDate=when)
+
+def stage_fab_ss():
+    """Tek yuz ciktilari (fab-ss/): tel listesi (csv) ve alttan bakis tel haritasi (A4 1:1 PDF + PNG). Bakir,
+    delik ve pozlama dosyalari DIY ile ortak: fab-diy/ gerber zip'i ve saturn3/ icinde cerceve.goo, alt.goo,
+    pozlama-testi.goo (ust.goo kullanilmaz)."""
+    import csv
+    check_erc_drc()
+    import pcbnew
+    board = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
+    wires = ss_minimize(ss_wires(board))
+    nvia = sum(1 for t in board.GetTracks() if t.GetClass() == 'PCB_VIA')
+    used = {p for _, a, b, _ in wires for p in (a, b)}
+    FAB.mkdir(exist_ok=True)
+    gx = lambda p: '%.2f; %.2f' % (BOARD_W - p[0], BOARD_H - p[1])   # tel haritasi gibi alttan bakis, sol-alt kose
+    with open(FAB / 'magpanel-carrier-ss-teller.csv', 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['Tel', 'Net', 'Uc A alttan bakis (x; y mm)', 'Uc B alttan bakis (x; y mm)', 'Duz mesafe (mm)',
+                    'Kesim (mm)'])
+        for k, (n, a, b, d) in enumerate(wires, 1):
+            w.writerow(['W%d' % k, n.lstrip('/'), gx(a), gx(b), '%.1f' % d, ss_cut(d)])
+    print('tel kopru: %d tel, %d/%d via pedi, kesim toplami %d mm -> %s/magpanel-carrier-ss-teller.csv'
+          % (len(wires), len(used), nvia, sum(ss_cut(d) for *_, d in wires), FAB.name))
+    if find_chrome() is None:
+        print('tel haritasi atlandi: Chromium/Chrome bulunamadi (CHROME=... ile verilebilir)')
+        return
+    IMG.mkdir(exist_ok=True)
+    print('tel haritasi: %s/magpanel-carrier-ss-teller.pdf, img/ss-bottom.png' % FAB.name,
+          board_render(board, 'bottom', IMG / 'ss-bottom.png', wires=wires, sheet=FAB / 'magpanel-carrier-ss-teller.pdf'))
+
 def stage_fab_diy():
     """Ev yapimi ciktilari (fab-diy/): UVtools PCB exposure icin gerber + delik (orijin kartin sol-alt kosesi),
     iki yuzun 1:1 montaj cizimi, BOM ve gorseller."""
@@ -1980,6 +2194,8 @@ def stage_fab_diy():
     print('gorsel: diy-bottom.png', board_render(board, 'bottom', IMG / 'diy-bottom.png'))
 
 def stage_fab():
+    if SS:
+        return stage_fab_ss()
     if DIY:
         return stage_fab_diy()
     check_erc_drc()
@@ -2009,8 +2225,12 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('stage', choices=['sch', 'pcb', 'route', 'fab', 'all'])
     ap.add_argument('--diy', action='store_true', help='ev yapimi cift yuz surum (magpanel-carrier-diy/, fab-diy/)')
+    ap.add_argument('--ss', action='store_true', help='tek yuz: DIY karti + bakir yuzde tel kopruler (fab-ss/); '
+                    'sch/pcb/route DIY ile ortak')
     a = ap.parse_args()
-    if a.diy:
+    if a.ss:
+        set_variant_ss()
+    elif a.diy:
         set_variant_diy()
     if a.stage in ('sch', 'all'):
         stage_sch()

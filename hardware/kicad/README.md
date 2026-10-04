@@ -21,8 +21,9 @@ Doğrulama satırı `fab` aşamasında her seferinde yeniden kontrol edilir. Bir
 gerber üretilmez.
 
 **Evde yapmak için** aynı şematiğin çift yüz ev yapımı sürümü var: kaplamasız delik, SMD'ler
-altta, 33 telli via, Elegoo Saturn 3 ile negatif dry film pozlaması. Yazıcıya hazır `.goo`
-dosyaları ve adım adım anlatım: [`DIY.md`](DIY.md).
+altta, 33 telli via, Elegoo Saturn 3 ile negatif dry film pozlaması. Aynı kart tek yüz plaketle
+de yapılır: üst katman yerine bakır yüzde 19 tel. Yazıcıya hazır `.goo` dosyaları ve adım adım
+anlatım: [`DIY.md`](DIY.md).
 
 ## Dosyalar
 | Yol | İçerik |
@@ -37,6 +38,7 @@ dosyaları ve adım adım anlatım: [`DIY.md`](DIY.md).
 | `fab/magpanel-carrier-schematic.pdf` | şematik (A3) |
 | `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
 | `magpanel-carrier-diy/`, `fab-diy/` | ev yapımı çift yüz sürüm, bkz. [`DIY.md`](DIY.md) |
+| `fab-ss/` | aynı kartın tek yüz yapımı için tel listesi ve A4 tel haritası |
 | `img/` | şematik ve kart görselleri |
 
 Şematik: [`img/schematic.png`](img/schematic.png) · Alt yüz: [`img/pcb-bottom.png`](img/pcb-bottom.png)
@@ -99,6 +101,7 @@ $PY gen_carrier.py route   # Freerouting 2.1.0 + GND dökümü + dikiş via'lar�
 $PY gen_carrier.py fab     # ERC/DRC kapısı + gerber/delik/BOM/CPL/PDF + görseller
 $PY gen_carrier.py all     # hepsi sırayla
 $PY gen_carrier.py --diy all   # ev yapımı sürüm: magpanel-carrier-diy/ ve fab-diy/ (DIY.md)
+$PY gen_carrier.py --ss fab    # tek yüz: aynı DIY kartından tel listesi ve tel haritası (fab-ss/)
 ```
 
 - `route` Freerouting jar'ını yoksa `work/` altına indirir (yaklaşık 67 MB).
