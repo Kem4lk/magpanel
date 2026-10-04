@@ -225,7 +225,7 @@ def main():
         mask = np.abs(a - np.array([244, 241, 236])).sum(axis=2) > 30
         ys, xs = np.where(mask)
         pad = 20
-        im = im.crop((max(xs.min() - pad, 0), max(ys.min() - pad, 0), xs.max() + pad, ys.max() + pad))
+        im = im.crop((max(xs.min() - pad, 0), max(ys.min() - pad, 0), min(xs.max() + pad, im.width), min(ys.max() + pad, im.height)))
         ax.imshow(im)
         ax.axis('off')
         ax.set_title('%s  —  %.0f × %.0f × %.0f mm' % (info['ad'], *ext), fontsize=17, fontweight='bold', loc='left')
