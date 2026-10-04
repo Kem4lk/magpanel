@@ -23,6 +23,7 @@ import json
 import math
 import shutil
 import argparse
+import collections
 import subprocess
 from pathlib import Path
 
@@ -37,6 +38,8 @@ PROJ = 'magpanel-carrier'
 OUT = HERE / PROJ
 REV = '1.2'
 DATE = '2026-10-02'
+DIY = False      # --diy: ev yapimi cift yuz surum (dry film + MSLA ekran pozlama); set_variant_diy() tablolari degistirir
+SS = False       # --ss: tek yuz ev yapimi kart, 150 x 100 mm (magpanel-carrier-ss/, fab-ss/); DIY kurallariyla
 G = 2.54                                     # sematik izgara (100 mil)
 
 # =============================================================================
@@ -125,6 +128,34 @@ FP = {
     'MH': 'MountingHole:MountingHole_3.2mm_M3',
     'DEVKIT': 'MagPanel:ESP32-S3-DevKitC-1_Socket',
 }
+
+# SMT montaj tedariki (Robotistan / JLCPCB). LCSC numaralari ve stok LCSC urun API'sinden dogrulandi
+# (2026-10-02). anahtar -> (BOM 'Comment', uretici, MPN, LCSC, kilif, teknik aciklama)
+# R7 10k: 100k (C17407, '(SMT)' kaydi) Robotistan'da stok yok cikti; IO2 bos girisi icin deger onemsiz.
+SMT_PARTS = {
+    '33R': ('33R 1% SMD Resistor', 'UNI-ROYAL', '0805W8F330JT5E', 'C17634', '0805',
+            '0805 33 Ohms 1% 1/8W'),
+    '10k': ('10k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F1002T5E', 'C17414', '0805',
+            '0805 10K Ohms 1% 1/8W'),
+    '2.2k': ('2.2k 1% SMD Resistor', 'UNI-ROYAL', '0805W8F2201T5E', 'C17520', '0805',
+             '0805 2.2K Ohms 1% 1/8W'),
+    '100nF': ('100nF 50V X7R Ceramic Capacitor', 'YAGEO', 'CC0805KRX7R9BB104', 'C49678', '0805',
+              '100nF 50VDC ±10% X7R'),
+    '10uF': ('10uF 25V X5R Ceramic Capacitor', 'Samsung', 'CL21A106KAYNNNE', 'C15850', '0805',
+             '10uF 25VDC ±10% X5R'),
+    'LED': ('Green LED 0805', 'Hubei KENTO', 'KT-0805G', 'C2297', '0805',
+            'Green LED 525nm'),
+    'PTC': ('PTC Resettable Fuse 6V 1.5A', 'BOURNS', 'MF-MSMF150-2', 'C89648', '1812',
+            'PTC Resettable Fuse 6V 1.5A hold 3A trip'),
+    'TVS': ('TVS Diode 5V 400W Unidirectional', 'Littelfuse', 'SMAJ5.0A', 'C83329', 'SMA (DO-214AC)',
+            'TVS Diode 5V 400W Unidirectional'),
+}
+SMT_BY_MPN = {v[2]: v for v in SMT_PARTS.values()}
+
+def smt(key):
+    """SMD parcanin sematik alanlari (uretici, MPN, LCSC). BOM/CPL ciktilari buradan okur."""
+    _, mfr, mpn, lcsc, _, _ = SMT_PARTS[key]
+    return {'MPN': mpn, 'Manufacturer': mfr, 'LCSC': lcsc}
 
 # =============================================================================
 #  OZEL KUTUPHANE: ESP32-S3-DevKitC-1 sembolu
@@ -373,7 +404,7 @@ def build_schematic(libs):
                    desc='5 V DC giris (PSU). Panel gucu PSU -> panel dogrudan; bu kart <= 1 A ceker.')
     f1 = sch.place('Device:Polyfuse', 'F1', '1.5A', *P(20, 14), rot=90, footprint=FP['PTC'],
                    ref_at=(0, -3.81, ('center',)), val_at=(0, 3.81, ('center',)),
-                   fields={'MPN': 'Bourns MF-MSMF150-2 (1812, 1.5 A hold)'},
+                   fields=smt('PTC'),
                    desc='Kendini sifirlayan sigorta: asiri akim / ters kutupta (D1 iletir) acar')
     p1x, p1y, _ = j1.pin(1)
     p2x, p2y, _ = j1.pin(2)
@@ -398,7 +429,7 @@ def build_schematic(libs):
     # D1 TVS (katot +5V)
     d1 = sch.place('Diode:SMAJ5.0A', 'D1', 'SMAJ5.0A', xs[0], P(0, 17)[1], rot=270, footprint=FP['SMA'],
                    ref_at=(2.54, -1.27), val_at=(2.54, 1.27),
-                   fields={'MPN': 'SMAJ5.0A (400 W, 5 V TVS)'},
+                   fields=smt('TVS'),
                    desc='TVS: ters kutup/asiri gerilimde iletir -> F1 acar')
     k = d1.pin(1)
     sch.wire((xs[0], rail_y), (k[0], k[1])); sch.assign(d1, 1, '+5V')
@@ -409,16 +440,16 @@ def build_schematic(libs):
     t = c1.pin(1); sch.wire((xs[1], rail_y), (t[0], t[1])); sch.assign(c1, 1, '+5V')
     sch.pwr(c1, 2, 'GND', length=0)
     c2 = sch.place('Device:C', 'C2', '10uF', xs[2], P(0, 17)[1], footprint=FP['C0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 10 uF 16 V X5R 0805'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10uF'),
                    desc='5 V giris seramik dekuplaj')
     t = c2.pin(1); sch.wire((xs[2], rail_y), (t[0], t[1])); sch.assign(c2, 1, '+5V')
     sch.pwr(c2, 2, 'GND', length=0)
     r1 = sch.place('Device:R', 'R1', '2.2k', xs[3], P(0, 16.5)[1], footprint=FP['R0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 2.2 kOhm 1%'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('2.2k'),
                    desc='PWR LED akim siniri (~1 mA)')
     t = r1.pin(1); sch.wire((xs[3], rail_y), (t[0], t[1])); sch.assign(r1, 1, '+5V')
     d2 = sch.place('Device:LED', 'D2', 'PWR (yesil)', xs[3], P(0, 21)[1], rot=90, footprint=FP['LED0805'],
-                   ref_at=(4.45, -1.27), val_at=(4.45, 1.27), fields={'MPN': 'LED 0805 yesil'},
+                   ref_at=(4.45, -1.27), val_at=(4.45, 1.27), fields=smt('LED'),
                    desc='5 V var gostergesi')
     ra = r1.pin(2); la = d2.pin(2)
     sch.wire((ra[0], ra[1]), (la[0], la[1]))
@@ -489,18 +520,18 @@ def build_schematic(libs):
         sch.pwr(u, '20', '+5V', length=0)
         sch.pwr(u, '10', 'GND', length=0)
         c = sch.place('Device:C', cref, '100nF', *P(98, gy - 6), footprint=FP['C0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 100 nF 50 V X7R 0805'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100nF'),
                       desc='74HCT245 VCC dekuplaj (pin 20 yaninda)')
         sch.pwr(c, '1', '+5V', length=0)
         sch.pwr(c, '2', 'GND', length=0)
     c8 = sch.place('Device:C', 'C8', '10uF', *P(98, 37), footprint=FP['C0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 10 uF 16 V X5R 0805'},
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10uF'),
                    desc='Tamponlar icin yerel 5 V yigin kapasitesi')
     sch.pwr(c8, '1', '+5V', length=0)
     sch.pwr(c8, '2', 'GND', length=0)
     for i, (ref, net) in enumerate(PULLDOWNS):
         r = sch.place('Device:R', ref, '10k', *P(63 + i * 7, 72.5), footprint=FP['R0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 10 kOhm 1%'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10k'),
                       desc='Pull-down: acilista GPIO surulmezken LAT/OE dusuk -> panel karanlik')
         x0, y0, _ = r.pin('1')
         sch.wire((x0, y0), (x0, y0 - G))
@@ -517,7 +548,7 @@ def build_schematic(libs):
         gy = 10 + i * 3.5 + (1.5 if i >= 8 else 0)                    # U2 grubu ust, U3 grubu alt
         r = sch.place('Device:R', ref, '33R', *P(117, gy), rot=90, footprint=FP['R0805'],
                       ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)),
-                      fields={'MPN': '0805 33 Ohm 1%'},
+                      fields=smt('33R'),
                       desc='Seri sonlandirma: kablo yansimalarini/zil (ringing) bastirir')
         sch.stub(r, '1', sig + '_5V', length=2 * G)                    # tampon tarafi
         sch.stub(r, '2', 'HUB_' + sig, length=2 * G)                   # konnektor tarafi
@@ -559,15 +590,15 @@ def build_schematic(libs):
             sch.text(desc.split(' - ')[1], *P(9 + i * 17, 98.3), size=1.0)
     for i, (ref, net) in enumerate(ENC_CAPS):
         c = sch.place('Device:C', ref, '100nF', *P(42 + i * 6, 107), footprint=FP['C0805'],
-                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': 'MLCC 100 nF 50 V X7R 0805'},
+                      ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('100nF'),
                       desc='Enkoder RC debounce (modul 10k + 100nF ~ 1 ms)')
         x0, y0, _ = c.pin('1')
         sch.wire((x0, y0), (x0, y0 - G))
         sch.label(net, x0, y0 - G, (0, -1))
         sch.assign(c, '1', net)
         sch.pwr(c, '2', 'GND', length=0)
-    r7 = sch.place('Device:R', 'R7', '100k', *P(30, 105), footprint=FP['R0805'],
-                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields={'MPN': '0805 100 kOhm 1%'},
+    r7 = sch.place('Device:R', 'R7', '10k', *P(30, 105), footprint=FP['R0805'],
+                   ref_at=(2.54, -1.27), val_at=(2.54, 1.27), fields=smt('10k'),
                    desc='IO2 (analog mikrofon girisi) bosta gurultu okumasin: eldeki mikrofon modulu yalniz dijital')
     x0, y0, _ = r7.pin('1')
     sch.wire((x0, y0), (x0, y0 - G))
@@ -575,7 +606,7 @@ def build_schematic(libs):
     sch.assign(r7, '1', 'MIC_AO')
     sch.pwr(r7, '2', 'GND', length=0)
     r6 = sch.place('Device:R', 'R6', '10k', *P(64, 107), rot=90, footprint=FP['R0805'],
-                   ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)), fields={'MPN': '0805 10 kOhm 1%'},
+                   ref_at=(0, -2.54, ('center',)), val_at=(0, 2.54, ('center',)), fields=smt('10k'),
                    desc='DHT11 DATA pull-up (ciplak sensor icin; modul uzerindekiyle paralel sorun degil)')
     sch.pwr(r6, '1', '+3V3', length=G)
     sch.stub(r6, '2', 'DHT_DATA', length=2 * G)
@@ -621,7 +652,7 @@ def write_project_files():
     data = json.loads(pro.read_text()) if pro.exists() else {}
     data.setdefault('meta', {'filename': PROJ + '.kicad_pro', 'version': 1})
     classes = []
-    for name, tw, cl, vd, vdr, _ in NETCLASSES:
+    for name, tw, cl, vd, vdr, _ in sorted(NETCLASSES, key=lambda nc: (nc[0] != 'Default', nc[0])):   # KiCad sirasi
         classes.append({'name': name, 'track_width': tw, 'clearance': cl, 'via_diameter': vd, 'via_drill': vdr,
                         'bus_width': 12, 'wire_width': 6, 'diff_pair_gap': 0.25, 'diff_pair_via_gap': 0.25,
                         'diff_pair_width': 0.2, 'line_style': 0, 'microvia_diameter': 0.3, 'microvia_drill': 0.1,
@@ -631,7 +662,7 @@ def write_project_files():
         'netclass_patterns': [{'netclass': nc[0], 'pattern': p} for nc in NETCLASSES for p in nc[5]]}
     data.setdefault('text_variables', {})
     data['text_variables'].update({'REV': REV, 'DATE': DATE})
-    pro.write_text(json.dumps(data, indent=2) + '\n')
+    pro.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
 
 def stage_sch():
     write_project_files()
@@ -653,6 +684,7 @@ def stage_sch():
 # =============================================================================
 BOARD_W, BOARD_H = 100.0, 63.5
 ORIGIN = (50.0, 50.0)            # kartin sol-ust kosesi (KiCad sayfa koordinati, mm)
+PLACE_ORIGIN = (0.0, BOARD_H)    # gerber/delik/yerlesim dosyasi orijini: kartin sol-alt kosesi (yerel mm, Y yukari)
 J1X, PIN1Y = 56.5, 1.6           # DevKit J1 pin 1: ust kenara 1.6 mm -> anten kartin DISINDA kalir
 XA = 51.0                        # 74HCT245 A sutunu (pin 1..10; B sutunu XA - 7.62)
 XR = J1X + DEVKIT_ROW_IN         # DevKit sag sira (sensorlere en yakin)
@@ -816,7 +848,7 @@ def silk_text(board, s, x, y, size=1.0, layer=None, angle=0, align='center', th=
     t.SetTextAngleDegrees(angle)
     t.SetHorizJustify({'center': pcbnew.GR_TEXT_H_ALIGN_CENTER, 'left': pcbnew.GR_TEXT_H_ALIGN_LEFT,
                        'right': pcbnew.GR_TEXT_H_ALIGN_RIGHT}[align])
-    if t.GetLayer() == pcbnew.B_SilkS:
+    if t.GetLayer() in (pcbnew.B_SilkS, pcbnew.B_Cu):
         t.SetMirrored(True)
     board.Add(t)
     return t
@@ -913,18 +945,249 @@ def layout_silkscreen(board, fps):
             silk_text(board, lbl, x - 1.6, y + k * G, 0.8, align='right')
     # 5V giris
     x0, y0, x1, y1 = silk_bbox(fps['J1'])
-    silk_text(board, '+5V IN', x0 + 0.1, y0 - 0.9, 0.8, align='left')      # pin 1 (ust)
-    silk_text(board, 'GND', x0 + 0.1, y1 + 0.9, 0.8, align='left')         # pin 2 (alt)
-    silk_text(board, 'PWR', PLACE['D2'][0] - 3.2, PLACE['D2'][1], 0.8, align='right')
+    if SS:                                            # pinler yan yana, kablo asagidan: adlar pinlerin ustunde
+        for num, lbl in (('1', '+5V'), ('2', 'GND')):
+            silk_text(board, lbl, pad_xy(fps['J1'], num)[0], y0 - 0.9, 0.8)
+    else:
+        silk_text(board, '+5V IN', x0 + 0.1, y0 - 0.9, 0.8, align='left')  # pin 1 (ust)
+        silk_text(board, 'GND', x0 + 0.1, y1 + 0.9, 0.8, align='left')     # pin 2 (alt)
+    smd_silk = pcbnew.B_SilkS if DIY else None       # DIY: SMD'ler alt yuzde
+    silk_text(board, 'PWR', PLACE['D2'][0] - 3.2, PLACE['D2'][1], 0.8, align='left' if DIY else 'right',
+              layer=smd_silk)                         # aynali yazida hizalama ters doner
     # seri direnc sutunu: grup basinda ilk-son ref (ust U2 grubu, satir 12'de U3 grubu)
     for refs, row in ((SERIES_R[:8], 1), (SERIES_R[8:], 12)):
-        silk_text(board, '%s-%s' % (refs[0][0], refs[-1][0][1:]), RCOL, pin_y(row) + (0.15 if row == 1 else 0), 0.8)
+        silk_text(board, '%s-%s' % (refs[0][0], refs[-1][0][1:]), RCOL, pin_y(row) + (0.15 if row == 1 else 0), 0.8,
+                  layer=smd_silk)
     # baslik / surum: on yuzde sag-alt bos alanda kisa, arka yuzde tam
-    silk_text(board, 'MagPanel', 92.0, 48.6, 1.2, bold=True)
-    silk_text(board, 'Carrier v' + REV, 92.0, 50.6, 1.0)
-    silk_text(board, 'MagPanel Carrier v%s  %s  github.com/Kem4lk/magpanel' % (REV, DATE), 30.0, 61.6, 0.9,
+    tx, ty, bx, by = (25.0, 62.0, 112.0, 96.5) if SS else (92.0, 48.6, 30.0, 61.6)
+    silk_text(board, 'MagPanel', tx, ty, 1.2, bold=True)
+    silk_text(board, 'Carrier v' + REV, tx, ty + 2.0, 1.0)
+    silk_text(board, 'MagPanel Carrier v%s  %s  github.com/Kem4lk/magpanel' % (REV, DATE), bx, by, 0.9,
               layer=pcbnew.B_SilkS)
     silk_text(board, 'ANT', J1X + max(DEVKIT_RIGHT_ROWS) / 2, 1.9, 0.8)
+
+# =============================================================================
+#  EV YAPIMI CIFT YUZ (--diy): dry film + MSLA ekran pozlama (Elegoo Saturn 3), kaplamasiz delik
+# =============================================================================
+DIY_VIA = (1.6, 0.8)          # via capi / delik: elle tel (0.6 mm bakir tel ya da direnc bacagi), iki yuzden lehim
+DIY_HOLE_KEEP = 0.35          # ust katmanda iz/via delik kenarindan en az bu kadar uzak (delik yalniz altta bakirli)
+DIY_POUR_CLEARANCE = 0.5      # GND dokumu ile diger bakir arasi (maskesiz lehimde kopru riski az)
+DIY_VIA_COST = int(os.environ.get('DIY_VIA_COST', 50))    # Freerouting via maliyeti: 80 ve ustunde cogu deneme takiliyor
+DIY_RING = (2.1, 0.25)        # hizalama halkasi yaricap / genislik (montaj deliklerinin cevresi, iki yuzde)
+DIY_RING_EDGE = PLACE['H1'][0] - DIY_RING[0] - DIY_RING[1] / 2 + 0.03   # ust kenar seridi: halkalarin disina bakir yok
+DIY_FRAME = (0.5, 3.0)        # hizalama cercevesi: kart kenarindan bosluk / isikli bant genisligi (mm)
+
+def set_variant_diy():
+    """Ev yapimi surum. Ayni sematik, ayri KiCad projesi (magpanel-carrier-diy/) ve ciktilar (fab-diy/).
+    - SMD'ler alt yuzde; delikli pedlerin bakiri yalniz altta (soket pinleri ustten lehimlenemez)
+    - ust katman yalniz via'lar arasi gecis; via = elle delinip telle iki yuzden lehimlenir
+    - sinyal 0.25/0.2 mm (fabrika ile ayni): 2.54 mm adimli pinlerin 0.84 mm arasindan bir iz gecer.
+      Uc HUB75 basligi ayni yonde: ortak hatlar pin aralarindan gecmezse her basligi via'yla atlar
+      (0.3/0.25 mm ile 40-45 via, 0.25/0.2 ile ~30). Guc ve GND hatlari 0.3 mm aralik.
+    - GND dokumu yalniz altta, dikis viasi yok"""
+    global DIY, PROJ, OUT, FAB, PREROUTE, NETCLASSES, GND_VIAS
+    DIY = True
+    PROJ = 'magpanel-carrier-diy'
+    OUT = HERE / PROJ
+    FAB = HERE / 'fab-diy'
+    PREROUTE = WORK / (PROJ + '-preroute.kicad_pcb')
+    NETCLASSES = [(n, tw, cl if n == 'Default' else max(cl, 0.3), DIY_VIA[0], DIY_VIA[1], pats)
+                  for n, tw, cl, vd, vdr, pats in NETCLASSES]
+    GND_VIAS = {}                                     # SMD GND pedleri alt yuzde, dokume dogrudan baglanir
+    RULES.update({'min_clearance': 0.2, 'min_track_width': 0.25, 'min_copper_edge_clearance': 0.5,
+                  'min_via_diameter': DIY_VIA[0], 'min_through_hole_diameter': 0.8, 'min_hole_to_hole': 0.5,
+                  'min_hole_clearance': 0.3, 'min_via_annular_width': 0.3})   # via 0.5, delikli ped >= 0.35
+
+# =============================================================================
+#  TEK YUZ (--ss): 150 x 100 mm tek yuz plaket. Yalniz alt bakir pozlanir; ust katman yalniz tel kopru demek:
+#  ust katmandaki her gecis bakir yuzde yalitimli tel olur, uclari tel pedlerine (via) lehimlenir.
+# =============================================================================
+SS_SIZE = (150.0, 100.0)
+SS_J1X = 84.0                     # DevKit sol sira x (pin 1 ust kenara 1.6 mm: anten kartin disinda)
+SS_XA = SS_J1X - 6.0              # 74HCT245 A sutunu (pin 1..10)
+SS_XB = SS_XA - 7.62              # B sutunu
+SS_RCOL = SS_XB - 5.9             # seri 33R sutunu: B pinleriyle arasinda CLK'nin soket ici donusune yer
+SS_HUB = (12.0, 17.0, 16.84)      # en uzak baslik (J4) pin 1 x, baslik araligi, J2 pin 1 y (J3, J4 1.27 mm asagida)
+SS_SENS_X = 136.0                 # sensor basliklari (dikey, pin 1 ustte): sinyal + 3V3 soldan, GND sagdan
+SS_VIA = (1.6, 0.8)               # tel pedi / delik (tel ucu bakir yuzde pede lehimlenir, delmek istege bagli)
+SS_VIA_COST = int(os.environ.get('SS_VIA_COST', 120))   # Freerouting via maliyeti: yuksek -> az tel
+# Seri 33R sutunu HUB75 serit sirasinda (... D, CLK, LAT, OE). CLK'nin B pini (satir 18) LAT ve OE'nin altinda:
+# iz soketin ic koridorundan yukari cikip D ile LAT arasindan sutuna girer (tel gerekmez).
+SS_RROW = {'CLK': 16, 'LAT': 17, 'OE': 18}
+
+def devkit_label(name):
+    """DevKit pin adi, modulun uzerindeki baskiyla ayni: GPIO numarasi, TX/RX, 3V3, 5V, GND, RST."""
+    return {'IO43/TX': 'TX', 'IO44/RX': 'RX'}.get(name, name[2:] if name.startswith('IO') else name)
+
+def ss_place():
+    """Tek yuz yerlesimi (yerel mm). Soldan saga: HUB75 basliklari (J4, J3, J2), seri 33R sutunu, tamponlar,
+    DevKit, sensorler. 5 V girisi alt kenarda; DevKit'in alti USB fisleri icin bos."""
+    j3x = SS_J1X + DEVKIT_ROW_IN
+    x4, pitch, hy = SS_HUB
+    sx = SS_SENS_X
+    w, h = SS_SIZE
+    p = {
+        'U1': (SS_J1X, PIN1Y, 0, 'F'),
+        # 1.27 mm basamak: basliklar arasi serit duz gider (uzak sutun pini = komsunun yakin sutun araligi)
+        'J4': (x4, hy + G, 0, 'F'), 'J3': (x4 + pitch, hy + G / 2, 0, 'F'), 'J2': (x4 + 2 * pitch, hy, 0, 'F'),
+        'U2': (SS_XA, pin_y(U2_ROW1), 180, 'F'), 'U3': (SS_XA, pin_y(U3_ROW1), 180, 'F'),
+        # dekuplaj soket icinde (alt yuz): VCC (pin 20) ile /OE (pin 19 = GND) arasinda
+        'C3': (SS_XB + 2.5, (pin_y(U2_ROW1) + pin_y(U2_ROW1 - 1)) / 2, 270, 'F'),
+        'C4': (SS_XB + 2.5, (pin_y(U3_ROW1) + pin_y(U3_ROW1 - 1)) / 2, 270, 'F'),
+        'C8': (SS_XB + 2.5, pin_y(U3_ROW1) + 4.0, 0, 'F'),
+        # pull-down'lar DevKit altinda, pin adlarinin otesinde (ped 1 pine, ped 2 GND'ye)
+        'R3': (SS_J1X + 7.6, pin_y(10), 0, 'F'), 'R2': (SS_J1X + 7.6, pin_y(16), 0, 'F'),
+        'R5': (SS_J1X + 7.6, pin_y(17), 0, 'F'), 'R4': (SS_J1X + 7.6, pin_y(20), 0, 'F'),
+        # 5 V giris: klemens alt kenarda (kablo asagidan), TVS anodu dogrudan klemens GND'sine
+        'J1': (54.0, 93.6, 0, 'F'), 'F1': (54.0, 84.0, 270, 'F'),
+        'D1': (54.0 + 5.08, 84.0 + 0.275, 90, 'F'),     # katot F1 cikisi hizasinda, anot klemens GND'si hizasinda
+        'C1': (66.0, 82.0, 0, 'F'), 'C2': (63.0, 75.0, 0, 'F'), 'R1': (56.0, 75.0, 180, 'F'),
+        'D2': (51.5, 75.0, 0, 'F'),
+        # sensorler J3 pin sirasiyla ustten alta
+        'J10': (sx, 4.6, 0, 'F'), 'J5': (sx, 20.0, 0, 'F'), 'J6': (sx, 30.5, 0, 'F'), 'J7': (sx, 41.0, 0, 'F'),
+        'J8': (sx, 58.0, 0, 'F'), 'J9': (sx, 68.5, 0, 'F'),
+        'R7': (j3x + 5.0, pin_y(5), 0, 'F'),
+        'C5': (sx + 4.5, 41.0, 0, 'F'), 'C6': (sx + 4.5, 41.0 + G, 0, 'F'), 'C7': (sx + 4.5, 41.0 + 2 * G, 0, 'F'),
+        'R6': (sx - 4.5, 58.0 + 1.5 * G, 270, 'F'),
+        'H1': (3.5, 3.5, 0, 'F'), 'H2': (w - 3.5, 3.5, 0, 'F'), 'H3': (3.5, h - 3.5, 0, 'F'), 'H4': (w - 3.5, h - 3.5, 0, 'F'),
+    }
+    rows = {sig: row for _, sig, row in SERIES_R}
+    rows.update(SS_RROW)
+    p.update({ref: (SS_RCOL, pin_y(rows[sig]), 180, 'F') for ref, sig, _ in SERIES_R})
+    return p
+
+def set_variant_ss():
+    """Tek yuz ev yapimi surum: ayni sematik, ayri KiCad projesi (magpanel-carrier-ss/), ciktilar fab-ss/.
+    DIY kurallari gecerli (SMD'ler alt yuzde, delikli pedlerin bakiri yalniz altta) ama kart 150 x 100 mm ve
+    yerlesim tek katmana gore: ust katman gecisi = bakir yuzde tel, yonlendirme bunlari en aza indirir.
+    Sinyal 0.25/0.25 mm (2.54 mm adimli pinlerin arasindan bir iz), guc ve GND izleri pin aralarindan gecebilsin
+    diye ince; GND'nin govdesi alt yuz dokumu."""
+    global SS, PROJ, OUT, FAB, PREROUTE, BOARD_W, BOARD_H, PLACE_ORIGIN, PLACE, NETCLASSES, J1X, XA, XR, RCOL
+    set_variant_diy()
+    SS = True
+    PROJ = 'magpanel-carrier-ss'
+    OUT = HERE / PROJ
+    FAB = HERE / 'fab-ss'
+    PREROUTE = WORK / (PROJ + '-preroute.kicad_pcb')
+    BOARD_W, BOARD_H = SS_SIZE
+    PLACE_ORIGIN = (0.0, BOARD_H)
+    J1X, XA, XR, RCOL = SS_J1X, SS_XA, SS_J1X + DEVKIT_ROW_IN, SS_RCOL
+    PLACE = ss_place()
+    NETCLASSES = [('Default', 0.25, 0.25, SS_VIA[0], SS_VIA[1], []),
+                  ('Power', 0.8, 0.3, SS_VIA[0], SS_VIA[1], ['+5V', '/VIN']),
+                  ('Power3V3', 0.3, 0.25, SS_VIA[0], SS_VIA[1], ['+3V3']),
+                  ('GND', 0.3, 0.25, SS_VIA[0], SS_VIA[1], ['GND'])]
+    RULES.update({'min_clearance': 0.25, 'min_via_diameter': SS_VIA[0], 'min_through_hole_diameter': 0.8})
+    REF_POS.update({'C3': (2.0, 0, 90, 0.8), 'C4': (2.0, 0, 90, 0.8), 'C5': (3.2, 0, 0, 0.8), 'C6': (3.2, 0, 0, 0.8),
+                    'C7': (3.2, 0, 0, 0.8), 'R7': (3.0, 0, 0, 0.8), 'D1': (2.8, 0, 90, 0.8), 'F1': (-2.9, 0, 90, 0.8)})
+
+def circle_pts(cx, cy, r, n=24):
+    """Cembere disaridan teget cokgen (yasak bolge gercek cemberden kucuk kalmasin)."""
+    R = r / math.cos(math.pi / n)
+    return [(cx + R * math.cos(2 * math.pi * k / n), cy + R * math.sin(2 * math.pi * k / n)) for k in range(n)]
+
+def add_keepout(board, layer, pts):
+    """Kural alani: iz, via ve dokum yasak (Freerouting'e 'keepout' olarak gider)."""
+    import pcbnew
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetLayer(layer)
+    z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True); z.SetDoNotAllowCopperPour(True)
+    z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+    ol = z.Outline()
+    ol.NewOutline()
+    for x, y in pts:
+        v = V(x, y)
+        ol.Append(v.x, v.y)
+    board.Add(z)
+    return z
+
+def diy_footprint(fp):
+    """Delikli pedlerin bakiri yalniz altta: kaplamasiz delikte ust yuze iz gelmesin. DevKit soketi oval ped
+    (2.4 x 1.7 mm): 44 delik, elle delmede kayan delige halka payi. Sensor basliklari yuvarlak kalir (sik bolge)."""
+    import pcbnew
+    oval = fp.GetReference() == 'U1'
+    for p in fp.Pads():
+        if p.GetAttribute() != pcbnew.PAD_ATTRIB_PTH:
+            continue
+        if SS and fp.GetReference() in ('J2', 'J3', 'J4') and p.GetNumber() == '1':
+            p.SetShape(pcbnew.PAD_SHAPE_CIRCLE)      # tek yuz: serit izi kare pedin kosesine fazla yaklasiyor
+        ls = pcbnew.LSET()
+        ls.AddLayer(pcbnew.B_Cu)
+        ls.AddLayer(pcbnew.B_Mask)
+        p.SetLayerSet(ls)
+        if oval:
+            if p.GetShape() != pcbnew.PAD_SHAPE_RECT:
+                p.SetShape(pcbnew.PAD_SHAPE_OVAL)
+            p.SetSize(pcbnew.VECTOR2I(mm(2.4), mm(1.7)))
+
+def diy_features(board, fps):
+    """Ust katmanda delik yasak bolgeleri; iki yuzde ayni yerde hizalama halkalari (montaj delikleri) ve
+    UST/ALT yazisi (yazilar dogru okunuyorsa pozlama aynalamasi dogru)."""
+    import pcbnew
+    for fp in fps.values():
+        for p in fp.Pads():
+            if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH:
+                x, y = pad_xy(fp, p.GetNumber())
+                r = pcbnew.ToMM(max(p.GetDrillSize().x, p.GetDrillSize().y)) / 2 + DIY_HOLE_KEEP
+                add_keepout(board, pcbnew.F_Cu, circle_pts(x, y, r, 16))
+    if SS:
+        return ss_features(board)
+    # Ust katman kenar seritleri: UVtools 'Mirror' cizimi kendi sinir kutusunun ortasindan aynalar. Ustteki en dis
+    # bakir hizalama halkalari (kosegen simetrik) olunca eksen kart ortasina duser; alttaki dokum de simetrik.
+    e = DIY_RING_EDGE
+    for x0, y0, x1, y1 in ((0, 0, e, BOARD_H), (BOARD_W - e, 0, BOARD_W, BOARD_H),
+                           (0, 0, BOARD_W, e), (0, BOARD_H - e, BOARD_W, BOARD_H)):
+        add_keepout(board, pcbnew.F_Cu, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+    rr, rw = DIY_RING
+    for ref in ('H1', 'H2', 'H3', 'H4'):
+        x, y, _, _ = PLACE[ref]
+        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+            c = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_CIRCLE)
+            c.SetCenter(V(x, y)); c.SetEnd(V(x + rr, y))
+            c.SetLayer(layer); c.SetWidth(mm(rw)); c.SetFilled(False)
+            board.Add(c)
+            add_keepout(board, layer, circle_pts(x, y, rr + rw / 2 + 0.6))
+    for s, x, y, layer in (('ÜST v%s' % REV, 91.5, 53.5, pcbnew.F_Cu), ('ALT v%s' % REV, 11.0, 60.0, pcbnew.B_Cu)):
+        t = silk_text(board, s, x, y, 1.2, layer=layer, th=0.25)
+        bb = t.GetBoundingBox()
+        x0, y0 = pcbnew.ToMM(bb.GetLeft()) - ORIGIN[0] - 0.6, pcbnew.ToMM(bb.GetTop()) - ORIGIN[1] - 0.6
+        x1, y1 = pcbnew.ToMM(bb.GetRight()) - ORIGIN[0] + 0.6, pcbnew.ToMM(bb.GetBottom()) - ORIGIN[1] + 0.6
+        add_keepout(board, layer, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+
+SS_LABEL = (0.9, 0.18, 0.15)      # DevKit pin adi: yazi yuksekligi, cizgi kalinligi, cevresindeki yasak bolge payi
+
+def text_box(t):
+    """Yazinin cizgilerinin sinir kutusu (yerel mm). GetBoundingBox satir araligini da sayiyor (0.9 mm yazi ->
+    1.69 mm): pin adlarinin yasak bolgeleri ust uste binip DevKit sirasini duvar gibi kapatiyordu."""
+    import pcbnew
+    bb = t.GetEffectiveTextShape().BBox()
+    return (pcbnew.ToMM(bb.GetLeft()) - ORIGIN[0], pcbnew.ToMM(bb.GetTop()) - ORIGIN[1],
+            pcbnew.ToMM(bb.GetRight()) - ORIGIN[0], pcbnew.ToMM(bb.GetBottom()) - ORIGIN[1])
+
+def keepout_box(board, layer, box, grow):
+    x0, y0, x1, y1 = box
+    add_keepout(board, layer, [(x0 - grow, y0 - grow), (x1 + grow, y0 - grow), (x1 + grow, y1 + grow),
+                               (x0 - grow, y1 + grow)])
+
+def ss_features(board):
+    """Tek yuz: DevKit pin adlari soket siralarinin ic tarafinda, her pinin yaninda. Alt bakirda (bakir yuzden
+    duz okunur, cevresi bakirsiz) ve ust serigrafide (montaj ciziminde gorunsun). Kart adi alt bakirda."""
+    import pcbnew
+    size, th, grow = SS_LABEL
+    gap = 1.2 + 0.25 + grow                       # oval ped yari genisligi + aciklik + yasak bolge payi
+    for i, name in enumerate(DEVKIT_J1 + DEVKIT_J3):
+        right = i >= 22                           # sag sira: yazi pinin solunda (ic taraf)
+        x = J1X + (DEVKIT_ROW_IN - gap if right else gap)
+        y = pin_y(i % 22 + 1)
+        for layer in (pcbnew.B_Cu, pcbnew.F_SilkS):
+            t = silk_text(board, devkit_label(name), x, y, size, layer=layer, th=th)
+            x0, _, x1, _ = text_box(t)
+            t.Move(pcbnew.VECTOR2I(mm((x - x1) if right else (x - x0)), 0))   # yakin kenar pine 'gap' uzakta
+            if layer == pcbnew.B_Cu:
+                keepout_box(board, layer, text_box(t), grow)
+    t = silk_text(board, 'MagPanel Carrier v%s tek yüz' % REV, 26.0, BOARD_H - 3.5, 1.2, layer=pcbnew.B_Cu, th=0.25)
+    keepout_box(board, pcbnew.B_Cu, text_box(t), 0.6)
 
 def kicad_netlist():
     """kicad-cli ile sematikten KiCad netlist'i: {(ref, pin): (net, pinfunction, pintype)}.
@@ -958,15 +1221,17 @@ def stage_pcb():
     board = pcbnew.NewBoard(str(path))
     board.SetCopperLayerCount(2)
     ds = board.GetDesignSettings()
-    ds.m_CopperEdgeClearance = mm(0.3)
-    ds.m_TrackMinWidth = mm(0.15)
-    ds.m_ViasMinSize = mm(0.5)
-    ds.m_MinThroughDrill = mm(0.3)
-    ds.m_HoleToHoleMin = mm(0.25)
-    ds.m_HoleClearance = mm(0.25)
+    ds.m_CopperEdgeClearance = mm(RULES['min_copper_edge_clearance'])
+    ds.m_TrackMinWidth = mm(RULES['min_track_width'])
+    ds.m_ViasMinSize = mm(RULES['min_via_diameter'])
+    ds.m_MinThroughDrill = mm(RULES['min_through_hole_diameter'])
+    ds.m_HoleToHoleMin = mm(RULES['min_hole_to_hole'])
+    ds.m_HoleClearance = mm(RULES['min_hole_clearance'])
     ds.m_SolderMaskMinWidth = mm(0)
+    ds.SetAuxOrigin(V(*PLACE_ORIGIN))      # montaj servisleri sol-alt kose orijini bekler (pozitif koordinat)
     tb = board.GetTitleBlock()
-    tb.SetTitle('MagPanel Carrier'); tb.SetRevision(REV); tb.SetDate(DATE)
+    tb.SetTitle('MagPanel Carrier' + (' tek yuz' if SS else ' DIY' if DIY else ''))
+    tb.SetRevision(REV); tb.SetDate(DATE)
     tb.SetCompany('MagPanel (github.com/Kem4lk/magpanel)')
     tb.SetComment(0, 'ESP32-S3-DevKitC-1 + 2x 74HCT245 + 3x HUB75E + sensorler')
     tb.SetComment(1, 'hardware/kicad/gen_carrier.py ile uretildi')
@@ -987,54 +1252,177 @@ def stage_pcb():
         fp.SetValue(p['value'])
         fp.SetPosition(V(x, y))
         fp.SetOrientationDegrees(rot)
-        if side == 'B':
-            fp.Flip(fp.GetPosition(), False)
         fp.SetPath(pcbnew.KIID_PATH('/' + p['uuid']))
         fp.SetSheetname('/')
         fp.SetSheetfile(PROJ + '.kicad_sch')
         board.Add(fp)
+        if side == 'B' or (DIY and fp.GetAttributes() & pcbnew.FP_SMD):     # DIY: SMD'ler alt yuzde
+            fp.Flip(fp.GetPosition(), False)      # karta eklendikten sonra (KiCad 8: kartsiz Flip cokuyor)
         for pad in fp.Pads():
             k = knl.get((ref, pad.GetNumber()))
             if k:
                 pad.SetNet(nets[k[0]])
                 pad.SetPinFunction(k[1])
                 pad.SetPinType(k[2])
+        if DIY:
+            diy_footprint(fp)
         fps[ref] = fp
     edge_outline(board, BOARD_W, BOARD_H)
     layout_silkscreen(board, fps)
-    # +5V ana hat (kalin, kilitli): C1+ -> alt serit (tamponlarin altindan) -> DevKit altindan 5V pinine
-    c1p = pad_xy(fps['C1'], '1')
-    u5v = pad_xy(fps['U1'], devkit_pin('5V'))
-    f1a, f1b = pad_xy(fps['F1'], '1'), pad_xy(fps['F1'], '2')
-    d1k, d1a = pad_xy(fps['D1'], '1'), pad_xy(fps['D1'], '2')
-    c2p, r1p = pad_xy(fps['C2'], '1'), pad_xy(fps['R1'], '1')
-    add_track(board, nets['VIN'], [pad_xy(fps['J1'], '1'), f1a], TRUNK_W)
-    add_track(board, nets['+5V'], [f1b, (c1p[0] - 2.0, f1b[1]), c1p], TRUNK_W)
-    # TVS: F1 cikisi -> katot; anot dogrudan J1 GND'sine (ters kutupta F1'i acan akim yolu kisa ve kalin)
-    add_track(board, nets['+5V'], [f1b, (f1b[0], d1k[1]), d1k], TRUNK_W)
-    add_track(board, nets['GND'], [d1a, pad_xy(fps['J1'], '2')], TRUNK_W)
-    add_track(board, nets['+5V'], [c1p, (c1p[0], c2p[1]), (c1p[0], r1p[1]), (c1p[0], TRUNK_Y), (TRUNK_X, TRUNK_Y),
-                                   (TRUNK_X, u5v[1]), u5v], TRUNK_W)
-    add_track(board, nets['+5V'], [c2p, (c1p[0], c2p[1])], 0.8)          # C2 ve R1: ana hatta T kol
-    add_track(board, nets['+5V'], [r1p, (c1p[0], r1p[1])], 0.5)
-    # U3 kollari: ana hat -> C8+ -> C4+ -> VCC (pin 20); ana hat -> DIR (pin 1)
-    c8p, c4p = pad_xy(fps['C8'], '1'), pad_xy(fps['C4'], '1')
-    u3vcc, u3dir = pad_xy(fps['U3'], '20'), pad_xy(fps['U3'], '1')
-    assert abs(c8p[0] - c4p[0]) < 1e-6 and abs(c4p[1] - u3vcc[1]) < 1e-6
-    add_track(board, nets['+5V'], [(c8p[0], TRUNK_Y), c8p, c4p, u3vcc], 0.8)
-    add_track(board, nets['+5V'], [(u3dir[0], TRUNK_Y), u3dir], 0.8)
-    # SMD GND pedleri -> kisa iz + via
-    for (ref, num), (dx, dy) in GND_VIAS.items():
-        px, py = pad_xy(fps[ref], num)
-        assert nl[ref]['pins'][num] == 'GND', (ref, num)
-        add_track(board, nets['GND'], [(px, py), (px + dx, py + dy)], 0.4)
-        add_via(board, nets['GND'], px + dx, py + dy)
+    if SS:
+        ss_fixed_tracks(board, fps, nets)
+    else:
+        fixed_power_tracks(board, fps, nets, nl)
+    if DIY:
+        diy_features(board, fps)
     pcbnew.SaveBoard(str(path), board, True)          # True: proje ayarlarina dokunma
     WORK.mkdir(exist_ok=True)
     shutil.copyfile(path, PREROUTE)
     patch_rules()
     print('pcb: %d footprint, %d net -> %s' % (len(fps), board.GetNetCount() - 1, path.name))
     return board, fps
+
+def ss_fixed_tracks(board, fps, nets):
+    """Tek yuz 5 V girisi: klemens -> PTC -> TVS kalin ve kilitli (ters kutupta F1'i acan akim yolu). TVS anodu
+    dogrudan klemens GND'sine. Gerisini Freerouting ceker (+5V 0.8 mm)."""
+    import pcbnew
+    cu = pcbnew.B_Cu
+    j1a, j1b = pad_xy(fps['J1'], '1'), pad_xy(fps['J1'], '2')
+    f1a, f1b = pad_xy(fps['F1'], '1'), pad_xy(fps['F1'], '2')
+    d1k, d1a = pad_xy(fps['D1'], '1'), pad_xy(fps['D1'], '2')
+    assert abs(j1a[0] - f1a[0]) < 1e-6 and abs(j1b[0] - d1a[0]) < 1e-6 and abs(f1b[1] - d1k[1]) < 1e-6, \
+        (j1a, f1a, j1b, d1a, f1b, d1k)
+    add_track(board, nets['VIN'], [j1a, f1a], TRUNK_W, layer=cu)
+    add_track(board, nets['+5V'], [f1b, d1k], TRUNK_W, layer=cu)
+    add_track(board, nets['GND'], [d1a, j1b], TRUNK_W, layer=cu)
+    ss_hub_tracks(board, fps, nets)
+
+def ss_hub_tracks(board, fps, nets):
+    """HUB75 seridi sabit izlerle (Freerouting'e birakilmaz). Seri 33R sutunundan J2'ye 45 derece yelpaze; uc
+    baslikta pin aralarindan gecis: tek numarali pin (uzak sutun) yakin sutunun araligindan girer, cift numarali pin
+    uzak sutunun araligindan cikar, ikisi pinler arasinda paralel kirik iz (0.25 mm iz, pede en az 0.27 mm).
+    Basliklar 1.27 mm basamakli: baslik arasi izler duz. Seritte sira pin sirasi (1 R1 ... 16 GND); GND (4, 16) son
+    basligin otesinde birlesir. Tek katmanda kesismesi kacinilmaz uc hat telle (ust katman = bakir yuzde tel):
+    E (sutunun altindan seritteki yerine), LAT2 (seritin icinden J2-J3 arasina), LAT3 (seritin altindan J3-J4
+    arasina). Tampon B pinleri -> 33R; CLK soketin ic koridorundan cikip D ile LAT arasindan sutuna girer."""
+    import pcbnew
+    w, h2 = 0.25, G / 2
+    hubs = ['J2', 'J3', 'J4']                          # tamponlara en yakindan en uzaga
+    X = {h: pad_xy(fps[h], '1')[0] for h in hubs}       # uzak sutun (tek pinler); yakin sutun X + G
+    Y = {h: pad_xy(fps[h], '1')[1] for h in hubs}
+    for a, b in zip(hubs, hubs[1:]):
+        assert abs(Y[b] - Y[a] - h2) < 1e-6, 'basliklar 1.27 mm basamakli olmali'
+    yr = lambda hd, r: Y[hd] + r * G
+    T = lambda n, pts, layer=pcbnew.B_Cu, width=w: add_track(board, nets[n], pts, width, layer=layer)
+    via = lambda n, x, y: add_via(board, nets[n], x, y, SS_VIA[0], SS_VIA[1])
+    hubnet = lambda p: 'GND' if HUB_PINS[p] == 'GND' else 'HUB_' + HUB_PINS[p]
+    # 1) basliklar arasi ve baslik ici gecis (LAT = pin 14 panel basina ayri, burada yok)
+    for p in range(1, 17):
+        if p == 14:
+            continue
+        r, n = (p - 1) // 2, hubnet(p)
+        for a, b in zip(hubs, hubs[1:]):
+            if p % 2:
+                T(n, [(X[a], yr(a, r)), (X[b] + 2.0, yr(b, r) - h2), (X[b], yr(b, r))])
+            else:
+                T(n, [(X[a] + G, yr(a, r)), (X[a] + h2, yr(a, r) + 1.0), (X[a], yr(a, r) + h2), (X[b] + G, yr(b, r))])
+    x4, xg = X['J4'], X['J4'] - 2.5                    # GND 4 ve 16 son basligin otesinde birlesir
+    for r in (1, 7):
+        T('GND', [(x4 + G, yr('J4', r)), (x4 + h2, yr('J4', r) + 1.0), (x4, yr('J4', r) + h2), (xg, yr('J4', r) + h2)])
+    T('GND', [(xg, yr('J4', 1) + h2), (xg, yr('J4', 7) + h2)])
+    # 2) seri 33R (ped 2) -> J2: 45 derece yelpaze, hepsi J2'nin 2 mm onunde duzlesir
+    rref = {sig: ref for ref, sig, _ in SERIES_R}
+    slot = {sig: p for p, sig in HUB_PINS.items() if sig not in (None, 'GND')}
+    slot['LAT'] = 14
+    xe = X['J2'] + G + 2.0
+    def into_j2(p):                                    # J2'nin onunden pine (tek pin yakin sutun araligindan)
+        r = (p - 1) // 2
+        return [(X['J2'] + 2.0, yr('J2', r) - h2), (X['J2'], yr('J2', r))] if p % 2 else [(X['J2'] + G, yr('J2', r))]
+    for sig, p in sorted(slot.items(), key=lambda kv: kv[1]):
+        if sig == 'ADDR_E':
+            continue                                    # E telle gelir (asagida)
+        xc, yc = pad_xy(fps[rref[sig]], '2')
+        ys = yr('J2', (p - 1) // 2) - (h2 if p % 2 else 0)
+        assert xe + abs(ys - yc) < xc - 0.9, (sig, xe + abs(ys - yc), xc)
+        T('HUB_' + sig, [(xc, yc), (xe + abs(ys - yc), yc), (xe, ys)] + into_j2(p))
+    # 3) E: sutunun altindan (OE'nin altinda) tel -> B2 ile A arasina, oradan J2 pin 8
+    xc, yc = pad_xy(fps[rref['ADDR_E']], '2')
+    ya = pad_xy(fps[rref['ADDR_A']], '2')[1]
+    yb2 = pad_xy(fps[rref['B2']], '2')[1]
+    eu = (xe + 7.46, (ya + yb2) / 2)                   # B2 ile A'nin duz kisimlari arasinda
+    ys = yr('J2', (slot['ADDR_E'] - 1) // 2)
+    T('HUB_ADDR_E', [eu, (xe + (ys - eu[1]), eu[1]), (xe, ys)] + into_j2(slot['ADDR_E']))
+    oe = pad_xy(fps[rref['OE']], '2')
+    el = (xe + 6.96, oe[1] - 2.36)                     # OE yelpazesinin altinda
+    T('HUB_ADDR_E', [(xc, yc), (el[0] + (yc - el[1]), yc), el])
+    for v in (eu, el):
+        via('HUB_ADDR_E', *v)
+    T('HUB_ADDR_E', [el, eu], layer=pcbnew.F_Cu)
+    # 4) LAT2: seritin icinden (B2 ile A arasi) J2-J3 arasina; orada CLK ile OE arasinda bos serit yeri
+    xc, yc = pad_xy(fps[rref['LAT2']], '2')
+    l2a = (xc - 1.88, yc)
+    l2b = ((X['J2'] + X['J3'] + G) / 2, yr('J2', 6) + h2)
+    T('HUB_LAT2', [(xc, yc), l2a])
+    T('HUB_LAT2', [l2b, (X['J3'] + G, yr('J3', 6))])
+    for v in (l2a, l2b):
+        via('HUB_LAT2', *v)
+    xd = eu[0] - 2.0                                   # E telinin solundan, J2'nin 6. ve 7. sira pinleri arasindan
+    T('HUB_LAT2', [l2a, (l2a[0] - 1.7, l2a[1] - 1.7), (xd, l2a[1] - 1.7), (xd, l2b[1]), l2b], layer=pcbnew.F_Cu)
+    # 5) LAT3: seritin altindan J3-J4 arasina (OE ve GND 16'nin ustunden kisa tel)
+    xc, yc = pad_xy(fps[rref['LAT3']], '2')
+    l3b = ((X['J3'] + X['J4'] + G) / 2, yr('J3', 6) + h2)
+    l3a = (l3b[0], yr('J3', 7) + h2 + 2.44)
+    T('HUB_LAT3', [l3b, (X['J4'] + G, yr('J4', 6))])
+    T('HUB_LAT3', [l3a, (l3a[0], yc - 4.86), (l3a[0] + 4.86, yc), (xc, yc)])
+    for v in (l3a, l3b):
+        via('HUB_LAT3', *v)
+    T('HUB_LAT3', [l3a, l3b], layer=pcbnew.F_Cu)
+    # 6) tampon B pinleri -> 33R ped 1 (sutun serit sirasinda; LAT ve OE bir satir asagi, CLK soket icinden)
+    for ref, sig, brow in SERIES_R:
+        u, pin = ('U2', str(brow + 9)) if brow <= 9 else ('U3', str(brow - 2))   # 180 derece: B pin m satir m-9 / m+2
+        xb, yb = pad_xy(fps[u], pin)
+        assert abs(yb - pin_y(brow)) < 1e-6, (ref, sig, u, pin)
+        xr, yrr = pad_xy(fps[ref], '1')
+        n = sig + '_5V'
+        if sig == 'CLK':
+            yg = pin_y(brow - 3) + h2                    # D (satir 15) ile LAT (16) B pinleri arasi
+            T(n, [(xb, yb), (xb + 1.85, yb), (xb + 1.85, yg), (xr + (yrr - yg), yg), (xr, yrr)])
+        elif abs(yrr - yb) < 1e-6:
+            T(n, [(xb, yb), (xr, yrr)])
+        else:
+            T(n, [(xb, yb), (xr + (yrr - yb), yb), (xr, yrr)])
+
+def fixed_power_tracks(board, fps, nets, nl):
+    """Fabrika ve cift yuz DIY karti: +5V ana hat (kalin, kilitli): C1+ -> alt serit (tamponlarin altindan) ->
+    DevKit altindan 5V pinine. DIY: delikli pedlerin bakiri yalniz altta -> sabit izler de altta."""
+    import pcbnew
+    cu = pcbnew.B_Cu if DIY else pcbnew.F_Cu
+    c1p = pad_xy(fps['C1'], '1')
+    u5v = pad_xy(fps['U1'], devkit_pin('5V'))
+    f1a, f1b = pad_xy(fps['F1'], '1'), pad_xy(fps['F1'], '2')
+    d1k, d1a = pad_xy(fps['D1'], '1'), pad_xy(fps['D1'], '2')
+    c2p, r1p = pad_xy(fps['C2'], '1'), pad_xy(fps['R1'], '1')
+    add_track(board, nets['VIN'], [pad_xy(fps['J1'], '1'), f1a], TRUNK_W, layer=cu)
+    add_track(board, nets['+5V'], [f1b, (c1p[0] - 2.0, f1b[1]), c1p], TRUNK_W, layer=cu)
+    # TVS: F1 cikisi -> katot; anot dogrudan J1 GND'sine (ters kutupta F1'i acan akim yolu kisa ve kalin)
+    add_track(board, nets['+5V'], [f1b, (f1b[0], d1k[1]), d1k], TRUNK_W, layer=cu)
+    add_track(board, nets['GND'], [d1a, pad_xy(fps['J1'], '2')], TRUNK_W, layer=cu)
+    add_track(board, nets['+5V'], [c1p, (c1p[0], c2p[1]), (c1p[0], r1p[1]), (c1p[0], TRUNK_Y), (TRUNK_X, TRUNK_Y),
+                                   (TRUNK_X, u5v[1]), u5v], TRUNK_W, layer=cu)
+    add_track(board, nets['+5V'], [c2p, (c1p[0], c2p[1])], 0.8, layer=cu)          # C2 ve R1: ana hatta T kol
+    add_track(board, nets['+5V'], [r1p, (c1p[0], r1p[1])], 0.5, layer=cu)
+    # U3 kollari: ana hat -> C8+ -> C4+ -> VCC (pin 20); ana hat -> DIR (pin 1)
+    c8p, c4p = pad_xy(fps['C8'], '1'), pad_xy(fps['C4'], '1')
+    u3vcc, u3dir = pad_xy(fps['U3'], '20'), pad_xy(fps['U3'], '1')
+    assert abs(c8p[0] - c4p[0]) < 1e-6 and abs(c4p[1] - u3vcc[1]) < 1e-6
+    add_track(board, nets['+5V'], [(c8p[0], TRUNK_Y), c8p, c4p, u3vcc], 0.8, layer=cu)
+    add_track(board, nets['+5V'], [(u3dir[0], TRUNK_Y), u3dir], 0.8, layer=cu)
+    # SMD GND pedleri -> kisa iz + via
+    for (ref, num), (dx, dy) in GND_VIAS.items():
+        px, py = pad_xy(fps[ref], num)
+        assert nl[ref]['pins'][num] == 'GND', (ref, num)
+        add_track(board, nets['GND'], [(px, py), (px + dx, py + dy)], 0.4)
+        add_via(board, nets['GND'], px + dx, py + dy)
 
 # JLCPCB standart 2 katman yeteneklerinin rahat ustunde
 RULES = {'min_clearance': 0.15, 'min_track_width': 0.15, 'min_copper_edge_clearance': 0.3,
@@ -1060,7 +1448,13 @@ def patch_rules():
     dsets.setdefault('rules', {}).update(RULES)
     dsets['track_widths'] = [0.0, 0.25, 0.4, 0.5, 0.8, 1.0]
     dsets['via_dimensions'] = [{'diameter': 0.0, 'drill': 0.0}, {'diameter': 0.6, 'drill': 0.3}, {'diameter': 0.8, 'drill': 0.4}]
-    pro.write_text(json.dumps(data, indent=2) + '\n')
+    if DIY:
+        via = SS_VIA if SS else DIY_VIA
+        dsets['track_widths'] = [0.0, 0.25, 0.5, 0.8, 1.0]
+        dsets['via_dimensions'] = [{'diameter': 0.0, 'drill': 0.0}, {'diameter': via[0], 'drill': via[1]}]
+        # delikli pedlerin bakiri bilerek yalniz altta: kutuphane kopyasindan farkli olmalari beklenen durum
+        dsets.setdefault('rule_severities', {})['lib_footprint_mismatch'] = 'ignore'
+    pro.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
 
 # =============================================================================
 #  YONLENDIRME (Freerouting) + GND DOKUMU
@@ -1086,7 +1480,7 @@ def add_gnd_zones(board):
     iz olarak cekmez; pedler dokumle baglanir, kopuk adaciklar dikis vialariyla birlesir."""
     import pcbnew
     gnd = board.FindNet('GND')
-    for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+    for layer in ((pcbnew.B_Cu,) if DIY else (pcbnew.F_Cu, pcbnew.B_Cu)):
         z = pcbnew.ZONE(board)
         z.SetLayer(layer)
         z.SetNet(gnd)
@@ -1096,7 +1490,7 @@ def add_gnd_zones(board):
         ol.NewOutline()
         for x, y in ((0, 0), (BOARD_W, 0), (BOARD_W, BOARD_H), (0, BOARD_H)):
             ol.Append(V(x, y).x, V(x, y).y)
-        z.SetLocalClearance(mm(0.3))
+        z.SetLocalClearance(mm(DIY_POUR_CLEARANCE if DIY else 0.3))
         z.SetMinThickness(mm(0.25))
         z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
         z.SetThermalReliefGap(mm(0.4))
@@ -1191,11 +1585,16 @@ def remove_dangling(board):
             return total
         total += removed
 
-def run_freerouting(dsn, ses, passes):
+def run_freerouting(dsn, ses, passes, minutes=20):
+    """Freerouting 2.1.0 CLI'da gecis sinirini ('-mp') uygulamiyor: tamamlayamayinca binlerce gecis surer.
+    Sure siniri (router.job_timeout) calisiyor ve o ana kadarki en iyi sonucu SES'e yaziyor."""
     if ses.exists():
         ses.unlink()
     cmd = ['java', '-jar', str(ensure_freerouting()), '-de', str(dsn), '-do', str(ses), '-mp', str(passes),
-           '-da', '--gui.enabled=false']
+           '-da', '--gui.enabled=false', '--router.job_timeout=%02d:%02d:00' % divmod(minutes, 60),
+           '--usage_and_diagnostic_data.disable_analytics=true', '--profile.allow_telemetry=false']
+    if DIY:
+        cmd.append('--router.scoring.via_costs=%d' % (SS_VIA_COST if SS else DIY_VIA_COST))
     print('freerouting:', ' '.join(cmd))
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
     log = r.stdout + r.stderr
@@ -1223,15 +1622,29 @@ def route_once(passes, gnd_plane=False):
     dsn, ses = WORK / (PROJ + '.dsn'), WORK / (PROJ + '.ses')
     if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
         raise RuntimeError('DSN disa aktarilamadi')
-    run_freerouting(dsn, ses, passes)
+    run_freerouting(dsn, ses, passes, SS_ROUTE_MIN if SS else 4 if DIY else 20)
     if not pcbnew.ImportSpecctraSES(board, str(ses)):
         raise RuntimeError('SES ice aktarilamadi')
+    for k in range(3):
+        # Freerouting 'tamam' dese de SES'te bazi ust katman parcalari eksik kalabiliyor (via'dan cikan iz yok).
+        # Mevcut izlerle yeniden DSN -> Freerouting yalniz eksikleri ceker.
+        board.BuildConnectivity()
+        n = board.GetConnectivity().GetUnconnectedCount(False)
+        if not n:
+            break
+        print('route: %d baglanmamis -> tamamlama turu %d' % (n, k + 1))
+        if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
+            raise RuntimeError('DSN disa aktarilamadi')
+        run_freerouting(dsn, ses, 10, 2)
+        if not pcbnew.ImportSpecctraSES(board, str(ses)):
+            raise RuntimeError('SES ice aktarilamadi')
     if not gnd_plane:
         add_gnd_zones(board)                   # GND izleri cekildi; dokum sonradan
     print('route: %d bos uclu parca silindi' % remove_dangling(board))
     fill_zones(board, zones)
-    print('route: %d GND dikis viasi' % add_stitching_vias(board, zones))
-    fill_zones(board, zones)
+    if not DIY:                                # DIY: her via elle tel, dikis viasi yok
+        print('route: %d GND dikis viasi' % add_stitching_vias(board, zones))
+        fill_zones(board, zones)
     pcbnew.SaveBoard(str(path), board, True)
     return board
 
@@ -1240,6 +1653,8 @@ def stage_route(passes=40, attempts=10):
     DRC (ihlal + baglanmamis + sematik farki) sifir olana kadar yeniden dene.
     GND de iz olarak cekilir (gnd_plane=False): yalniz dokume guvenince IDC GND pinleri (4/16)
     veri yolu izleri arasinda yalitilabiliyordu; izler dokumle birlesir, gorselde kaybolur."""
+    if DIY:
+        return stage_route_diy(passes)
     for k in range(1, attempts + 1):
         print('route: deneme %d/%d' % (k, attempts))
         route_once(passes)
@@ -1249,6 +1664,37 @@ def stage_route(passes=40, attempts=10):
             print('route: tamam ->', PROJ + '.kicad_pcb')
             return
     raise RuntimeError('route: %d denemede temiz sonuc yok (work/drc.json)' % attempts)
+
+DIY_ROUTE_TRIES = int(os.environ.get('DIY_ROUTE_TRIES', 6))
+SS_ROUTE_MIN = int(os.environ.get('SS_ROUTE_MIN', 8))      # tek yuz: deneme basina Freerouting suresi (dk)
+
+def stage_route_diy(passes):
+    """DIY: her via elle delinip telle iki yuzden lehimlenir. Freerouting deterministik degil ve via sayisi
+    denemeden denemeye oynuyor -> DIY_ROUTE_TRIES deneme, DRC temiz olanlardan en az vialisi (esitse ust
+    katmanda en kisa izlisi) kalir. Tek yuz: once bakir yuzdeki tel sayisi (ss_wires + ss_minimize)."""
+    import pcbnew
+    path = OUT / (PROJ + '.kicad_pcb')
+    best, keep = None, WORK / (PROJ + '-best.kicad_pcb')
+    for k in range(1, DIY_ROUTE_TRIES + 1):
+        print('route: deneme %d/%d' % (k, DIY_ROUTE_TRIES))
+        board = route_once(passes)
+        n = drc_counts()
+        tracks = list(board.GetTracks())
+        score = (sum(1 for t in tracks if t.GetClass() == 'PCB_VIA'),
+                 round(sum(pcbnew.ToMM(t.GetLength()) for t in tracks
+                           if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu), 1))
+        if SS:                                   # tek yuz: puan = bakir yuzdeki tel sayisi
+            score = (len(ss_minimize(ss_wires(board))) if not n[1] else 99,) + score
+        print('route: DRC %d ihlal, %d baglanmamis, %d sematik farki | ' % n +
+              ('%d tel, ' % score[0] if SS else '') + '%d via, ust iz %.1f mm' % score[-2:])
+        if not any(n) and (best is None or score < best):
+            best = score
+            shutil.copyfile(path, keep)
+    if best is None:
+        raise RuntimeError('route: %d denemede temiz sonuc yok (work/drc.json)' % DIY_ROUTE_TRIES)
+    shutil.copyfile(keep, path)
+    print('route: tamam -> %s (' % (PROJ + '.kicad_pcb') + ('%d tel, ' % best[0] if SS else '') +
+          '%d via, ust iz %.1f mm)' % best[-2:])
 
 
 # =============================================================================
@@ -1262,6 +1708,13 @@ def kcli(*args):
     if r.returncode != 0:
         raise RuntimeError('kicad-cli %s:\n%s' % (' '.join(str(a) for a in args[:3]), (r.stdout + r.stderr)[-2000:]))
     return r.stdout
+
+def pdf_fix_date(path):
+    """kicad-cli PDF'ine olusturma anini yaziyor: DATE'e sabitle (ayni kart -> ayni dosya). Uzunluk ayni kalir,
+    xref tablosu gecerli."""
+    import re
+    path = Path(path)
+    path.write_bytes(re.sub(rb'\(D:\d{14}\)', ('(D:%s000000)' % DATE.replace('-', '')).encode(), path.read_bytes()))
 
 def find_chrome():
     for c in (os.environ.get('CHROME'), 'chromium', 'chromium-browser', 'google-chrome', 'google-chrome-stable',
@@ -1316,23 +1769,60 @@ def zip_dir(src, dst):
             zi.compress_type = zipfile.ZIP_DEFLATED
             z.writestr(zi, f.read_bytes())
 
-def fab_gerbers():
+def write_frame_gerber(path):
+    """DIY hizalama cercevesi: kart dis hattinin DISINDA isikli bant (koordinatlar gerber orijinine gore: kartin
+    sol-alt kosesi). Ic kenari kart kenarindan DIY_FRAME[0] uzakta: ekranda yanarken kart, dort kenarda esit
+    karanlik bosluk kalacak sekilde bandin ortasina oturtulur. Simetrik: aynalamadan etkilenmez, bakir pozlamasina
+    eklenince UVtools'un 'Mirror' eksenini kart ortasina sabitler."""
+    g, f = DIY_FRAME
+    x0, y0, x1, y1 = -g, -g, BOARD_W + g, BOARD_H + g             # ic kenar
+    rects = [(x0 - f, y0 - f, x0, y1 + f), (x1, y0 - f, x1 + f, y1 + f), (x0, y0 - f, x1, y0), (x0, y1, x1, y1 + f)]
+    c = lambda v: '%d' % round(v * 1e6)
+    lines = ['G04 MagPanel Carrier v%s DIY - hizalama cercevesi: kart kenarindan %.1f mm bosluk, %.1f mm bant*'
+             % (REV, g, f),
+             '%FSLAX46Y46*%', '%MOMM*%', '%LPD*%', 'G01*']
+    for x0, y0, x1, y1 in rects:
+        lines += ['G36*', 'X%sY%sD02*' % (c(x0), c(y0))]
+        lines += ['X%sY%sD01*' % (c(x), c(y)) for x, y in ((x1, y0), (x1, y1), (x0, y1), (x0, y0))]
+        lines.append('G37*')
+    lines.append('M02*')
+    path.write_text('\n'.join(lines) + '\n')
+
+def fab_gerbers(layers='F.Cu,B.Cu,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts'):
     pcb = OUT / (PROJ + '.kicad_pcb')
     gd = WORK / 'gerber'
     shutil.rmtree(gd, ignore_errors=True)
     gd.mkdir(parents=True)
-    kcli('pcb', 'export', 'gerbers', '--layers',
-         'F.Cu,B.Cu,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts',
-         '--subtract-soldermask', '-o', str(gd) + os.sep, pcb)
+    # DIY: UVtools Gerber okuyucusu icin sade dosya (yuvarlak koseli ped = cokgen, X2/net ozniteligi yok;
+    # oznitelik satirlarindaki 'D1' gibi parca adlari D-kodu sanilabiliyor)
+    extra = ['--disable-aperture-macros', '--no-x2', '--no-netlist'] if DIY else []
+    kcli('pcb', 'export', 'gerbers', '--layers', layers, *extra,
+         '--subtract-soldermask', '--use-drill-file-origin', '-o', str(gd) + os.sep, pcb)
     kcli('pcb', 'export', 'drill', '--format', 'excellon', '--excellon-separate-th', '-u', 'mm',
-         '-o', str(gd) + os.sep, pcb)
+         '--drill-origin', 'plot', '-o', str(gd) + os.sep, pcb)
+    import re
+    for f in gd.iterdir():                     # KiCad'in yazdigi uretim zamani -> DATE (ayni kart -> ayni zip)
+        f.write_text(re.sub(r'\d{4}-\d\d-\d\d([T ])\d\d:\d\d:\d\d', lambda m: DATE + m.group(1) + '00:00:00',
+                            f.read_text()))
+    if DIY:                                    # UVtools PCB exposure kart dis hattini .gko uzantisiyla taniyor
+        for f in gd.glob('*-Edge_Cuts.gm1'):
+            shutil.copyfile(f, f.with_suffix('.gko'))
+        write_frame_gerber(gd / (PROJ + '-Hizalama.gbr'))
     zip_dir(gd, FAB / (PROJ + '-gerber.zip'))
     return sorted(f.name for f in gd.iterdir())
 
-def fab_bom_cpl(board):
-    """Tam BOM (insan) + JLCPCB SMT BOM/CPL (yalniz SMD; LCSC no. siparis aninda eslenir)."""
+def place_xy(fp):
+    """Footprint merkezi kartin sol-alt kosesine gore (mm, Y yukari): gerber ve delik dosyalariyla ayni orijin."""
+    import pcbnew
+    pos = fp.GetPosition()
+    return (pcbnew.ToMM(pos.x) - ORIGIN[0] - PLACE_ORIGIN[0], PLACE_ORIGIN[1] - (pcbnew.ToMM(pos.y) - ORIGIN[1]))
+
+def fab_bom_cpl(board, smt=True):
+    """Tam BOM (insan) + SMT montaj dosyalari: JLCPCB BOM/CPL (csv), Robotistan BOM/PnP (xlsx).
+    Montaj dosyalarinda yalniz SMD parcalar var (hepsi ust yuzde); delikli parcalar elle lehimlenir."""
     import csv
     import pcbnew
+    import xlsx
     nl = json.loads((OUT / 'netlist.json').read_text())
     fps = {fp.GetReference(): fp for fp in board.GetFootprints()}
     def is_smd(ref):
@@ -1351,34 +1841,72 @@ def fab_bom_cpl(board):
     rows = grouped(True)                      # insan BOM'u: ayni deger, farkli gorev -> ayri satir
     with open(FAB / (PROJ + '-bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['Ref', 'Adet', 'Deger', 'Footprint', 'Montaj', 'Parca / MPN', 'Not'])
+        w.writerow(['Ref', 'Adet', 'Deger', 'Footprint', 'Montaj', 'Uretici', 'Parca / MPN', 'LCSC', 'Not'])
         for (val, fpn, mpn, desc), refs in rows:
+            fl = nl[refs[0]]['fields']
             w.writerow([' '.join(refs), len(refs), val, fpn.split(':')[1], 'SMD' if is_smd(refs[0]) else 'THT',
-                        mpn, desc])
+                        fl.get('Manufacturer', ''), mpn, fl.get('LCSC', ''), desc])
+    if not smt:                               # ev yapimi: montaj servisi dosyalari gerekmez
+        return len(rows)
+    smt_rows = []                             # (Comment, refs, kilif, LCSC, MPN, uretici, aciklama); adet kart basina
+    for (val, fpn, mpn), refs in grouped(False):
+        if is_smd(refs[0]):
+            assert mpn in SMT_BY_MPN, ('SMT_PARTS tablosunda yok', refs, mpn)
+            comment, mfr, _, lcsc, pkg, spec = SMT_BY_MPN[mpn]
+            smt_rows.append((comment, refs, pkg, lcsc, mpn, mfr, spec))
     with open(FAB / (PROJ + '-jlc-bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
-        for (val, fpn, mpn), refs in grouped(False):
-            if is_smd(refs[0]):
-                w.writerow([mpn or val, ','.join(refs), fpn.split(':')[1], ''])
+        for comment, refs, pkg, lcsc, mpn, mfr, spec in smt_rows:
+            w.writerow([comment, ','.join(refs), pkg, lcsc])
+    xlsx.write(FAB / (PROJ + '-robotistan-bom.xlsx'),
+               [['Comment', 'Designator', 'Footprint', 'RobotistanPro Part', 'Manufacturer Part Number (MPN)', 'Quantity']]
+               + [[comment, ','.join(refs), pkg, lcsc, mpn, len(refs)] for comment, refs, pkg, lcsc, mpn, _, _ in smt_rows],
+               widths=[34, 44, 18, 22, 34, 12])
+    # Turkce "default_bomlist" sablonu (Fabrika Kodu = MPN; sade Calibri, sayfa adi 'Worksheet')
+    xlsx.write(FAB / (PROJ + '-bomlist.xlsx'),
+               [['Fabrika Kodu', 'Açıklama', 'Designatör', 'Malzeme Kılıfı', 'Adet']]
+               + [[mpn, '%s (%s)' % (spec, mfr), ','.join(refs), pkg, len(refs)]
+                  for comment, refs, pkg, lcsc, mpn, mfr, spec in smt_rows],
+               widths=[22, 50, 60, 16, 8], sheet='Worksheet', plain=True)
+    place = []                                # (ref, x, y, alt yuz, aci)
+    for ref in sorted(fps, key=refkey):
+        if is_smd(ref) and nl.get(ref, {}).get('in_bom', True):
+            fp = fps[ref]
+            x, y = place_xy(fp)
+            place.append((ref, x, y, fp.IsFlipped(), int(round(fp.GetOrientationDegrees())) % 360))
     with open(FAB / (PROJ + '-jlc-cpl.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
-        for ref in sorted(fps, key=refkey):
-            fp = fps[ref]
-            if not is_smd(ref) or not nl.get(ref, {}).get('in_bom', True):
-                continue
-            pos = fp.GetPosition()               # gerber ile ayni mutlak koordinat (Y yukari)
-            w.writerow([ref, '%.4fmm' % pcbnew.ToMM(pos.x), '%.4fmm' % -pcbnew.ToMM(pos.y),
-                        'Bottom' if fp.IsFlipped() else 'Top', '%g' % (fp.GetOrientationDegrees() % 360)])
-    return len(rows)
+        for ref, x, y, back, rot in place:
+            w.writerow([ref, '%.4fmm' % x, '%.4fmm' % y, 'Bottom' if back else 'Top', rot])
+    xlsx.write(FAB / (PROJ + '-robotistan-pnp.xlsx'),
+               [['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation']]
+               + [[ref, '%.4fmm' % x, '%.4fmm' % y, 'B' if back else 'T', rot] for ref, x, y, back, rot in place],
+               widths=[18, 22, 22, 14, 14])
+    return len(rows), len(smt_rows), len(place)
 
 # kart gorseli renkleri (yesil maske, ENIG gorunumu)
 RENDER_COL = {'fr4_masked': (22, 84, 48, 255), 'cu_masked': (38, 118, 66, 255), 'fr4_bare': (196, 176, 122, 255),
-              'finish': (214, 172, 82, 255), 'silk': (244, 244, 240, 255)}
+              'finish': (214, 172, 82, 255), 'silk': (244, 244, 240, 255),
+              'fr4_diy': (204, 190, 142, 255), 'cu_diy': (196, 112, 58, 255)}   # DIY: maskesiz, serigrafisiz
+RENDER_WIRES = [(220, 40, 40, 255), (40, 110, 230, 255), (30, 170, 80, 255), (240, 170, 20, 255), (160, 70, 200, 255)]
 
-def board_render(brd, side, out_png, width=4000, final=1800):
-    """Katman SVG'lerinden (kicad-cli) gercekci 2B kart gorseli: alt taraf aynalanir (alttan bakis)."""
+def ui_font(size, bold=False):
+    """Turkce harfli TrueType yazi tipi (DejaVu, Arial). Bulunamazsa Pillow'un varsayilani (Turkce harf yok)."""
+    from PIL import ImageFont
+    names = ('DejaVuSans-Bold.ttf', 'Arial Bold.ttf', 'arialbd.ttf') if bold else ('DejaVuSans.ttf', 'Arial.ttf', 'arial.ttf')
+    for d in ('/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/TTF', '/Library/Fonts',
+              '/System/Library/Fonts/Supplemental', 'C:/Windows/Fonts'):
+        for n in names:
+            if (Path(d) / n).exists():
+                return ImageFont.truetype(str(Path(d) / n), size)
+    return ImageFont.load_default(size=size)
+
+def board_render(brd, side, out_png, width=4000, final=1800, wires=None, sheet=None):
+    """Katman SVG'lerinden (kicad-cli) gercekci 2B kart gorseli: alt taraf aynalanir (alttan bakis).
+    DIY: lehim maskesi ve serigrafi yok, ciplak FR4 uzerinde bakir. wires (tek yuz): via pedleri arasi teller,
+    numarali; sheet: ayni gorselden A4 yatay, %100 olcekli PDF (tel listesiyle)."""
     from PIL import Image, ImageChops, ImageDraw
     import pcbnew
     pcb = OUT / (PROJ + '.kicad_pcb')
@@ -1413,15 +1941,52 @@ def board_render(brd, side, out_png, width=4000, final=1800):
     mul = ImageChops.multiply
     def paint(col, mask):
         img.paste(Image.new('RGBA', (W, H), col), (0, 0), mask)
-    paint(RENDER_COL['fr4_masked'], board)
-    paint(RENDER_COL['cu_masked'], mul(m['cu'], board))
-    paint(RENDER_COL['fr4_bare'], mul(m['mask'], board))
-    paint(RENDER_COL['finish'], mul(mul(m['mask'], m['cu']), board))
-    paint(RENDER_COL['silk'], mul(mul(m['silk'], ImageChops.invert(m['mask'])), board))
+    if SS and side == 'top':                            # tek yuz: ustte bakir yok, parca yerlesimi serigrafiden
+        paint(RENDER_COL['fr4_diy'], board)
+        paint((70, 64, 52, 255), mul(m['silk'], board))
+    elif DIY:
+        paint(RENDER_COL['fr4_diy'], board)
+        paint(RENDER_COL['cu_diy'], mul(m['cu'], board))
+    else:
+        paint(RENDER_COL['fr4_masked'], board)
+        paint(RENDER_COL['cu_masked'], mul(m['cu'], board))
+        paint(RENDER_COL['fr4_bare'], mul(m['mask'], board))
+        paint(RENDER_COL['finish'], mul(mul(m['mask'], m['cu']), board))
+        paint(RENDER_COL['silk'], mul(mul(m['silk'], ImageChops.invert(m['mask'])), board))
+    if wires:
+        wd = ImageDraw.Draw(img)
+        for k, (_, a, b, _) in enumerate(wires):
+            col = RENDER_WIRES[k % len(RENDER_WIRES)]
+            pa, pb = px(*a), px(*b)
+            wd.line((pa, pb), fill=(30, 30, 30, 255), width=int(1.0 * sx))     # yalitimli tel: koyu kenar
+            wd.line((pa, pb), fill=col, width=int(0.7 * sx))
+            for q in (pa, pb):
+                wd.ellipse((q[0] - 0.9 * sx, q[1] - 0.9 * sx, q[0] + 0.9 * sx, q[1] + 0.9 * sx), outline=col,
+                           width=int(0.3 * sx))
     img.putalpha(mul(mul(img.getchannel('A'), board), ImageChops.invert(holes)))
     if side == 'bottom':
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    if wires:                                           # numaralar aynalama sonrasi: duz okunsun
+        wd = ImageDraw.Draw(img)
+        f, sw = ui_font(int(2.0 * sx), bold=True), int(0.35 * sx)
+        boxes = []                                      # yerlesen etiketler: ust uste binmesin
+        for k, (_, a, b, _) in enumerate(wires, 1):
+            (ax, ay), (bx, by) = px(*a), px(*b)
+            if side == 'bottom':
+                ax, bx = W - 1 - ax, W - 1 - bx
+            n = math.hypot(bx - ax, by - ay) or 1.0
+            nx, ny = (ay - by) / n, (bx - ax) / n        # tele dik birim vektor
+            for t, off in [(t, o) for t in (0.5, 0.3, 0.7, 0.15, 0.85) for o in (0, 1.8, -1.8, 3.4, -3.4)] + [(0.5, 0)]:
+                x, y = ax + t * (bx - ax) + off * sx * nx, ay + t * (by - ay) + off * sx * ny
+                bb = wd.textbbox((x, y), 'W%d' % k, font=f, anchor='mm', stroke_width=sw)
+                if not any(bb[0] < c[2] and c[0] < bb[2] and bb[1] < c[3] and c[1] < bb[3] for c in boxes):
+                    break
+            boxes.append(bb)
+            wd.text((x, y), 'W%d' % k, font=f, fill=(255, 255, 255, 255), anchor='mm', stroke_width=sw,
+                    stroke_fill=(20, 20, 20, 255))
     img = img.crop(img.getbbox())
+    if sheet:
+        ss_sheet(img, (BOARD_W + 0.1) / img.size[0], wires, sheet)
     img = img.resize((final, int(round(final * img.size[1] / img.size[0]))), Image.LANCZOS)
     img.quantize(colors=96, method=Image.Quantize.FASTOCTREE).save(out_png, optimize=True)   # az renk -> kucuk PNG
     return img.size
@@ -1433,6 +1998,7 @@ def fab_print(brd, out_pdf):
     tmp = WORK / 'print'
     tmp.mkdir(parents=True, exist_ok=True)
     b = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
+    pcbnew.KIID.SeedGenerator(0x4D60)                 # eklenen cizimlere sabit UUID: KiCad cizim sirasini UUID'ye gore
     for t in list(b.GetTracks()):                     # izler/dokum yok: pedlerin beyaz delikleri gorunsun
         board_remove(b, t)
     for z in list(b.Zones()):
@@ -1462,6 +2028,7 @@ def fab_print(brd, out_pdf):
     pcbnew.SaveBoard(str(path), b)
     kcli('pcb', 'export', 'pdf', '--layers', 'Edge.Cuts,F.Cu,F.Fab,F.Silkscreen,Dwgs.User', '--black-and-white',
          '--drill-shape-opt', '2', '-o', out_pdf, path)
+    pdf_fix_date(out_pdf)
 
 def schematic_png(out_png, width=4200, final=2400):
     from PIL import Image
@@ -1477,15 +2044,505 @@ def schematic_png(out_png, width=4200, final=2400):
     im.quantize(colors=64, method=Image.Quantize.MEDIANCUT).save(out_png, optimize=True)
     return im.size
 
-def stage_fab():
+def fab_diy_sheets(brd):
+    """Ev yapimi montaj cizimleri (A4, 1:1): ust yuz (delikli parcalar + ust katman gecisleri + via'lar) ve
+    alt yuz (alttan bakis, aynali: SMD'ler + izler). Via'lar iki cizimde de: her birine tel gecip iki yuzden lehim."""
+    import pcbnew
+    tmp = WORK / 'print'
+    tmp.mkdir(parents=True, exist_ok=True)
+    nvia = sum(1 for t in brd.GetTracks() if t.GetClass() == 'PCB_VIA')
+    out = []
+    sides = ((('top', 'Edge.Cuts,F.Fab,F.Silkscreen,Dwgs.User', False,
+               'ÜST YÜZ (üstten bakış): delikli parçalar'),
+              ('bottom', 'Edge.Cuts,B.Cu,B.Fab,B.Silkscreen,Dwgs.User', True,
+               'BAKIR YÜZ (alttan bakış): SMD parçalar, izler, %d tel pedi' % nvia)) if SS else
+             (('top', 'Edge.Cuts,F.Cu,F.Fab,F.Silkscreen,Dwgs.User', False,
+               'ÜST YÜZ (üstten bakış): delikli parçalar, üst katman geçişleri, %d via' % nvia),
+              ('bottom', 'Edge.Cuts,B.Cu,B.Fab,B.Silkscreen,Dwgs.User', True,
+               'ALT YÜZ (alttan bakış): SMD parçalar ve lehim tarafı, %d via' % nvia)))
+    for side, layers, mirror, title in sides:
+        b = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
+        pcbnew.KIID.SeedGenerator(0x4D61 + (side == 'bottom'))   # sabit UUID: PDF'te cizim sirasi her seferinde ayni
+        for z in list(b.Zones()):                      # dokum ve yasak bolgeler yok: izler okunsun
+            board_remove(b, z)
+        if SS and side == 'top':                       # tek yuz: ustte bakir yok, parca delikleri cizimle
+            for fp in b.GetFootprints():
+                for p in fp.Pads():
+                    if p.GetDrillSize().x > 0:
+                        c = pcbnew.PCB_SHAPE(b, pcbnew.SHAPE_T_CIRCLE)
+                        c.SetCenter(p.GetPosition()); c.SetEnd(p.GetPosition() + pcbnew.VECTOR2I(p.GetDrillSize().x // 2, 0))
+                        c.SetLayer(pcbnew.Dwgs_User); c.SetWidth(mm(0.15)); c.SetFilled(False); b.Add(c)
+        t = pcbnew.PCB_TEXT(b)
+        t.SetText('MagPanel Carrier v%s %s - %s' % (REV, 'tek yüz' if SS else 'DIY', title)); t.SetLayer(pcbnew.Dwgs_User)
+        t.SetPosition(V(0, -12 if SS else -8)); t.SetTextSize(pcbnew.VECTOR2I(mm(2.2), mm(2.2)))
+        t.SetTextThickness(mm(0.3))
+        # aynali sayfada kart sayfanin sagina duser: baslik kartin sag kenarinda biter, sola uzar (sayfadan tasmaz)
+        t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_RIGHT if mirror else pcbnew.GR_TEXT_H_ALIGN_LEFT)
+        t.SetMirrored(mirror)                          # PDF aynalaninca okunur
+        b.Add(t)
+        for k in range(11):                            # 100 mm olcek cubugu
+            sh = pcbnew.PCB_SHAPE(b, pcbnew.SHAPE_T_SEGMENT)
+            sh.SetStart(V(10 * k, BOARD_H + 6 - (3 if k % 5 == 0 else 1.8))); sh.SetEnd(V(10 * k, BOARD_H + 6))
+            sh.SetLayer(pcbnew.Dwgs_User); sh.SetWidth(mm(0.3)); b.Add(sh)
+        sh = pcbnew.PCB_SHAPE(b, pcbnew.SHAPE_T_SEGMENT)
+        sh.SetStart(V(0, BOARD_H + 6)); sh.SetEnd(V(100, BOARD_H + 6)); sh.SetLayer(pcbnew.Dwgs_User)
+        sh.SetWidth(mm(0.3)); b.Add(sh)
+        path = tmp / ('diy-%s.kicad_pcb' % side)
+        pcbnew.SaveBoard(str(path), b)
+        pdf = FAB / ('%s-assembly-%s.pdf' % (PROJ, side))
+        args = ['pcb', 'export', 'pdf', '--layers', layers, '--black-and-white', '--drill-shape-opt', '2']
+        if mirror:
+            args.append('--mirror')
+        kcli(*args, '-o', pdf, path)
+        pdf_fix_date(pdf)
+        out.append(pdf.name)
+    return out
+
+# --- Elegoo Saturn 3 / 3 Ultra pozlama dosyalari (.goo). UVtools 7 komut satiri (UVtoolsCmd) varsa uretilir ---
+UVTOOLS = os.environ.get('UVTOOLS_CMD') or shutil.which('UVtoolsCmd')
+SATURN3 = {'display_width': 218.88, 'display_height': 122.88, 'display_pixels_x': 11520, 'display_pixels_y': 5120}
+# Yazici basliktaki makine adini kendi adiyla karsilastirabiliyor (yanlis model -> format hatasi). Ekran iki modelde
+# ayni; duz Saturn 3 icin GOO_MACHINE='ELEGOO Saturn 3'.
+GOO_MACHINE = os.environ.get('GOO_MACHINE', 'ELEGOO Saturn 3 Ultra')
+GOO_MACHINE_Z = 260 if 'Ultra' in GOO_MACHINE else 250
+# pozlama testi: serit sayisi, adim, ilk serit (s) -> 60, 65 ... 85 s. Kullanicinin film + Saturn 3 Ultra deneyimi:
+# 70-80 s iyi; test bu araligi ortalar. Normal katman = adim; ilk serit ilk/adim katman isik alir.
+DIY_TEST = (6, 5, 60)
+DIY_PLACE = 120               # s: her dosyanin ilk katmani yalniz cerceveyi yakar, kart bu surede yerlestirilir
+# bakir dosyalari: testteki her sure icin bir dosya (alt-10s.goo ...); DIY_EXPOSURE=25 ya da 25,35 ile baska sureler
+DIY_TIMES = ([float(t) for t in os.environ['DIY_EXPOSURE'].split(',')] if os.environ.get('DIY_EXPOSURE')
+             else [DIY_TEST[2] + k * DIY_TEST[1] for k in range(DIY_TEST[0])])
+
+def uvtools(*args):
+    r = subprocess.run([UVTOOLS] + [str(a) for a in args], capture_output=True, text=True)
+    if r.returncode:
+        raise RuntimeError('UVtoolsCmd %s:\n%s' % (args[0], (r.stdout + r.stderr)[-2000:]))
+
+def goo_fix(path, exposure_total, layers):
+    """Ayni kart -> ayni dosya. UVtools'un tahmini baski suresi calistirmadan calistirmaya oynuyor (337/330 s):
+    pozlama toplami + katman basina 8 s (kalkma/inme) yazilir. Basliktaki uretim zamani -> DATE (saglama yok)."""
+    uvtools('set-properties', path, 'PrintTime=%d' % round(exposure_total + 8 * layers))
+    import re
+    import struct
+    data = bytearray(path.read_bytes())
+    m = re.search(rb'\d{4}-\d\d-\d\d \d\d:\d\d:\d\d', bytes(data[:512]))
+    if m:
+        data[m.start():m.end()] = (DATE + ' 00:00:00').encode()
+    # hacim / agirlik / fiyat tahmini (bilgi alani) de oynuyor (fiyat 0 ya da 0.005) -> 0. V3.0 basligi sabit
+    # boyutlu: alanlar 195450'de, katman tanimlari 195477'de baslar (adresi 195470'te yazili)
+    if data[:4] == b'V3.0' and struct.unpack_from('>I', data, 195470)[0] == 195477:
+        struct.pack_into('>3f', data, 195450, 0, 0, 0)
+    path.write_bytes(bytes(data))
+
+def saturn3_goo(path, layers, exposure, first=None):
+    """Ekran cozunurlugundeki katman goruntulerinden (PIL 'L') .goo dosyasi. UVtools PrusaSlicer SL1 arsivini okuyup
+    Goo'ya cevirir; ekran degerleri UVtools'un Saturn 3 / 3 Ultra profilleriyle ayni (display_mirror_x = 1).
+    Ilk katman (alt katman) first saniye, digerleri exposure saniye."""
+    import io
+    import zipfile
+    first = exposure if first is None else first
+    sl1 = WORK / (path.stem + '.sl1')
+    cfg = ('action = print\njobDir = magpanel\nexpTime = %g\nexpTimeFirst = %g\nlayerHeight = 0.05\nnumFade = 0\n'
+           'numFast = %d\nnumSlow = 0\nprinterModel = SL1\nprinterProfile = %s\nprinterVariant = default\n'
+           % (exposure, first, len(layers), GOO_MACHINE))
+    ini = ''.join('%s = %s\n' % kv for kv in SATURN3.items()) + (
+        'display_orientation = landscape\ndisplay_mirror_x = 1\ndisplay_mirror_y = 0\nmax_print_height = %d\n'
+        'printer_model = SL1\nprinter_settings_id = %s\n' % (GOO_MACHINE_Z, GOO_MACHINE))
+    with zipfile.ZipFile(sl1, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('config.ini', cfg)
+        z.writestr('prusaslicer.ini', ini)
+        for k, im in enumerate(layers):
+            b = io.BytesIO()
+            im.save(b, 'PNG')
+            z.writestr('magpanel%05d.png' % k, b.getvalue())
+    uvtools('convert', sl1, 'GooFile', path)       # makine adi printerProfile'dan, MachineZ max_print_height'tan
+    uvtools('set-properties', path, 'BottomLayerCount=1', 'TransitionLayerCount=0',
+            'BottomExposureTime=%g' % first, 'ExposureTime=%g' % exposure)
+    goo_fix(path, first + (len(layers) - 1) * exposure, len(layers))
+
+def pcb_exposure_image(base, files, mirror, name):
+    """UVtools 'PCB exposure' islemi (ayarlar DIY.md tablosuyla ayni) -> ekran goruntusu (PIL 'L').
+    files: [(yol, kart_dis_hatti, boyut_olcegi)]. Delik dosyasi varsayilan olarak karanlik cizilir: kucultulunce
+    pedin ortasinda bakirsiz merkez noktasi kalir."""
+    from xml.sax.saxutils import escape
+    from PIL import Image
+    items = ''.join('<PCBExposureFile><FilePath>%s</FilePath><InvertPolarity>false</InvertPolarity>'
+                    '<IsBoardOutline>%s</IsBoardOutline><SizeScale>%g</SizeScale></PCBExposureFile>'
+                    % (escape(str(f)), str(outline).lower(), scale) for f, outline, scale in files)
+    op = WORK / (name + '.uvtop')
+    op.write_text('<?xml version="1.0" encoding="utf-8"?>\n<OperationPCBExposure '
+                  'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">'
+                  '<Files>%s</Files><MergeFiles>true</MergeFiles><LayerHeight>0.05</LayerHeight>'
+                  '<ExposureTime>%g</ExposureTime><SizeMidpointRounding>AwayFromZero</SizeMidpointRounding>'
+                  '<OffsetX>0</OffsetX><OffsetY>0</OffsetY><Mirror>%s</Mirror><InvertColor>false</InvertColor>'
+                  '<EnableAntiAliasing>false</EnableAntiAliasing><FlipVertically>true</FlipVertically>'
+                  '<Anchor>MiddleCenter</Anchor><FillPlate>false</FillPlate></OperationPCBExposure>\n'
+                  % (items, DIY_PLACE, str(mirror).lower()))
+    tmp, ex = WORK / (name + '-pcb.goo'), WORK / (name + '-pcb')
+    uvtools('run', base, op, '-o', tmp)
+    shutil.rmtree(ex, ignore_errors=True)
+    uvtools('extract', tmp, ex)
+    return Image.open(ex / 'layer0.png').convert('L')
+
+SEG7 = {'0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg',
+        '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'}
+
+def exposure_test_layers():
+    """Pozlama testi: ekran ortasinda DIY_TEST[0] serit. Ilk katman yalniz yerlestirme cercevesi (serit bu sirada
+    konur). Sonra adim saniyelik esit katmanlar: serit k ilk (ilk/adim + k) katmanda yanar, toplam ilk + k * adim
+    saniye isik alir (esit katman: her yazici alt katman disinda tek pozlama suresi kullanir). Her seritte sure
+    etiketi (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk (iki yonde: ekran pikseli
+    19 x 24 um) ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
+    from PIL import Image, ImageDraw
+    n, step, first = DIY_TEST
+    base = round(first / step)
+    if base * step != first:
+        raise ValueError('DIY_TEST: ilk serit suresi adimin kati olmali')
+    W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
+    sx, sy = W / SATURN3['display_width'], H / SATURN3['display_height']
+    bw, bh = 16.0, 24.0                                   # serit (mm)
+    x0 = SATURN3['display_width'] / 2 - n * bw / 2
+    y0 = SATURN3['display_height'] / 2 - bh / 2
+
+    def rect(d, x1, y1, x2, y2):
+        d.rectangle((round(x1 * sx), round(y1 * sy), round(x2 * sx) - 1, round(y2 * sy) - 1), fill=255)
+
+    def disc(d, x, y, r):
+        d.ellipse((round((x - r) * sx), round((y - r) * sy), round((x + r) * sx) - 1, round((y + r) * sy) - 1), fill=255)
+
+    def digit(d, ch, x, y, w=2.4, h=4.4, t=0.5):      # 7 bolumlu rakam, sol-ust (x, y), yatay aynali
+        segs = {'a': (0, 0, w, t), 'b': (0, 0, t, h / 2), 'c': (0, h / 2, t, h / 2), 'd': (0, h - t, w, t),
+                'e': (w - t, h / 2, t, h / 2), 'f': (w - t, 0, t, h / 2), 'g': (0, h / 2 - t / 2, w, t)}
+        for s in SEG7[ch]:
+            dx, dy, sw, sh = segs[s]
+            rect(d, x + dx, y + dy, x + dx + sw, y + dy + sh)
+
+    def band(d, k):
+        bx = x0 + k * bw
+        label = '%d' % (first + k * step)
+        for j, ch in enumerate(reversed(label)):         # aynali: sondan basa, soldan saga
+            digit(d, ch, bx + 2.0 + j * 3.2, y0 + 1.5)
+        for g, gw in enumerate((0.2, 0.25, 0.3)):        # dikey cizgiler (x yonunde bosluk)
+            gx = bx + 1.5 + g * 4.6
+            for m in range(4):
+                rect(d, gx + 2 * m * gw, y0 + 7.5, gx + (2 * m + 1) * gw, y0 + 13.5)
+        for g, gw in enumerate((0.2, 0.25, 0.3)):        # yatay cizgiler (y yonunde bosluk)
+            gy = y0 + 15.0 + g * 2.6
+            for m in range(4):
+                rect(d, bx + 1.5, gy + 2 * m * gw, bx + 8.0, gy + (2 * m + 1) * gw)
+        for m in range(3):                               # HUB75 ornegi: 2.54 mm adimli pedler, aradan iz
+            disc(d, bx + 11.5, y0 + 15.0 + m * 2.54, 0.85)
+        for m in range(2):
+            rect(d, bx + 9.5, y0 + 15.0 + (m + 0.5) * 2.54 - 0.125, bx + 15.0, y0 + 15.0 + (m + 0.5) * 2.54 + 0.125)
+
+    layers = []
+    for i in range(-1, base + n - 1):                    # -1: yalniz cerceve
+        im = Image.new('L', (W, H), 0)
+        d = ImageDraw.Draw(im)
+        g, f = 2.5, DIY_FRAME[1]                          # yerlestirme cercevesi: ~100 x 28 mm serit sigar
+        rect(d, x0 - g - f, y0 - g - f, x0 + n * bw + g + f, y0 - g)
+        rect(d, x0 - g - f, y0 + bh + g, x0 + n * bw + g + f, y0 + bh + g + f)
+        rect(d, x0 - g - f, y0 - g, x0 - g, y0 + bh + g)
+        rect(d, x0 + n * bw + g, y0 - g, x0 + n * bw + g + f, y0 + bh + g)
+        for k in range(max(i - base + 1, 0), n if i >= 0 else 0):
+            band(d, k)
+        layers.append(im)
+    return layers
+
+def fab_saturn3(gd):
+    """FAB/saturn3/: pozlama-testi.goo, cerceve.goo, alt-<s>s.goo (cift yuzde ust-<s>s.goo da), DIY_TIMES'taki her
+    sure icin. Her dosyanin ilk katmani DIY_PLACE saniye yalniz cerceveyi yakar: kart o sirada yerlestirilir, bakir
+    pozlamasi kendiliginden baslar (durdurup yeni dosya baslatirken kart kaymaz). UVtoolsCmd yoksa atlanir."""
+    if not UVTOOLS:
+        print('saturn3: UVtoolsCmd bulunamadi (UVTOOLS_CMD=... ile verilebilir), .goo dosyalari atlandi')
+        return
+    out = FAB / 'saturn3'
+    shutil.rmtree(out, ignore_errors=True)
+    out.mkdir(parents=True)
+    from PIL import Image, ImageChops
+    W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
+    base = WORK / 'saturn3-base.goo'
+    saturn3_goo(base, [Image.new('L', (W, H), 0)], DIY_PLACE)
+    f = lambda suffix: gd / (PROJ + suffix)
+    outline, frame = (f('-Edge_Cuts.gko'), True, 1), (f('-Hizalama.gbr'), False, 1)
+    place = pcb_exposure_image(base, [outline, frame], False, 'cerceve')
+    x0, y0, x1, y1 = place.getbbox()
+    if abs(x0 + x1 - W) > 2 or abs(y0 + y1 - H) > 2:
+        raise RuntimeError('cerceve ekranin ortasinda degil: %s' % ((x0, y0, x1, y1),))
+    saturn3_goo(out / 'cerceve.goo', [place], DIY_PLACE)
+    sides = [('alt', [outline, (f('-B_Cu.gbl'), False, 1), frame, (f('-PTH.drl'), False, 0.4)], False)]
+    if not SS:                                     # tek yuz: yalniz alt bakir
+        sides.append(('ust', [outline, (f('-F_Cu.gtl'), False, 1), frame], True))
+    for name, files, mirror in sides:
+        img = pcb_exposure_image(base, files, mirror, name)
+        if ImageChops.subtract(place, img).getbbox():   # aynali ust dahil cerceve ayni yerde olmali
+            raise RuntimeError('%s: cerceve yerlestirme katmaniyla ayni yerde degil' % name)
+        for t in DIY_TIMES:
+            saturn3_goo(out / ('%s-%gs.goo' % (name, t)), [place, img], t, first=DIY_PLACE)
+    saturn3_goo(out / 'pozlama-testi.goo', exposure_test_layers(), DIY_TEST[1], first=DIY_PLACE)
+    return sorted(p.name for p in out.iterdir())
+
+def copper_bbox(board, layer):
+    """Bir bakir katmandaki her seyin sinir kutusu (yerel mm): iz, via, ped, dokum dolgusu, cizim."""
+    import pcbnew
+    boxes = [t.GetBoundingBox() for t in board.GetTracks() if t.IsOnLayer(layer)]
+    boxes += [p.GetBoundingBox() for fp in board.GetFootprints() for p in fp.Pads() if p.IsOnLayer(layer)]
+    boxes += [d.GetBoundingBox() for d in board.GetDrawings() if d.GetLayer() == layer]
+    boxes += [z.GetFilledPolysList(layer).BBox() for z in board.Zones()
+              if not z.GetIsRuleArea() and z.IsOnLayer(layer) and z.GetFilledPolysList(layer).OutlineCount()]
+    x0 = min(pcbnew.ToMM(b.GetLeft()) for b in boxes) - ORIGIN[0]
+    y0 = min(pcbnew.ToMM(b.GetTop()) for b in boxes) - ORIGIN[1]
+    x1 = max(pcbnew.ToMM(b.GetRight()) for b in boxes) - ORIGIN[0]
+    y1 = max(pcbnew.ToMM(b.GetBottom()) for b in boxes) - ORIGIN[1]
+    return x0, y0, x1, y1
+
+def ss_wires(board):
+    """Tek yuz tel listesi. Ust katman izleriyle birbirine bagli via'lar bir grup; grup icinde via'lar arasi duz
+    mesafeyle minimum kapsayan agac, her kenar bir tel (havada T birlesimi yok, tel serbest yoldan gider).
+    Donus: [(net, uc A, uc B, duz mesafe mm)], uclar yerel mm (y asagi); sira alttan bakista soldan saga."""
+    import pcbnew
+    mmxy = lambda p: (pcbnew.ToMM(p.x) - ORIGIN[0], pcbnew.ToMM(p.y) - ORIGIN[1])
+    segs = [(mmxy(t.GetStart()), mmxy(t.GetEnd()), t.GetNetname()) for t in board.GetTracks()
+            if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu]
+    parent = list(range(len(segs)))
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    def near(q, a, b):                                 # nokta-dogru parcasi uzakligi
+        (x0, y0), (x1, y1) = a, b
+        L2 = (x1 - x0) ** 2 + (y1 - y0) ** 2
+        t = 0 if L2 == 0 else max(0, min(1, ((q[0] - x0) * (x1 - x0) + (q[1] - y0) * (y1 - y0)) / L2))
+        return math.dist(q, (x0 + t * (x1 - x0), y0 + t * (y1 - y0)))
+    for i, (a, b, n) in enumerate(segs):               # ayni netin birbirine degen parcalari birlesir
+        for j in range(i):
+            if segs[j][2] == n and min(near(a, *segs[j][:2]), near(b, *segs[j][:2]),
+                                       near(segs[j][0], a, b), near(segs[j][1], a, b)) < 0.01:
+                parent[find(i)] = find(j)
+    groups = collections.defaultdict(list)             # kok parca -> via konumlari
+    for v in board.GetTracks():
+        if v.GetClass() == 'PCB_VIA':
+            q = mmxy(v.GetPosition())
+            hit = [i for i, (a, b, n) in enumerate(segs) if n == v.GetNetname() and near(q, a, b) < 0.01]
+            if hit:
+                groups[find(hit[0])].append(q)
+    wires = []
+    for root, g in groups.items():
+        inside = {g[0]}
+        while len(inside) < len(g):
+            d, a, b = min((math.dist(a, b), a, b) for a in inside for b in g if b not in inside)
+            wires.append((segs[root][2], a, b, d))
+            inside.add(b)
+    wires.sort(key=lambda w: (round(BOARD_W - (w[1][0] + w[2][0]) / 2, 1), (w[1][1] + w[2][1]) / 2))
+    return wires
+
+def ss_minimize(wires):
+    """KiCad baglantisiyla dogrulama: kartin kopyasinda ust bakir silinir, teller duz iz olarak eklenir; baglanmamis
+    0 olmali. Alttan zaten bagli via'lari birlestiren gereksiz teller uzundan kisaya denenip cikarilir."""
+    import pcbnew
+    tmp = WORK / 'sscheck'
+    tmp.mkdir(parents=True, exist_ok=True)
+    for ext in ('.kicad_pcb', '.kicad_pro', '.kicad_dru'):
+        shutil.copyfile(OUT / (PROJ + ext), tmp / (PROJ + ext))
+    b = pcbnew.LoadBoard(str(tmp / (PROJ + '.kicad_pcb')))
+    for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu]:
+        board_remove(b, t)
+    items = []
+    for n, a, c, _ in wires:
+        tr = pcbnew.PCB_TRACK(b)
+        tr.SetStart(V(*a)); tr.SetEnd(V(*c)); tr.SetLayer(pcbnew.F_Cu); tr.SetWidth(mm(0.2))
+        tr.SetNet(b.FindNet(n))
+        b.Add(tr)
+        items.append(tr)
+    def unconnected():
+        b.BuildConnectivity()
+        return b.GetConnectivity().GetUnconnectedCount(False)
+    if unconnected():
+        raise RuntimeError('teller baglantiyi tamamlamiyor: %d baglanmamis' % unconnected())
+    keep = [True] * len(wires)
+    for i in sorted(range(len(wires)), key=lambda i: -wires[i][3]):
+        board_remove(b, items[i])
+        if unconnected():
+            b.Add(items[i])                        # gerekliymis
+        else:
+            keep[i] = False
+    return [w for w, k in zip(wires, keep) if k]
+
+SS_ZOOM_MARGIN = 6.0   # tel haritasi: tellerin cevresi bu payla 2 kat buyutulur (alttan bakis)
+
+def ss_cut(d):
+    """Kesim boyu (mm): tel duz gitmez (x1.3), iki ucta soyma ve lehim payi 10 mm; 5 mm'ye yuvarlak."""
+    return int(5 * math.ceil((1.3 * d + 10) / 5))
+
+def ss_sheet(img, mm_per_px, wires, out_pdf):
+    """A4 yatay, %100 olcekli tel haritasi (300 dpi): solda alttan bakis kart gorseli (1:1), sagda tel listesi."""
+    import time
+    from PIL import Image, ImageDraw
+    dpi = 300
+    k = dpi / 25.4                                     # px/mm
+    page = Image.new('RGB', (round(297 * k), round(210 * k)), (255, 255, 255))
+    bw = round(img.size[0] * mm_per_px * k)
+    board = img.resize((bw, round(bw * img.size[1] / img.size[0])), Image.LANCZOS)
+    x0, y0 = round(12 * k), round(30 * k)
+    page.paste(board, (x0, y0), board)
+    d = ImageDraw.Draw(page)
+    d.text((x0, round(9 * k)), 'MagPanel Carrier v%s tek yüz - BAKIR YÜZ, alttan bakış: %d tel köprü'
+           % (REV, len(wires)), font=ui_font(round(4.2 * k), bold=True), fill=(0, 0, 0))
+    d.text((x0, round(17 * k)), 'Teller bakır yüzde, yalıtımlı; uçları tel pedlerine lehimlenir. Çizgi yalnız hangi iki '
+           'pedin bağlanacağını gösterir: teli lehim noktalarının üstünden geçirmeden istediğin yoldan götür.',
+           font=ui_font(round(2.6 * k)), fill=(60, 60, 60))
+    yb = y0 + board.size[1] + round(6 * k)             # 100 mm olcek cubugu
+    d.line((x0, yb, x0 + round(100 * k), yb), fill=(0, 0, 0), width=round(0.3 * k))
+    for i in range(11):
+        h = (3 if i % 5 == 0 else 1.8) * k
+        d.line((x0 + round(10 * i * k), yb - h, x0 + round(10 * i * k), yb), fill=(0, 0, 0), width=round(0.3 * k))
+    d.text((x0, yb + round(2 * k)), '100 mm: yazdırınca cetvelle doğrula (ölçek %100)', font=ui_font(round(2.6 * k)),
+           fill=(0, 0, 0))
+    tx, ty, row = x0 + bw + round(14 * k), y0, 4.5 * k  # tel listesi (sagda)
+    pts = [(BOARD_W - x, y) for _, a, b, _ in wires for x, y in (a, b)]     # alttan bakis mm
+    m = SS_ZOOM_MARGIN
+    zx0, zy0 = max(0, min(x for x, _ in pts) - m), max(0, min(y for _, y in pts) - m)
+    zx1, zy1 = min(BOARD_W, max(x for x, _ in pts) + m), min(BOARD_H, max(y for _, y in pts) + m)
+    zx, zy = tx - round(5 * k), ty + round((len(wires) + 3) * row)           # tablonun altinda
+    sc = min(2.0, (page.size[0] - zx - 8 * k) / ((zx1 - zx0) * k), (page.size[1] - zy - 10 * k) / ((zy1 - zy0) * k))
+    if sc >= 1.2:                                      # tellerin oldugu bolge buyutulmus (yalniz kart genisse yer var)
+        zoom = img.crop((round(zx0 / mm_per_px), round(zy0 / mm_per_px), round(zx1 / mm_per_px), round(zy1 / mm_per_px)))
+        zw = round((zx1 - zx0) * sc * k)
+        zoom = zoom.resize((zw, round(zw * zoom.size[1] / zoom.size[0])), Image.LANCZOS)
+        page.paste(zoom, (zx, zy + round(6 * k)), zoom)
+        d.rectangle((zx, zy + round(6 * k), zx + zoom.size[0], zy + round(6 * k) + zoom.size[1]), outline=(0, 0, 0),
+                    width=round(0.25 * k))
+        s1 = board.size[0] / img.size[0]               # 1:1 gorselde buyutulen bolgenin cercevesi
+        d.rectangle((x0 + round(zx0 / mm_per_px * s1), y0 + round(zy0 / mm_per_px * s1),
+                     x0 + round(zx1 / mm_per_px * s1), y0 + round(zy1 / mm_per_px * s1)), outline=(0, 0, 0),
+                    width=round(0.25 * k))
+        d.text((zx, zy), 'Tellerin olduğu bölge, %.1f kat büyük (ölçek dışı)' % sc,
+               font=ui_font(round(2.8 * k), bold=True), fill=(0, 0, 0))
+    fb, fr = ui_font(round(3.0 * k), bold=True), ui_font(round(3.0 * k))
+    for c, h in ((0, 'Tel'), (12, 'Net'), (46, 'Düz'), (62, 'Kesim')):
+        d.text((tx + round(c * k), ty), h, font=fb, fill=(0, 0, 0))
+    for i, (n, a, b, dist) in enumerate(wires, 1):
+        y = ty + round(i * row)
+        col = RENDER_WIRES[(i - 1) % len(RENDER_WIRES)][:3]
+        d.rectangle((tx - round(5 * k), y + round(0.6 * k), tx - round(2 * k), y + round(2.6 * k)), fill=col)
+        for c, v in ((0, 'W%d' % i), (12, n.lstrip('/')), (46, '%.0f mm' % dist), (62, '%d mm' % ss_cut(dist))):
+            d.text((tx + round(c * k), y), v, font=fr, fill=(0, 0, 0))
+    when = time.strptime(DATE, '%Y-%m-%d')            # Pillow PDF tarihi struct_time ister (ayni kart -> ayni dosya)
+    page.save(out_pdf, 'PDF', resolution=dpi, title='MagPanel Carrier tek yuz tel haritasi', creationDate=when,
+              modDate=when)
+
+def stage_fab_ss():
+    """Tek yuz ciktilari (fab-ss/): alt bakir + delik + hizalama cercevesi (UVtools icin gerber zip), Saturn 3
+    pozlama dosyalari (cerceve, alt bakir, pozlama testi), iki yuzun 1:1 montaj cizimi, tel listesi (csv) ve
+    alttan bakis tel haritasi (A4 1:1 PDF), BOM ve gorseller."""
+    import csv
     check_erc_drc()
-    FAB.mkdir(exist_ok=True)
-    files = fab_gerbers()
-    print('gerber: %d dosya -> fab/%s-gerber.zip' % (len(files), PROJ))
     import pcbnew
     board = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
-    print('bom: %d satir -> fab/%s-bom.csv (+ jlc-bom/cpl)' % (fab_bom_cpl(board), PROJ))
+    if board.GetDesignSettings().GetAuxOrigin() != V(*PLACE_ORIGIN):
+        raise RuntimeError('yerlesim orijini kartin sol-alt kosesinde degil: pcb ve route asamalarini yeniden calistir')
+    for fp in board.GetFootprints():              # tek yuz: delikli pedlerin bakiri yalniz altta
+        for pad in fp.Pads():
+            if pad.GetAttribute() == pcbnew.PAD_ATTRIB_PTH and pad.IsOnLayer(pcbnew.F_Cu):
+                raise RuntimeError('ustte delikli ped bakiri: %s %s' % (fp.GetReference(), pad.GetNumber()))
+    wires = ss_minimize(ss_wires(board))
+    vias = [t for t in board.GetTracks() if t.GetClass() == 'PCB_VIA']
+    used = {p for _, a, b, _ in wires for p in (a, b)}
+    holes = collections.Counter()
+    for fp in board.GetFootprints():
+        for p in fp.Pads():
+            if p.GetAttribute() in (pcbnew.PAD_ATTRIB_PTH, pcbnew.PAD_ATTRIB_NPTH):
+                holes[round(pcbnew.ToMM(min(p.GetDrillSize().x, p.GetDrillSize().y)), 2)] += 1
+    FAB.mkdir(exist_ok=True)
+    files = fab_gerbers('B.Cu,B.Mask,Edge.Cuts')
+    print('gerber: %d dosya -> %s/%s-gerber.zip (alt bakir + hizalama cercevesi)' % (len(files), FAB.name, PROJ))
+    print('bom: %d satir -> %s/%s-bom.csv' % (fab_bom_cpl(board, smt=False), FAB.name, PROJ))
+    print('montaj cizimleri:', ', '.join(fab_diy_sheets(board)))
+    print('delikler (parca):', ', '.join('%g mm x %d' % (d, n) for d, n in sorted(holes.items())),
+          '| tel pedleri: %d (delmek istege bagli)' % len(vias))
+    gx = lambda p: '%.2f; %.2f' % (BOARD_W - p[0], BOARD_H - p[1])   # tel haritasi gibi alttan bakis, sol-alt kose
+    with open(FAB / (PROJ + '-teller.csv'), 'w', newline='') as f:
+        w = csv.writer(f)
+        w.writerow(['Tel', 'Net', 'Uc A alttan bakis (x; y mm)', 'Uc B alttan bakis (x; y mm)', 'Duz mesafe (mm)',
+                    'Kesim (mm)'])
+        for k, (n, a, b, d) in enumerate(wires, 1):
+            w.writerow(['W%d' % k, n.lstrip('/'), gx(a), gx(b), '%.1f' % d, ss_cut(d)])
+    print('tel kopru: %d tel, %d/%d tel pedi, kesim toplami %d mm -> %s/%s-teller.csv'
+          % (len(wires), len(used), len(vias), sum(ss_cut(d) for *_, d in wires), FAB.name, PROJ))
+    goo = fab_saturn3(WORK / 'gerber')
+    if goo:
+        print('saturn3: %s -> %s/saturn3/ (%s, ilk katman %d s yerlestirme)' % (', '.join(goo), FAB.name, GOO_MACHINE,
+                                                                                  DIY_PLACE))
+    if find_chrome() is None:
+        print('gorseller atlandi: Chromium/Chrome bulunamadi (CHROME=... ile verilebilir)')
+        return
+    IMG.mkdir(exist_ok=True)
+    print('tel haritasi: %s/%s-teller.pdf, img/ss-bottom.png' % (FAB.name, PROJ),
+          board_render(board, 'bottom', IMG / 'ss-bottom.png', wires=wires, sheet=FAB / (PROJ + '-teller.pdf')))
+    print('gorsel: ss-top.png', board_render(board, 'top', IMG / 'ss-top.png'))
+
+def stage_fab_diy():
+    """Ev yapimi ciktilari (fab-diy/): UVtools PCB exposure icin gerber + delik (orijin kartin sol-alt kosesi),
+    iki yuzun 1:1 montaj cizimi, BOM ve gorseller."""
+    check_erc_drc()
+    import pcbnew
+    board = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
+    if board.GetDesignSettings().GetAuxOrigin() != V(*PLACE_ORIGIN):
+        raise RuntimeError('yerlesim orijini kartin sol-alt kosesinde degil: pcb ve route asamalarini yeniden calistir')
+    for fp in board.GetFootprints():              # soket pinleri ustten lehimlenemez: ustte delikli ped bakiri yok
+        for pad in fp.Pads():
+            if pad.GetAttribute() == pcbnew.PAD_ATTRIB_PTH and pad.IsOnLayer(pcbnew.F_Cu):
+                raise RuntimeError('ustte delikli ped bakiri: %s %s' % (fp.GetReference(), pad.GetNumber()))
+    for layer in (pcbnew.F_Cu, pcbnew.B_Cu):      # UVtools 'Mirror' cizimi bakir sinir kutusunun ortasindan aynalar
+        x0, y0, x1, y1 = copper_bbox(board, layer)
+        dx, dy = (x0 + x1 - BOARD_W) / 2, (y0 + y1 - BOARD_H) / 2
+        if max(abs(dx), abs(dy)) > 0.02:
+            raise RuntimeError('%s bakir sinir kutusu kart ortasinda degil (%.2f, %.2f mm): aynalama ekseni kayar'
+                               % (board.GetLayerName(layer), dx, dy))
+    vias = [t for t in board.GetTracks() if t.GetClass() == 'PCB_VIA']
+    top = [t for t in board.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetLayer() == pcbnew.F_Cu]
+    holes = collections.Counter(round(pcbnew.ToMM(v.GetDrillValue()), 2) for v in vias)
+    for fp in board.GetFootprints():
+        for p in fp.Pads():
+            if p.GetAttribute() in (pcbnew.PAD_ATTRIB_PTH, pcbnew.PAD_ATTRIB_NPTH):
+                holes[round(pcbnew.ToMM(min(p.GetDrillSize().x, p.GetDrillSize().y)), 2)] += 1
+    FAB.mkdir(exist_ok=True)
+    files = fab_gerbers('F.Cu,B.Cu,F.Mask,B.Mask,Edge.Cuts')
+    print('gerber: %d dosya -> %s/%s-gerber.zip (+ hizalama cercevesi)' % (len(files), FAB.name, PROJ))
+    print('bom: %d satir -> %s/%s-bom.csv' % (fab_bom_cpl(board, smt=False), FAB.name, PROJ))
+    print('montaj cizimleri:', ', '.join(fab_diy_sheets(board)))
+    print('via (elle tel): %d | ust katman: %d iz parcasi, %.0f mm' % (
+        len(vias), len(top), sum(pcbnew.ToMM(t.GetLength()) for t in top)))
+    print('delikler:', ', '.join('%g mm x %d' % (d, n) for d, n in sorted(holes.items())))
+    goo = fab_saturn3(WORK / 'gerber')
+    if goo:
+        print('saturn3: %s -> %s/saturn3/ (%s, ilk katman %d s yerlestirme)' % (', '.join(goo), FAB.name, GOO_MACHINE,
+                                                                                  DIY_PLACE))
+    if find_chrome() is None:
+        print('gorseller atlandi: Chromium/Chrome bulunamadi (CHROME=... ile verilebilir)')
+        return
+    IMG.mkdir(exist_ok=True)
+    print('gorsel: diy-top.png', board_render(board, 'top', IMG / 'diy-top.png'))
+    print('gorsel: diy-bottom.png', board_render(board, 'bottom', IMG / 'diy-bottom.png'))
+
+def stage_fab():
+    if SS:
+        return stage_fab_ss()
+    if DIY:
+        return stage_fab_diy()
+    check_erc_drc()
+    import pcbnew
+    board = pcbnew.LoadBoard(str(OUT / (PROJ + '.kicad_pcb')))
+    if board.GetDesignSettings().GetAuxOrigin() != V(*PLACE_ORIGIN):
+        raise RuntimeError('yerlesim orijini kartin sol-alt kosesinde degil: pcb ve route asamalarini yeniden calistir')
+    FAB.mkdir(exist_ok=True)
+    files = fab_gerbers()
+    print('gerber: %d dosya -> fab/%s-gerber.zip (orijin: kartin sol-alt kosesi)' % (len(files), PROJ))
+    print('bom: %d satir, montaj: %d satir / %d parca -> fab/%s-bom.csv, jlc-bom/cpl, robotistan-bom/pnp'
+          % (*fab_bom_cpl(board), PROJ))
     kcli('sch', 'export', 'pdf', '-o', FAB / (PROJ + '-schematic.pdf'), OUT / (PROJ + '.kicad_sch'))
+    pdf_fix_date(FAB / (PROJ + '-schematic.pdf'))
     fab_print(board, FAB / (PROJ + '-1to1.pdf'))
     print('baski: fab/%s-1to1.pdf (A4, %%100 olcek)' % PROJ)
     if find_chrome() is None:
@@ -1501,7 +2558,14 @@ def stage_fab():
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('stage', choices=['sch', 'pcb', 'route', 'fab', 'all'])
+    ap.add_argument('--diy', action='store_true', help='ev yapimi cift yuz surum (magpanel-carrier-diy/, fab-diy/)')
+    ap.add_argument('--ss', action='store_true', help='tek yuz ev yapimi surum, 150 x 100 mm, ust katman gecisleri '
+                    'bakir yuzde tel (magpanel-carrier-ss/, fab-ss/)')
     a = ap.parse_args()
+    if a.ss:
+        set_variant_ss()
+    elif a.diy:
+        set_variant_diy()
     if a.stage in ('sch', 'all'):
         stage_sch()
     if a.stage in ('pcb', 'all'):

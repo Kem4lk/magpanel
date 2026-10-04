@@ -214,7 +214,7 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   1.5 A + SMAJ5.0A + 470 µF; 5 V ana hat tamponların altından (alt şerit) DevKit 5V pinine sağdan girer.
 - Eldeki modüller (foto 2026-10-02), başlıklar bu sırada: LDR 16067 VCC/GND/DO, MIC 15771 OUT/GND/VCC,
   KY-040 CLK/DT/SW/+/GND, DHT11 15579 −/OUT/+, TTP223B 17538 SIG/VCC/GND. **LDR ve MIC yalnız dijital**
-  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 100k GND.
+  (LM393): LDR DO→IO1 (analog okunur → oto parlaklık iki kademe), MIC OUT→IO42 (kesme); IO2 R7 10k GND (100k C17407 Robotistan'da stok yok çıktı; değer önemsiz).
 - Netler PCB'ye KiCad'in kendi netlist'inden yazılır (`kicad-cli sch export netlist`): yerel etiket
   `/AD`, NC pin `unconnected-(U1-…)` + pintype `…+no_connect` → şematik↔PCB farkı 0. Net sınıfları ve
   tasarım kuralları `.kicad_pro` JSON'una yazılır (`SaveBoard(..., True)` API'den ayarlanan kuralları
@@ -237,8 +237,93 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   3.8 mm), DevKit altı SMD'ler `DEV_OFF` 4.5 mm, `RCOL` 39.4 (DIP courtyard'ına 0.5). D1 anodu J1 GND'sine
   kilitli kalın iz; C2/R1 ana hatta T kol. Via'lar maskeli (gerber'de via aperturu yok). Montaj sırası
   ve ilk açılış `hardware/kicad/README.md`.
+- **SMT montaj (2026-10-02, kullanıcı Robotistan'dan sipariş ediyor):** `SMT_PARTS` (Comment, üretici, MPN,
+  LCSC, kılıf) SMD şematik alanlarını (MPN/Manufacturer/LCSC) besler. LCSC no.'ları LCSC ürün API'siyle
+  doğrulandı (`wmsc.lcsc.com/ftps/wm/product/detail?productCode=C…`; arama uç noktası 403). `fab` üretir:
+  JLC BOM/CPL (csv) + Robotistan `robotistan-bom.xlsx` (Comment, Designator, Footprint, RobotistanPro Part =
+  LCSC, MPN, Quantity = kart başına) ve `robotistan-pnp.xlsx` (Designator, Mid X/Y `…mm`, Layer T/B, Rotation);
+  `xlsx.py` stdlib yazıcı (Robotistan örneğinin stili; `plain=True` sade Calibri). Ayrıca Türkçe
+  `bomlist.xlsx` (sayfa `Worksheet`: Fabrika Kodu = MPN, Açıklama = `SMT_PARTS` teknik açıklama + üretici,
+  Designatör, Malzeme Kılıfı, Adet = kart başına). Yalnız 33 SMD (hepsi üst yüz). Orijin kartın sol-alt
+  köşesi (`PLACE_ORIGIN` = aux origin; gerber `--use-drill-file-origin`, delik `--drill-origin plot`, CPL aynı);
+  `fab` aux origin yoksa durur. Gerber/delik dosyalarındaki üretim zamanı `DATE`'e sabitlenir: aynı kart → aynı
+  zip (kullanıcı gereksiz yere yeniden yüklemesin). Form önerisi: Edge rails/fiducials Robotistan eklesin,
+  yerleşim onayı Evet. Robotistan BOM eşleştirmesinde C17407 (100k, LCSC'de '(SMT)' kaydı) "Stok Yok" çıktı
+  → R7 10k yapıldı (C17414, R2–R6 ile aynı satır).
 - Açık: pasifler SMD varsayıldı (0805, 1812 PTC, SMA), klemens 5.08 mm, C1 Ø8/3.5 mm;
-  kasaya taşıyıcı ayakları + sensör delikleri; LCSC numaraları.
+  kasaya taşıyıcı ayakları + sensör delikleri; delikli parçalar için LCSC yok (elle lehim).
+
+## Ev yapımı çift yüz kart (2026-10-02, `gen_carrier.py --diy`, `hardware/kicad/DIY.md`)
+- Kullanıcı kartı kendi **Elegoo Saturn 3 Ultra**'sı ile **negatif dry film** pozlayarak yapacak (çift yüz seçti).
+  Aynı şematik, ayrı proje `magpanel-carrier-diy/`, çıktılar `fab-diy/`; fabrika dosyalarına dokunmaz.
+  `set_variant_diy()` tabloları değiştirir: SMD'ler alt yüze (Flip **board.Add'den sonra**: KiCad 8'de kartsız
+  Flip segfault), delikli pedlerin bakırı yalnız B.Cu+B.Mask (kaplamasız delik → ustten lehim yok), üstte her
+  deliğe yasak bölge (r = delik/2 + 0.35), via 1.6/0.8 (elle tel), GND dökümü yalnız altta, dikiş via'sı yok.
+- Kurallar: sinyal 0.25/0.2 (fabrikayla aynı), güç/GND sınıfları 0.3 aralık. **0.3/0.25 ile 40–45 via**
+  çıkıyordu: 3 HUB75 başlığı aynı yönde, ortak hatlar 2.54 adımlı pinlerin 0.84 mm arasından geçmek zorunda.
+  Oval IDC pedi (1.7×1.5) denemesi Freerouting'i takıp bıraktı. Son durum **33 via**, üst iz 373 mm,
+  DRC 0/0/0. 12 via HUB başlık gövdelerinin altında (önce lehimle, üstü yassı).
+- **Freerouting 2.1.0 tuzakları:** CLI `-mp` (ve `--router.max_passes`) uygulanmıyor; ayar dosyasında 9999 →
+  tamamlayamayınca sonsuz geçiş. `--router.job_timeout=HH:MM:SS` çalışıyor ve o ana kadarki SES'i yazıyor
+  (ana 4 dk, tamamlama 2 dk). Via maliyeti ≥80 çoğu denemeyi takıyor → 50 (varsayılan). SES'te üst katman
+  parçaları eksik kalabiliyor (FR "0 incomplete" der, KiCad kopuk görür) → route_once mevcut izlerle DSN'i
+  yeniden verip ≤3 **tamamlama turu** çalıştırır. DIY route: 6 deneme, DRC temizlerden en az vialı kalır.
+  **Deney betiklerinde** kartı `.kicad_pro`'su yanında yükle: yoksa net sınıfları varsayılana düşer (0.2/0.6 via).
+- **Pozlama (UVtools 7.0.1 ile komut satırında doğrulandı):** `Hizalama.gbr` kart kenarından 0.5 mm dışarıda
+  3 mm ışıklı bant; kart bandın ortasına eşit boşlukla oturtulur. UVtools `Mirror` görüntüyü **içerik sınır
+  kutusunun ortasından** aynalar → çerçeve simetrik + `fab` iki bakır katmanın kutusunun kart ortasında
+  olduğunu denetler (üstte kenar şeritleri yasak). Delik dosyası UVtools'ta **varsayılan karanlık** çizilir:
+  PTH.drl Size scale 0.4, Invert polarity KAPALI → pedde matkap merkez noktası. Anchor MiddleCenter, Merge
+  açık, Invert color kapalı (negatif film). Saturn 3 profili `display_mirror_x = 1`: kayıtlı görüntü yukarıdan
+  olduğu gibi görünür → alt Mirror kapalı, üst açık; doğrulama: kâğıtla provada iki yazı da TERS ve aynı köşede.
+- `fab-diy/saturn3/*.goo` (UVtoolsCmd varsa, `UVTOOLS_CMD=`): taban dosya SL1 arşivinden (Saturn 3 ekran
+  değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure) → `extract` ile katman
+  PNG'si → yeni SL1 → Goo. `pozlama-testi.goo` basamak testi `DIY_TEST` = 6 şerit, 60..85 s, 5 s adım: 17 eşit
+  5 s katman, şerit k ilk 12+k katmanda yanar (yazıcı alt katman dışında tek süre kullanır). Kullanıcı: bu film +
+  Saturn 3 Ultra'da **70–80 s ideal** (2026-10-04, kendi deneyimi; ilk 10..60 s testi kaldırıldı). Goo
+  başlığındaki tarih DATE'e, tahmini baskı süresi pozlama + 8 s/katman'a sabitlenir (UVtools'un kendi hesabı
+  çalıştırmadan çalıştırmaya oynuyor: 337/330 s).
+- **Saturn 3 Ultra (2026-10-04, kullanıcının yazıcısı):** Elegoo yazıcı başka modelin dosyasını format hatasıyla
+  reddedebiliyor → makine adı `GOO_MACHINE` = `ELEGOO Saturn 3 Ultra` (yazıcının SDCP'de bildirdiği ad),
+  MachineZ 260; ekran düz Saturn 3 ile aynı (UVtools profilleri yalnız model adı ve yükseklikte farklı).
+  Ad SL1'in `printerProfile`/`printer_settings_id`'sinden gelir: `set-properties MachineName=` "File was partial
+  decoded, a full encode is not possible" hatası veriyor. **Her dosyanın ilk katmanı `DIY_PLACE` = 120 s yalnız
+  çerçeve** (alt katman pozlaması): kart o sırada yerleştirilir, bakır kendiliğinden pozlanır (durdur/başlat
+  yok). Bakır dosyaları testteki her süre için: `alt-60s.goo` … `alt-85s.goo` (çift yüzde `ust-…` da);
+  `DIY_EXPOSURE=25,35` başka süreler. `fab` çerçevenin ekran ortasında ve bakır katmanındakiyle aynı olduğunu
+  denetler. Kullanıcı yazıcıda ELEGOO SatelLite açtı: gerek yok, `.goo` USB bellekten basılır.
+- Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
+  doğrulanacak.
+
+## Ev yapımı tek yüz kart, 150 × 100 mm (2026-10-04, `gen_carrier.py --ss`, `hardware/kicad/TEK-YUZ.md`)
+- Kullanıcının plaketi 15 × 10 cm tek yüz → ayrı proje `magpanel-carrier-ss/`, çıktılar `fab-ss/`. Aynı şematik.
+  `set_variant_ss()` = `set_variant_diy()` (SMD'ler altta, delikli ped bakırı yalnız B.Cu, üstte delik yasakları,
+  çerçeve, Saturn 3) + kendi yerleşimi `ss_place()`. Üst katman = bakır yüzde yalıtımlı tel (via = tel pedi
+  1.6/0.8, delik isteğe bağlı). Ağ sınıfları 0.25/0.25 (IDC/DevKit pin arasından tek iz), 3V3 ve GND 0.3/0.25
+  (pin arasından geçebilsin), +5V 0.8. **Sonuç 3 tel** (E, LAT2, LAT3; kesim 105 mm), DRC 0/0/0. Eski tek yüz
+  (100×63.5 DIY kartı + 19 tel) kaldırıldı.
+- Yerleşim (soldan sağa): J4/J3/J2 (J2 tamponlara en yakın, PANEL 1), 33R sütunu, U2/U3 (180°, A DevKit'e),
+  DevKit (pin 1 üst kenara 1.6, anten dışarıda), sensörler dikey sütun (sinyal+3V3 soldan, GND sağdan),
+  5 V girişi alt kenarda (klemens kablosu aşağı), DevKit altı USB için boş.
+- **HUB75 şeridi sabit izler** (`ss_hub_tracks`): başlıklar 1.27 mm kademeli (J3 = J2+1.27, J4 = J2+2.54) →
+  başlık arası izler düz. Başlık içi: tek pin yakın sütun aralığından girip (X+2.0, y−1.27) kırılıp uzak pine;
+  çift pin (X+1.27, y+1.0) kırılıp uzak sütun aralığından çıkar (pede ≥0.27 mm). Şerit sırası = pin sırası.
+  GND 4 ve 16 J4'ün ötesinde birleşir. IDC pad 1 yuvarlak (kare köşe G1 izine 0.16 mm). 33R sütunu şerit
+  sırasında (`SS_RROW`: CLK 16, LAT 17, OE 18); CLK'nin B pini U3 soket iç koridorundan D–LAT arasına döner.
+  E/LAT2/LAT3 tek katmanda imkânsız (firmware pin sırası; LAT2/3 pinleri şerit içinde CLK–OE arasında) → sabit
+  via + F.Cu iz (tel). Gerisini Freerouting çeker (via maliyeti 120, 6 deneme, puan = tel sayısı).
+- **DevKit pin adları** (kullanıcı istedi): soket sıralarının iç tarafında, modül baskısıyla aynı (4, 5, TX, RX,
+  3V3, 5V, GND, RST; `devkit_label`), B.Cu (bakır yüzden düz) + F.SilkS. Yazı 0.9/0.18 mm, çevresi yasak bölge.
+  **Tuzak:** `GetBoundingBox()` satır aralığını sayıyor (0.9 mm yazı → 1.69 mm): yasak bölgeler üst üste binip
+  DevKit sırasını duvar gibi kapattı (pull-down ve 3V3 için 5 fazla tel). `text_box()` artık
+  `GetEffectiveTextShape().BBox()` kullanır (1.1 mm) → yazılar arası 1.1 mm geçit.
+- **Freerouting tuzağı:** bazen "0 incomplete" der ama SES'e bazı ağları hiç yazmaz (DSN'de var, SES'te yok;
+  "Restoring an earlier board" sonrası). `route_once` tamamlama turu + `stage_route_diy` DRC'si yakalar, deneme elenir.
+- Belirlenimcilik: montaj PDF'lerine eklenen çizimler rastgele UUID alıyordu, KiCad çizim sırası UUID'ye göre →
+  `KIID.SeedGenerator` (fab_diy_sheets, fab_print); kicad-cli PDF tarihi `pdf_fix_date` ile DATE'e.
+  Tel haritası PDF'i renk azaltmasız (yeşil tel kayboluyordu); tellerin bölgesi otomatik 2x büyütülür.
+- Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-60s … alt-85s, cerceve (üst yok). UVtools katman
+  görüntüsünde çerçeve 157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

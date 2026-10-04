@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "MagPanel")(type "KiCad")(uri "${KIPRJMOD}/MagPanel.pretty")(options "")(descr "MagPanel proje footprintleri"))
+)

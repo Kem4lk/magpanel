@@ -20,6 +20,13 @@ tabloları düzelt ve yeniden üret. KiCad'de elle yapılan değişiklik bir son
 Doğrulama satırı `fab` aşamasında her seferinde yeniden kontrol edilir. Biri sıfır değilse
 gerber üretilmez.
 
+**Evde yapmak için** iki sürüm var, ikisi de Elegoo Saturn 3 Ultra ile negatif dry film
+pozlanır ve yazıcıya hazır `.goo` dosyalarıyla gelir:
+- Tek yüz, 150 × 100 mm: yalnız alt bakır, tek pozlama, bakır yüzde 3 tel. DevKit pin adları
+  soket sıralarının iç tarafında bakırda yazılı. Anlatım: [`TEK-YUZ.md`](TEK-YUZ.md).
+- Çift yüz, 100 × 63.5 mm: kaplamasız delik, SMD'ler altta, 33 telli via. Anlatım:
+  [`DIY.md`](DIY.md).
+
 ## Dosyalar
 | Yol | İçerik |
 |---|---|
@@ -27,9 +34,13 @@ gerber üretilmez.
 | `magpanel-carrier/MagPanel.kicad_sym`, `MagPanel.pretty/` | DevKit sembolü ve soket footprint'i |
 | `fab/magpanel-carrier-gerber.zip` | gerber + delik dosyaları (doğrudan yüklenir) |
 | `fab/magpanel-carrier-bom.csv` | tam malzeme listesi |
-| `fab/magpanel-carrier-jlc-bom.csv`, `fab/magpanel-carrier-jlc-cpl.csv` | JLCPCB SMT montajı (yalnız SMD) |
+| `fab/magpanel-carrier-jlc-bom.csv`, `fab/magpanel-carrier-jlc-cpl.csv` | JLCPCB SMT montajı (yalnız SMD, LCSC numaralı) |
+| `fab/magpanel-carrier-robotistan-bom.xlsx`, `fab/magpanel-carrier-robotistan-pnp.xlsx` | Robotistan SMT montajı (yalnız SMD, LCSC numaralı) |
+| `fab/magpanel-carrier-bomlist.xlsx` | Türkçe BOM şablonu: Fabrika Kodu, Açıklama, Designatör, Malzeme Kılıfı, Adet (yalnız SMD) |
 | `fab/magpanel-carrier-schematic.pdf` | şematik (A3) |
 | `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
+| `magpanel-carrier-ss/`, `fab-ss/` | ev yapımı tek yüz sürüm, 150 × 100 mm, bkz. [`TEK-YUZ.md`](TEK-YUZ.md) |
+| `magpanel-carrier-diy/`, `fab-diy/` | ev yapımı çift yüz sürüm, bkz. [`DIY.md`](DIY.md) |
 | `img/` | şematik ve kart görselleri |
 
 Şematik: [`img/schematic.png`](img/schematic.png) · Alt yüz: [`img/pcb-bottom.png`](img/pcb-bottom.png)
@@ -73,7 +84,7 @@ gerber üretilmez.
 
    LDR ve mikrofon modülleri yalnız dijital çıkışlıdır. LDR'nin DO'su IO1'den okunur ve oto
    parlaklık iki kademe çalışır. Mikrofonun OUT'u IO42 kesmesine gider. Analog mikrofon girişi
-   IO2 boşta gürültü okumasın diye R7 (100 kΩ) onu GND'ye çeker. C5–C7 enkoder için RC filtre,
+   IO2 boşta gürültü okumasın diye R7 (10 kΩ) onu GND'ye çeker. C5–C7 enkoder için RC filtre,
    R6 DHT11 veri hattı pull-up'ıdır.
 
 GPIO tablosu ve modül notları: [`../README.md`](../README.md).
@@ -91,20 +102,44 @@ $PY gen_carrier.py pcb     # yerleşim, kart çerçevesi, kilitli 5 V ana hat, S
 $PY gen_carrier.py route   # Freerouting 2.1.0 + GND dökümü + dikiş via'ları
 $PY gen_carrier.py fab     # ERC/DRC kapısı + gerber/delik/BOM/CPL/PDF + görseller
 $PY gen_carrier.py all     # hepsi sırayla
+$PY gen_carrier.py --ss all    # ev yapımı tek yüz: magpanel-carrier-ss/ ve fab-ss/ (TEK-YUZ.md)
+$PY gen_carrier.py --diy all   # ev yapımı çift yüz: magpanel-carrier-diy/ ve fab-diy/ (DIY.md)
 ```
 
 - `route` Freerouting jar'ını yoksa `work/` altına indirir (yaklaşık 67 MB).
 - Freerouting deterministik değildir: her çalıştırma farklı ama eşdeğer bir yönlendirme
-  verir. Aşama, DRC temiz çıkana kadar en çok 10 kez dener.
+  verir. Aşama, DRC temiz çıkana kadar en çok 10 kez dener. Freerouting bağlantıyı tamam
+  sayıp KiCad kopuk görürse mevcut izlerle bir tamamlama turu daha çalışır.
 - `work/` ara dosyalar içindir ve git'e girmez.
 
 ## Sipariş ve montaj
 - **PCB:** `fab/magpanel-carrier-gerber.zip` yükle. 2 katman, 1.6 mm, HASL ya da ENIG.
 - **Önce 1:1 test:** `fab/magpanel-carrier-1to1.pdf` dosyasını yazıcıda %100 ölçekle bas,
   alttaki 100 mm çizgiyi cetvelle doğrula, gerçek parçaları deliklere oturt.
-- **SMT montaj (isteğe bağlı):** `jlc-bom` ve `jlc-cpl` dosyaları. LCSC numaraları boştur,
-  sipariş ekranında değer ve MPN'e göre eşleştir. Önizlemede D1 ve D2'nin dönüşünü kontrol et;
-  JLC kütüphanesi bazen 90° ya da 180° farklıdır.
+- **SMT montaj (isteğe bağlı):** bütün SMD parçalar üst yüzdedir. Montaj dosyalarında yalnız
+  bunlar var (33 parça, 8 satır); delikli parçalar elle lehimlenir. Koordinatlar kartın sol-alt
+  köşesine göredir, gerber ve delik dosyaları da aynı orijini kullanır. Parçaların LCSC
+  numaraları `gen_carrier.py` içindeki `SMT_PARTS` tablosundadır ve LCSC'de stoklu olarak
+  doğrulandı (2026-10-02). Yönler KiCad'den gelir: yerleşim önizlemesinde D1'in katot bandı
+  sağda (+5V), D2'nin katodu solda (GND) olmalı.
+  - JLCPCB: `jlc-bom.csv` ve `jlc-cpl.csv`.
+  - Robotistan: `robotistan-bom.xlsx` ve `robotistan-pnp.xlsx` (örnek dosyalarıyla aynı sütunlar).
+    BOM'daki Quantity kart başına adettir.
+  - Türkçe şablon isteyen servisler: `bomlist.xlsx` (Fabrika Kodu = MPN, Adet kart başına).
+
+### Robotistan PCB servisi
+| Form alanı | Seçim |
+|---|---|
+| Gerber | `fab/magpanel-carrier-gerber.zip` |
+| Katman, kalınlık, ölçü | 2 katman, 1.6 mm, 100 × 63.5 mm |
+| Via kaplaması | Tented (maskeli), tasarım buna göre |
+| Dizgi yüzeyi | Üst |
+| Edge Rails/Fiducials | Robotistan tarafından eklenecek (kartta ray ve fiducial yok) |
+| Komponent yerleşimi onayı | Evet (D1 ve D2'nin yönü kontrol edilsin) |
+| BOM / Pick and Place | `robotistan-bom.xlsx` / `robotistan-pnp.xlsx` |
+
+Raylar eklenirse kartlar raylı gelir. Ray kırılarak ayrılır ya da "Teslimattan önce panel ayırma"
+seçilir.
 
 ### Elle lehim
 Kart havyayla lehimlenecek şekilde çizildi:
@@ -127,6 +162,7 @@ Kart havyayla lehimlenecek şekilde çizildi:
 Montaj sırası (alçaktan yükseğe, kart masada düz durur):
 1. SMD'ler: 0805 dirençler ve kondansatörler, D2, sonra F1 ve D1. D1 ve D2'nin katodu serigrafideki
    kapalı uca bakar. DevKit altındakiler (R2–R7, C5–C7) soketlerden önce lehimlenmeli.
+   SMT dizgi yaptırıldıysa bu adım hazır gelir.
 2. İki DIP-20 soket. Çentik serigrafideki çentikle aynı yöne.
 3. Altı pin başlık (sensörler).
 4. Üç HUB75 kutu başlığı. Kutunun çentiği serigrafideki boşluğa (sola) gelir.
