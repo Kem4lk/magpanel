@@ -2160,10 +2160,11 @@ def saturn3_goo(path, layers, exposure, first=None):
             'BottomExposureTime=%g' % first, 'ExposureTime=%g' % exposure)
     goo_fix(path, first + (len(layers) - 1) * exposure, len(layers))
 
-def pcb_exposure_image(base, files, mirror, name):
+def pcb_exposure_image(base, files, mirror, name, invert=False):
     """UVtools 'PCB exposure' islemi (ayarlar DIY.md tablosuyla ayni) -> ekran goruntusu (PIL 'L').
     files: [(yol, kart_dis_hatti, boyut_olcegi)]. Delik dosyasi varsayilan olarak karanlik cizilir: kucultulunce
-    pedin ortasinda bakirsiz merkez noktasi kalir."""
+    pedin ortasinda bakirsiz merkez noktasi kalir. invert: pozitif lak (Positiv 20) icin renkleri ters cevirir;
+    UVtools yalniz kart dis hattinin icini cevirir, cerceve isikli kalir."""
     from xml.sax.saxutils import escape
     from PIL import Image
     items = ''.join('<PCBExposureFile><FilePath>%s</FilePath><InvertPolarity>false</InvertPolarity>'
@@ -2174,10 +2175,10 @@ def pcb_exposure_image(base, files, mirror, name):
                   'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">'
                   '<Files>%s</Files><MergeFiles>true</MergeFiles><LayerHeight>0.05</LayerHeight>'
                   '<ExposureTime>%g</ExposureTime><SizeMidpointRounding>AwayFromZero</SizeMidpointRounding>'
-                  '<OffsetX>0</OffsetX><OffsetY>0</OffsetY><Mirror>%s</Mirror><InvertColor>false</InvertColor>'
+                  '<OffsetX>0</OffsetX><OffsetY>0</OffsetY><Mirror>%s</Mirror><InvertColor>%s</InvertColor>'
                   '<EnableAntiAliasing>false</EnableAntiAliasing><FlipVertically>true</FlipVertically>'
                   '<Anchor>MiddleCenter</Anchor><FillPlate>false</FillPlate></OperationPCBExposure>\n'
-                  % (items, DIY_PLACE, str(mirror).lower()))
+                  % (items, DIY_PLACE, str(mirror).lower(), str(invert).lower()))
     tmp, ex = WORK / (name + '-pcb.goo'), WORK / (name + '-pcb')
     uvtools('run', base, op, '-o', tmp)
     shutil.rmtree(ex, ignore_errors=True)
@@ -2187,12 +2188,13 @@ def pcb_exposure_image(base, files, mirror, name):
 SEG7 = {'0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 'acdfg', '6': 'acdefg',
         '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'}
 
-def exposure_test_layers():
+def exposure_test_layers(positive=False):
     """Pozlama testi: ekran ortasinda DIY_TEST[0] serit. Ilk katman yalniz yerlestirme cercevesi (serit bu sirada
     konur). Sonra adim saniyelik esit katmanlar: serit k ilk (ilk/adim + k) katmanda yanar, toplam ilk + k * adim
     saniye isik alir (esit katman: her yazici alt katman disinda tek pozlama suresi kullanir). Her seritte sure
     etiketi (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk (iki yonde: ekran pikseli
-    19 x 24 um) ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
+    19 x 24 um) ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz. positive: pozitif lak icin serit
+    isikli, desen karanlik (isik alan lak cozulur, desenin altindaki bakir kalir)."""
     from PIL import Image, ImageDraw
     n, step, first = DIY_TEST
     base = round(first / step)
@@ -2204,11 +2206,14 @@ def exposure_test_layers():
     x0 = SATURN3['display_width'] / 2 - n * bw / 2
     y0 = SATURN3['display_height'] / 2 - bh / 2
 
-    def rect(d, x1, y1, x2, y2):
-        d.rectangle((round(x1 * sx), round(y1 * sy), round(x2 * sx) - 1, round(y2 * sy) - 1), fill=255)
+    fg = 0 if positive else 255                          # desenin rengi
+
+    def rect(d, x1, y1, x2, y2, fill=None):
+        d.rectangle((round(x1 * sx), round(y1 * sy), round(x2 * sx) - 1, round(y2 * sy) - 1),
+                    fill=fg if fill is None else fill)
 
     def disc(d, x, y, r):
-        d.ellipse((round((x - r) * sx), round((y - r) * sy), round((x + r) * sx) - 1, round((y + r) * sy) - 1), fill=255)
+        d.ellipse((round((x - r) * sx), round((y - r) * sy), round((x + r) * sx) - 1, round((y + r) * sy) - 1), fill=fg)
 
     def digit(d, ch, x, y, w=2.4, h=4.4, t=0.5):      # 7 bolumlu rakam, sol-ust (x, y), yatay aynali
         segs = {'a': (0, 0, w, t), 'b': (0, 0, t, h / 2), 'c': (0, h / 2, t, h / 2), 'd': (0, h - t, w, t),
@@ -2219,6 +2224,8 @@ def exposure_test_layers():
 
     def band(d, k):
         bx = x0 + k * bw
+        if positive:
+            rect(d, bx, y0, bx + bw, y0 + bh, 255)
         label = '%d' % (first + k * step)
         for j, ch in enumerate(reversed(label)):         # aynali: sondan basa, soldan saga
             digit(d, ch, bx + 2.0 + j * 3.2, y0 + 1.5)
@@ -2240,25 +2247,28 @@ def exposure_test_layers():
         im = Image.new('L', (W, H), 0)
         d = ImageDraw.Draw(im)
         g, f = 2.5, DIY_FRAME[1]                          # yerlestirme cercevesi: ~100 x 28 mm serit sigar
-        rect(d, x0 - g - f, y0 - g - f, x0 + n * bw + g + f, y0 - g)
-        rect(d, x0 - g - f, y0 + bh + g, x0 + n * bw + g + f, y0 + bh + g + f)
-        rect(d, x0 - g - f, y0 - g, x0 - g, y0 + bh + g)
-        rect(d, x0 + n * bw + g, y0 - g, x0 + n * bw + g + f, y0 + bh + g)
+        rect(d, x0 - g - f, y0 - g - f, x0 + n * bw + g + f, y0 - g, 255)
+        rect(d, x0 - g - f, y0 + bh + g, x0 + n * bw + g + f, y0 + bh + g + f, 255)
+        rect(d, x0 - g - f, y0 - g, x0 - g, y0 + bh + g, 255)
+        rect(d, x0 + n * bw + g, y0 - g, x0 + n * bw + g + f, y0 + bh + g, 255)
         for k in range(max(i - base + 1, 0), n if i >= 0 else 0):
             band(d, k)
         layers.append(im)
     return layers
 
 def fab_saturn3(gd):
-    """FAB/saturn3/: pozlama-testi.goo, cerceve.goo, alt-<s>s.goo (cift yuzde ust-<s>s.goo da), DIY_TIMES'taki her
-    sure icin. Her dosyanin ilk katmani DIY_PLACE saniye yalniz cerceveyi yakar: kart o sirada yerlestirilir, bakir
-    pozlamasi kendiliginden baslar (durdurup yeni dosya baslatirken kart kaymaz). UVtoolsCmd yoksa atlanir."""
+    """FAB/saturn3/ (negatif dry film): pozlama-testi.goo, cerceve.goo, alt-<s>s.goo (cift yuzde ust-<s>s.goo da),
+    DIY_TIMES'taki her sure icin. FAB/saturn3-pozitif/ (pozitif lak, Positiv 20): ayni dosyalar kart icinde renkleri
+    ters, adlari pozitif- ile baslar (yazicida karismasin). Her dosyanin ilk katmani DIY_PLACE saniye yalniz cerceveyi
+    yakar: kart o sirada yerlestirilir, bakir pozlamasi kendiliginden baslar (durdurup yeni dosya baslatirken kart
+    kaymaz). UVtoolsCmd yoksa atlanir."""
     if not UVTOOLS:
         print('saturn3: UVtoolsCmd bulunamadi (UVTOOLS_CMD=... ile verilebilir), .goo dosyalari atlandi')
         return
-    out = FAB / 'saturn3'
-    shutil.rmtree(out, ignore_errors=True)
-    out.mkdir(parents=True)
+    out, pos = FAB / 'saturn3', FAB / 'saturn3-pozitif'
+    for d in (out, pos):
+        shutil.rmtree(d, ignore_errors=True)
+        d.mkdir(parents=True)
     from PIL import Image, ImageChops
     W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
     base = WORK / 'saturn3-base.goo'
@@ -2273,14 +2283,27 @@ def fab_saturn3(gd):
     sides = [('alt', [outline, (f('-B_Cu.gbl'), False, 1), frame, (f('-PTH.drl'), False, 0.4)], False)]
     if not SS:                                     # tek yuz: yalniz alt bakir
         sides.append(('ust', [outline, (f('-F_Cu.gtl'), False, 1), frame], True))
+    gx = round(sum(DIY_FRAME) * W / SATURN3['display_width'])
+    gy = round(sum(DIY_FRAME) * H / SATURN3['display_height'])
+    board = (x0 + gx, y0 + gy, x1 - gx, y1 - gy)       # kart dis hatti (piksel): cerceveden DIY_FRAME kadar iceride
     for name, files, mirror in sides:
         img = pcb_exposure_image(base, files, mirror, name)
-        if ImageChops.subtract(place, img).getbbox():   # aynali ust dahil cerceve ayni yerde olmali
-            raise RuntimeError('%s: cerceve yerlestirme katmaniyla ayni yerde degil' % name)
+        inv = pcb_exposure_image(base, files, mirror, name + '-pozitif', invert=True)
+        for im in (img, inv):
+            if ImageChops.subtract(place, im).getbbox():   # aynali ust dahil cerceve ayni yerde olmali
+                raise RuntimeError('%s: cerceve yerlestirme katmaniyla ayni yerde degil' % name)
+        diff = ImageChops.difference(img, inv)            # pozitif: kart ici tam ters, disi ayni (kenarda 3 px pay)
+        inside = diff.crop((board[0] + 3, board[1] + 3, board[2] - 3, board[3] - 3))
+        outside = [diff.crop(b) for b in ((0, 0, W, board[1] - 3), (0, board[3] + 3, W, H),
+                                          (0, 0, board[0] - 3, H), (board[2] + 3, 0, W, H))]
+        if ImageChops.invert(inside).getbbox() or any(o.getbbox() for o in outside):
+            raise RuntimeError('%s: pozitif goruntu kart icinde negatifin tersi degil' % name)
         for t in DIY_TIMES:
             saturn3_goo(out / ('%s-%gs.goo' % (name, t)), [place, img], t, first=DIY_PLACE)
+            saturn3_goo(pos / ('pozitif-%s-%gs.goo' % (name, t)), [place, inv], t, first=DIY_PLACE)
     saturn3_goo(out / 'pozlama-testi.goo', exposure_test_layers(), DIY_TEST[1], first=DIY_PLACE)
-    return sorted(p.name for p in out.iterdir())
+    saturn3_goo(pos / 'pozitif-pozlama-testi.goo', exposure_test_layers(True), DIY_TEST[1], first=DIY_PLACE)
+    return sorted(p.name for p in out.iterdir()) + sorted('pozitif/' + p.name for p in pos.iterdir())
 
 def copper_bbox(board, layer):
     """Bir bakir katmandaki her seyin sinir kutusu (yerel mm): iz, via, ped, dokum dolgusu, cizim."""

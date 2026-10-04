@@ -20,8 +20,9 @@ tabloları düzelt ve yeniden üret. KiCad'de elle yapılan değişiklik bir son
 Doğrulama satırı `fab` aşamasında her seferinde yeniden kontrol edilir. Biri sıfır değilse
 gerber üretilmez.
 
-**Evde yapmak için** iki sürüm var, ikisi de Elegoo Saturn 3 Ultra ile negatif dry film
-pozlanır ve yazıcıya hazır `.goo` dosyalarıyla gelir:
+**Evde yapmak için** iki sürüm var. İkisi de Elegoo Saturn 3 Ultra ile pozlanır ve yazıcıya hazır
+`.goo` dosyalarıyla gelir: negatif dry film için `saturn3/`, Positiv 20 gibi pozitif lak için
+`saturn3-pozitif/`.
 - Tek yüz, 150 × 100 mm: yalnız alt bakır, tek pozlama, bakır yüzde 3 tel. DevKit pin adları
   soket sıralarının iç tarafında bakırda yazılı. Anlatım: [`TEK-YUZ.md`](TEK-YUZ.md).
 - Çift yüz, 100 × 63.5 mm: kaplamasız delik, SMD'ler altta, 33 telli via. Anlatım:

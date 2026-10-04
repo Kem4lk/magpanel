@@ -1,4 +1,4 @@
-# Tek yüz kart, 150 × 100 mm: Elegoo Saturn 3 Ultra + negatif dry film
+# Tek yüz kart, 150 × 100 mm: Elegoo Saturn 3 Ultra + dry film ya da Positiv 20
 
 Aynı şematiğin tek yüz plaketle yapılan sürümü. Bakır yalnız alt yüzde, kart 150 × 100 mm.
 Ayrı KiCad projesidir (`magpanel-carrier-ss/`), çıktılar `fab-ss/` altındadır. Hepsi
@@ -64,6 +64,7 @@ pedin hiçbiri bir parçanın altında kalmaz. W2 ise J2 başlığının gövdes
 | `fab-ss/saturn3/pozlama-testi.goo` | 6 şeritli süre testi: 60, 65 … 85 s |
 | `fab-ss/saturn3/alt-60s.goo` … `alt-85s.goo` | bakır + çerçeve + pedlerde matkap merkez noktası, adındaki süre kadar |
 | `fab-ss/saturn3/cerceve.goo` | yalnız hizalama çerçevesi, 120 s. Yerleştirmeyi denemek için, şart değil |
+| `fab-ss/saturn3-pozitif/` | Positiv 20 gibi pozitif lak için aynı dosyalar, kartın içinde renkler ters: `pozitif-pozlama-testi.goo`, `pozitif-alt-60s.goo` … `pozitif-alt-85s.goo` |
 | `fab-ss/magpanel-carrier-ss-gerber.zip` | B_Cu, Edge_Cuts (`.gko`), Hizalama, PTH/NPTH delik, B_Mask |
 | `fab-ss/magpanel-carrier-ss-teller.pdf` | A4, %100 ölçek: alttan bakış tel haritası, tel listesi, tellerin olduğu bölge büyük |
 | `fab-ss/magpanel-carrier-ss-teller.csv` | tel listesi: uçların koordinatı (alttan bakış, sol-alt köşeden), mesafe, kesim |
@@ -83,6 +84,23 @@ dosyaları `GOO_MACHINE='ELEGOO Saturn 3'` ile yeniden üret (aşağıda).
 
 Kendi pozlama dosyanı UVtools ile yaparsan [DIY.md](DIY.md)'deki tablo geçerli. Alt bakır için
 Edge_Cuts.gko, B_Cu.gbl, Hizalama.gbr ve PTH.drl dosyalarını ekle, Mirror kapalı kalsın.
+
+## Pozitif lak (Positiv 20)
+Kontakt Chemie Positiv 20 gibi pozitif lakta ışık alan yer banyoda çözülür. Bu, negatif filmin
+tersidir: `saturn3/` dosyalarıyla kart ters çıkar, izler aşınır, aralıklar kalır. Pozitif lak için
+`fab-ss/saturn3-pozitif/` dosyalarını kullan. Kartın içinde renkler ters, çerçeve aynı. Adlar
+`pozitif-` ile başlar, yazıcının belleğinde negatif dosyalarla karışmaz.
+
+| Adım | Negatif dry film | Positiv 20 |
+|---|---|---|
+| Kaplama | lamine, 100–110 °C | ince ve eşit sprey, karanlıkta 24 saat ya da 70 °C'de 15–20 dakika kurut |
+| Pozlamadan sonra | 15 dakika bekle | beklemek gerekmez |
+| Banyo | litrede 10 g sodyum karbonat, 25–30 °C | litrede 7 g sodyum hidroksit, oda sıcaklığı, 30–90 s |
+| Testte doğru süre | film kalkmamış, aralıklar açık | zemin tamamen açılmış, ince çizgiler yerinde |
+| Sökme | litrede 30–50 g sodyum hidroksit | aseton ya da izopropil alkol |
+
+Kâğıtla provada kartın çoğu karanlık, izlerin çevresindeki ince aralıklar aydınlık görünür. Yazılar
+yine yukarıdan ters görünmeli. Lak tamamen kurumamışsa ekrana yapışır.
 
 ## Yapım
 [DIY.md](DIY.md)'deki adımlar, şu farklarla:
@@ -126,6 +144,7 @@ PWR LED'i (D2) bakır yüzdedir. Kart DevKit dışarı bakacak şekilde takılı
 | DRC | 0 ihlal, 0 bağlanmamış, 0 şematik farkı |
 | Teller | KiCad bağlantı denetimi: üst katman silinip teller iz olarak eklenince 0 bağlanmamış |
 | Pozlama dosyaları | UVtools 7.0.1 katman görüntüsünde çerçeve 157.0 × 107.0 mm, ekranın ortasında. Yerleştirme katmanının çerçevesi bakır katmanındakiyle piksel piksel aynı |
+| Pozitif dosyalar | kart dış hattının içinde negatifin tam tersi, dışı aynı. Test şeritlerinin zemini 60–85 s, deseni 0 s ışık alıyor |
 
 Kartın kendisi henüz yapılıp denenmedi. Pozlama süresini önce test şeridiyle bul.
 

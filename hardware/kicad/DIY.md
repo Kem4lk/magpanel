@@ -1,4 +1,4 @@
-# Ev yapımı çift yüz kart: Elegoo Saturn 3 Ultra + negatif dry film
+# Ev yapımı çift yüz kart: Elegoo Saturn 3 Ultra + dry film ya da Positiv 20
 
 Aynı şematiğin evde yapılacak sürümü. Kart çizimi ayrı bir KiCad projesidir
 (`magpanel-carrier-diy/`), çıktılar `fab-diy/` altındadır. Hepsi `gen_carrier.py --diy` ile
@@ -89,6 +89,10 @@ Bakır dosyaları testteki altı süre için ayrı ayrı var: testte en iyi şer
 dosyayı bas. Bu filmle Saturn 3 Ultra'da 70–80 s iyi sonuç veriyor, test bu aralığı ortalar. Başka bir süre için: `DIY_EXPOSURE=25 $PY gen_carrier.py --diy fab` (virgülle birden
 çok süre), ya da [UVtools](https://github.com/sn4k3/UVtools)'ta dosyayı aç, **Tools → Edit print
 parameters**, yalnız Exposure time'ı değiştir. Bottom exposure time yerleştirme süresidir.
+
+**Pozitif lak (Positiv 20).** Işık alan yer çözülür, negatif filmin tersi. `fab-diy/saturn3-pozitif/`
+dosyalarını kullan: kartın içinde renkler ters, adlar `pozitif-` ile başlar. Kaplama, banyo ve sökme
+farkları [TEK-YUZ.md](TEK-YUZ.md)'deki tabloda.
 
 **Yazıcı modeli.** Dosyaların başlığındaki makine adı `ELEGOO Saturn 3 Ultra`. Yazıcı başka modelin
 dosyasını format hatasıyla reddedebilir. Ekran iki modelde aynıdır. Düz Saturn 3 için:
