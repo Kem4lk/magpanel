@@ -283,13 +283,36 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   alt/ust süresi 30 s yer tutucu (`DIY_EXPOSURE=`).
 - Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
   doğrulanacak.
-- **Tek yüz (`--ss fab`, 2026-10-04):** aynı DIY kartı; yalnız alt bakır pozlanır (`fab-diy/saturn3/alt.goo`),
-  üst katmandaki köprüler bakır yüzde yalıtımlı tel. `ss_wires`: üst izlerle bağlı via grupları, grup içinde düz
-  mesafeyle MST (havada T yok). `ss_minimize`: kart kopyasında üst bakır silinip teller iz olarak eklenir,
-  KiCad bağlantısı 0 olmalı; alttan zaten bağlı pedleri birleştiren tel çıkarılır (20 → **19 tel**, 550 mm).
-  Çıktı `fab-ss/`: teller.csv + A4 %100 tel haritası (alttan bakış, HUB 2x, liste; PIL, `ui_font` DejaVu/Arial)
-  + `img/ss-bottom.png`. Bileşen yüzünde klasik tel köprü denendi (üst katmana gövde courtyard yasakları):
-  HUB başlık gövdeleri arası 3.8 mm, Freerouting 9–17 kopukla takıldı → vazgeçildi.
+
+## Ev yapımı tek yüz kart, 150 × 100 mm (2026-10-04, `gen_carrier.py --ss`, `hardware/kicad/TEK-YUZ.md`)
+- Kullanıcının plaketi 15 × 10 cm tek yüz → ayrı proje `magpanel-carrier-ss/`, çıktılar `fab-ss/`. Aynı şematik.
+  `set_variant_ss()` = `set_variant_diy()` (SMD'ler altta, delikli ped bakırı yalnız B.Cu, üstte delik yasakları,
+  çerçeve, Saturn 3) + kendi yerleşimi `ss_place()`. Üst katman = bakır yüzde yalıtımlı tel (via = tel pedi
+  1.6/0.8, delik isteğe bağlı). Ağ sınıfları 0.25/0.25 (IDC/DevKit pin arasından tek iz), 3V3 ve GND 0.3/0.25
+  (pin arasından geçebilsin), +5V 0.8. **Sonuç 3 tel** (E, LAT2, LAT3; kesim 105 mm), DRC 0/0/0. Eski tek yüz
+  (100×63.5 DIY kartı + 19 tel) kaldırıldı.
+- Yerleşim (soldan sağa): J4/J3/J2 (J2 tamponlara en yakın, PANEL 1), 33R sütunu, U2/U3 (180°, A DevKit'e),
+  DevKit (pin 1 üst kenara 1.6, anten dışarıda), sensörler dikey sütun (sinyal+3V3 soldan, GND sağdan),
+  5 V girişi alt kenarda (klemens kablosu aşağı), DevKit altı USB için boş.
+- **HUB75 şeridi sabit izler** (`ss_hub_tracks`): başlıklar 1.27 mm kademeli (J3 = J2+1.27, J4 = J2+2.54) →
+  başlık arası izler düz. Başlık içi: tek pin yakın sütun aralığından girip (X+2.0, y−1.27) kırılıp uzak pine;
+  çift pin (X+1.27, y+1.0) kırılıp uzak sütun aralığından çıkar (pede ≥0.27 mm). Şerit sırası = pin sırası.
+  GND 4 ve 16 J4'ün ötesinde birleşir. IDC pad 1 yuvarlak (kare köşe G1 izine 0.16 mm). 33R sütunu şerit
+  sırasında (`SS_RROW`: CLK 16, LAT 17, OE 18); CLK'nin B pini U3 soket iç koridorundan D–LAT arasına döner.
+  E/LAT2/LAT3 tek katmanda imkânsız (firmware pin sırası; LAT2/3 pinleri şerit içinde CLK–OE arasında) → sabit
+  via + F.Cu iz (tel). Gerisini Freerouting çeker (via maliyeti 120, 6 deneme, puan = tel sayısı).
+- **DevKit pin adları** (kullanıcı istedi): soket sıralarının iç tarafında, modül baskısıyla aynı (4, 5, TX, RX,
+  3V3, 5V, GND, RST; `devkit_label`), B.Cu (bakır yüzden düz) + F.SilkS. Yazı 0.9/0.18 mm, çevresi yasak bölge.
+  **Tuzak:** `GetBoundingBox()` satır aralığını sayıyor (0.9 mm yazı → 1.69 mm): yasak bölgeler üst üste binip
+  DevKit sırasını duvar gibi kapattı (pull-down ve 3V3 için 5 fazla tel). `text_box()` artık
+  `GetEffectiveTextShape().BBox()` kullanır (1.1 mm) → yazılar arası 1.1 mm geçit.
+- **Freerouting tuzağı:** bazen "0 incomplete" der ama SES'e bazı ağları hiç yazmaz (DSN'de var, SES'te yok;
+  "Restoring an earlier board" sonrası). `route_once` tamamlama turu + `stage_route_diy` DRC'si yakalar, deneme elenir.
+- Belirlenimcilik: montaj PDF'lerine eklenen çizimler rastgele UUID alıyordu, KiCad çizim sırası UUID'ye göre →
+  `KIID.SeedGenerator` (fab_diy_sheets, fab_print); kicad-cli PDF tarihi `pdf_fix_date` ile DATE'e.
+  Tel haritası PDF'i renk azaltmasız (yeşil tel kayboluyordu); tellerin bölgesi otomatik 2x büyütülür.
+- Pozlama dosyaları `fab-ss/saturn3/`: cerceve, alt, pozlama-testi (üst yok). UVtools katman görüntüsünde çerçeve
+  157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)

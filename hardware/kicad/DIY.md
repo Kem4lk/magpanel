@@ -5,8 +5,8 @@ Aynı şematiğin evde yapılacak sürümü. Kart çizimi ayrı bir KiCad projes
 üretilir, fabrika kartının dosyalarına dokunmaz. Pozlama dosyaları Saturn 3 ve Saturn 3 Ultra
 içindir (12K ekran, 11520 × 5120 piksel).
 
-Tek yüz plaketle de yapılır: aynı alt bakır, üst katman yerine bakır yüzde 19 tel. Bkz.
-[Tek yüz sürüm](#tek-yüz-sürüm).
+Tek yüz plaket için ayrı, daha büyük bir kart var: 150 × 100 mm, tek pozlama, 3 tel. Bkz.
+[TEK-YUZ.md](TEK-YUZ.md).
 
 ![Ev yapımı kart, üst yüz](img/diy-top.png)
 
@@ -185,70 +185,8 @@ katına çıkar: 0.1 mm kayma via'larda 0.2 mm kaçıklık yapar. Via halkası 0
    arasında kısa devre olmamalı. Sonra [README](README.md)'deki ilk açılış adımları.
 
 ## Tek yüz sürüm
-Aynı kart tek yüz plaketle: yalnız alt bakır pozlanır, üst katmandaki 13 köprü bakır yüzde 19
-yalıtımlı tele dönüşür. İkinci pozlama, kartı çevirme ve iki yüzü hizalama yok.
-
-![Tek yüz tel haritası, alttan bakış](img/ss-bottom.png)
-
-| | Çift yüz | Tek yüz |
-|---|---|---|
-| Plaket | çift yüz | tek yüz, 1.6 mm |
-| Pozlama | 2, kartı çevirerek | 1 |
-| Üst katman | 373 mm bakır iz | yok |
-| Tel | 33 via teli, iki yüzden lehim | 19 köprü teli, bakır yüzde, toplam 550 mm |
-| Dosyalar | `fab-diy/` | `fab-diy/` bakır ve pozlama, `fab-ss/` tel listesi |
-
-| Dosya | İçerik |
-|---|---|
-| `fab-diy/saturn3/pozlama-testi.goo`, `cerceve.goo`, `alt.goo` | pozlama. `ust.goo` kullanılmaz |
-| `fab-ss/magpanel-carrier-ss-teller.pdf` | A4, %100 ölçek: alttan bakış tel haritası, HUB75 bölgesi 2 kat büyük, tel listesi |
-| `fab-ss/magpanel-carrier-ss-teller.csv` | tel listesi: uçların koordinatı (alttan bakış, sol-alt köşeden), düz mesafe, kesim boyu |
-| `img/ss-bottom.png` | tel haritası görseli |
-
-Telleri KiCad'in bağlantı denetimi doğruluyor: üst bakır silinince 19 bağlantı kopuk kalıyor, teller
-eklenince 0. Alttan zaten bağlı iki pedi birleştiren tel listeye girmiyor.
-
-**Yapım.** 1, 2 ve 3. adımlar aynı. Kâğıtla provada yalnız "ALT v1.2" yazısına bak, ters
-görünmeli. 4. adımda tek yüzü lamine et. 5. adımda kartı çerçevenin ortasına koy ve yalnız
-`alt.goo`'yu bas, çevirme yok. 6 ve 7. adımlar aynı. Via deliklerini delmek isteğe bağlı:
-delersen telin ucunu deliğe sokup lehimlemek daha sağlam olur.
-
-**Montaj sırası:**
-1. SMD'ler, bakır yüze.
-2. Delikli parçalar: üstten takılır, alttan lehimlenir. DevKit soketleri en son.
-3. Teller, bakır yüzde. Haritadaki çizgi yalnız hangi iki via pedinin bağlanacağını gösterir.
-   Teli lehim noktalarının üstünden geçirmeden istediğin yoldan götür, gerekirse bir damla
-   yapıştırıcıyla sabitle. İletkeni 0.5–0.6 mm olan yalıtımlı tek damarlı tel kullan.
-4. Ölçüm: her telin iki ucu arasında süreklilik olmalı, HUB75 başlıklarında komşu pinler
-   arasında kısa devre olmamalı.
-
-Kesim boyu düz mesafenin 1.3 katı artı iki uç için 10 mm, 5 mm'ye yuvarlanmış:
-
-| Tel | Net | Kesim |
-|---|---|---|
-| W1 | DHT_DATA | 30 mm |
-| W2 | +3V3 | 55 mm |
-| W3 | +3V3 | 25 mm |
-| W4 | +3V3 | 35 mm |
-| W5 | GND | 25 mm |
-| W6 | +5V | 45 mm |
-| W7 | GND | 35 mm |
-| W8 | GND | 30 mm |
-| W9 | HUB_LAT2 | 30 mm |
-| W10 | GND | 25 mm |
-| W11 | HUB_B1 | 15 mm |
-| W12 | HUB_R2 | 25 mm |
-| W13 | HUB_LAT | 30 mm |
-| W14 | HUB_ADDR_E | 30 mm |
-| W15 | HUB_OE | 30 mm |
-| W16 | HUB_R1 | 20 mm |
-| W17 | HUB_ADDR_E | 25 mm |
-| W18 | HUB_G1 | 15 mm |
-| W19 | HUB_B2 | 25 mm |
-
-Bileşen yüzünden geçen klasik tel köprüler de denendi. Tel parça gövdesinin altından geçemez ve
-üç HUB75 başlığının gövdeleri arasında yalnız 3.8 mm kalıyor. Freerouting bu kısıtla kartı
-tamamlayamadı, bu yüzden teller bakır yüzde.
+Tek yüz plaketle yapılacak sürüm ayrı bir karttır: 150 × 100 mm, tek pozlama, bakır yüzde 3 tel,
+DevKit pin adları bakırda yazılı. Anlatım ve dosyalar: [TEK-YUZ.md](TEK-YUZ.md).
 
 ## İsteğe bağlı: UV lehim maskesi
 Delmeden önce alt yüze UV lehim maskesi sür. UVtools'ta Edge_Cuts.gko ve B_Mask.gbs ile yeni dosya
@@ -262,7 +200,6 @@ $PY gen_carrier.py --diy sch     # aynı şematik, ayrı proje
 $PY gen_carrier.py --diy pcb     # SMD'ler alta, delikli pedler yalnız altta, üstte delik yasakları
 $PY gen_carrier.py --diy route   # 6 deneme, DRC temiz olanlardan en az vialı kalır
 $PY gen_carrier.py --diy fab     # gerber + çerçeve + delik + montaj çizimleri + .goo + görseller
-$PY gen_carrier.py --ss fab      # tek yüz: tel listesi + A4 tel haritası (aynı DIY kartından)
 ```
 
 - `fab` aşaması ERC/DRC sıfır değilse durur. Ayrıca iki bakır katmanın sınır kutusunun kartın
