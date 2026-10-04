@@ -21,9 +21,15 @@ POZ, CNC, ISL, HOT, ELK = ('1 Pozlama', '2 CNC portal', '3 Islak istasyon', '4 H
 # (modul, kalem, ozellik, adet, birim, birim_fiyat|None, satici, url, stok, dogrulandi, not)
 BOM = [
     # --- 1. UV LCD maske pozlama unitesi ---
-    (POZ, 'Mono LCD 4K', 'Phrozen Sonic Mighty 4K, 9.3", 3840x2400, ~52 µm, ~200x125 mm; MIPI FPC (HDMI yok)', 1, 'adet', 11280.00,
-     '3Dream', 'https://store.3dream.com.tr/products/phrozen-lcd-ekran', 'Stokta', 'evet',
-     'ESP32-P4 için en uygun (kare ~9 MB). Ucuz alt.: Elegoo Saturn 2/8K 10" 7680x4320, 4.700 TL, 3Dream, stokta; 8K kare P4 PSRAM\'ine sığmaz. Init dizisi yayımlanmamış, deneyle çıkarılacak.'),
+    (POZ, 'Mono LCD 10.3" 8K (Aptus)', 'Aptus DBM103M8K01, 7680x4320, ~30 µm, ~228x128 mm (hesap), LTPS, MIPI 50 pin', 2, 'adet', None,
+     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/10-3-inch-8k-7680x4320-mipi-50pin-mono-lcd-screen', 'Numune / teklif', 'hayır',
+     'Üretici kaynağı (yedek parça değil). Fiyat, MOQ, 405 nm geçirgenlik, UV ömrü, cam kalınlığı sorulacak (e-posta taslağı hazır). 150x100 kartı kapsar.'),
+    (POZ, 'HDMI → MIPI sürücü kartı (Aptus)', 'Aptus panel için özel HDMI-MIPI kart', 2, 'adet', None,
+     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/10-3-inch-8k-7680x4320-mipi-50pin-mono-lcd-screen', 'Numune / teklif', 'hayır',
+     'Panel MIPI zamanlamasını çözmeden HDMI ile sürülür. Giriş çözünürlüğü/EDID ve mono piksel paketlemesi sorulacak.'),
+    (POZ, 'Raspberry Pi 5 8 GB', 'Panelin HDMI kaynağı (pozlama görüntüsü); ürün için Compute Module 5', 1, 'adet', 12010.34,
+     'Robotistan', 'https://www.robotistan.com/raspberry-pi-5-8gb', 'Stokta', 'evet',
+     'Pi 5 4 GB her yerde tükenmiş (~6.900–8.000 TL). Ürün: CM5 2 GB/16 GB 6.228,05 TL stokta + CM5 IO Board 1.260,79 TL (Robotistan).'),
     (POZ, 'UV LED ışık modülü', 'Anycubic Photon Mono M7 Pro ışık kartı, 405 nm matris, 10" sınıfı', 1, 'adet', 4230.00,
      '3Dream', 'https://store.3dream.com.tr/products/anycubic-uv-led-modulu', 'Stokta', 'evet',
      'Gerilim/akım sayfada yok: kart etiketinden ölçülmeli. Alt.: Creality Halot Lite/Sky UV light, Robo90 470,40 TL (fiyat şüpheli düşük, teyit et). Gerçek 405 nm COB TR\'de yok → Yurt dışı sayfası.'),
@@ -36,12 +42,12 @@ BOM = [
     (POZ, 'Sabit akım LED sürücü', 'XL4015 ekranlı DC-DC, CC+CV, giriş ≤38 V, 5 A', 1, 'adet', 418.45,
      'Direnc.net', 'https://www.direnc.net/xl4015-display-dc-dc-power-modul', 'Stokta', 'evet',
      'Direnc\'in 98,80 TL\'lik "XL4015 5A Ayarlanabilir" modülü sabit akım DEĞİL. Ürün için Mean Well LDD-H (PWM kısılabilir) → Yurt dışı.'),
-    (POZ, 'Soğutucu + fan', '80x80x54 mm alüminyum işlemci soğutucusu, 12 V 0,15 A fan', 1, 'adet', 390.00,
-     'Motorobit', 'https://www.motorobit.com/80x80x54mm-sogutuculu-fan-islemci-fani', 'Stokta', 'evet',
-     'Braket yok. Işık modülü büyükse alt.: 200x195x10 mm alüminyum plaka, Motorobit 1.200 TL + fan.'),
-    (POZ, 'ESP32-P4 geliştirme kartı', 'Waveshare ESP32-P4-NANO: MIPI-DSI/CSI, 32 MB PSRAM, 16 MB flash, C6 ile Wi-Fi 6', 1, 'adet', 2400.00,
-     'Motorobit', 'https://www.motorobit.com/esp32-p4-nano-yuksek-performansli-gelistirme-karti', 'Stokta', 'evet',
-     'Alt.: Waveshare ESP32-P4-Pico, Robotistan 1.646,73 TL, stokta. Espressif Function-EV-Board TR\'de yok.'),
+    (POZ, 'COB soğutucu seti', '50 W COB alüminyum soğutucu 90x90x20 mm, LED yuvası 25.5x25.5 mm, vida arası 34 mm (+60° lens + 220 V kablo)', 1, 'set', 660.00,
+     'Motorobit', 'https://www.motorobit.com/50w-cob-led-aluminyum-sogutucu-60-derece-lens-kablo-seti', 'Stokta (10+)', 'evet',
+     'LED ve sürücü YOK. Yalnız soğutucu kullanılır: 60° lens ışığı yayar (paralel ışık gerekir), 220 V kablo sürücüsüz şebeke COB\'u içindir. COB, Fresnel odağına konur.'),
+    (POZ, 'Fan 92 mm', '92x92x25, 12 V 0,26 A, 3 kablo', 1, 'adet', 72.00,
+     'Motorobit', 'https://www.motorobit.com/92x92x25mm-12v-026a-fan-3-kablolu-sari', 'Stokta', 'evet',
+     'Soğutucuya (90 mm) oturur. Kalite/PWM alt.: NMB 92 mm 4 kablo 420 TL (Motorobit).'),
     (POZ, 'Sıcaklık sensörü (LED)', 'DS18B20, M10 vidalı prob, 1 m', 1, 'adet', 312.00,
      'Motorobit', 'https://www.motorobit.com/ds18b20-m10-dijital-sicaklik-sensoru-1-metre', 'Stokta', 'evet',
      'Ucuz alt.: çıplak DS18B20 36 TL (Motorobit) ya da 10k NTC 6,74 TL (Direnc).'),
@@ -239,6 +245,20 @@ BOM = [
 
 # Ana listeye girmeyen secenekler: (modul, kalem, ozellik, fiyat|None, satici, url, durum, not)
 ALT = [
+    (POZ, 'Aptus 6.6" 4K mono LCD', 'DBM066M4K01, 4098x2560, 35 µm, aktif alan 143.43x89.60 mm, MIPI 50 pin (master+slave)', None,
+     'Aptus Display', 'https://www.aptusdisplay.com/products/6-6-inch-4k-4098x2560-mono-lcd-display', 'Teklif',
+     'Daha ucuz/yaygın boy ama 150x100 kart SIĞMAZ (en büyük kart ~140x85). HDMI kartı var.'),
+    (POZ, 'Phrozen Sonic Mighty 4K LCD (yedek parça)', '9.3", 3840x2400, ~52 µm', 11280.00,
+     '3Dream', 'https://store.3dream.com.tr/products/phrozen-lcd-ekran', 'Stokta',
+     'Aptus numunesi gelene kadar deney için; ürüne girmez.'),
+    (POZ, 'Waveshare ESP32-P4-NANO', 'MIPI-DSI 2 hat, 32 MB PSRAM', 2400.00,
+     'Motorobit', 'https://www.motorobit.com/esp32-p4-nano-yuksek-performansli-gelistirme-karti', 'Stokta',
+     'Aptus panelleri (8K / çift MIPI) için yetersiz; HDMI kartı + Raspberry Pi yolu seçildi.'),
+    (POZ, 'Raspberry Pi CM5 2 GB / 16 GB + IO Board', 'Ürün için gömülü HDMI kaynağı', 7488.84,
+     'Robotistan', 'https://www.robotistan.com/raspberry-pi-compute-module-cm5002016', 'Stokta',
+     'CM5 6.228,05 + IO Board 1.260,79 (https://www.robotistan.com/raspberry-pi-compute-module-5-ioboard).'),
+    (POZ, 'Soğutucu + fan 80x80x54', 'İşlemci soğutucusu, 12 V fan', 390.00,
+     'Motorobit', 'https://www.motorobit.com/80x80x54mm-sogutuculu-fan-islemci-fani', 'Stokta', 'COB seti yerine alternatif.'),
     (CNC, 'Hazır CNC3018 kit (lazerli)', '300x180x45 mm, 775 mil (ER11 değil), düz mil + T-vida, GRBL', 26700.00,
      'Motorobit', 'https://www.motorobit.com/cnc3018-15000mw-lazerli-cnc-makinesi-kesim-tezga', 'Stokta (8)',
      'v0 hızlı deneme. ±0,1 mm: ±0,02 hedefini tutmaz. Aynı kit Robotistan 28.307,95 TL.'),
@@ -289,6 +309,7 @@ ALT = [
 
 # Turkiye'de bulunamayanlar
 YURTDISI = [
+    (POZ, 'Aptus 10.3" 8K mono LCD + HDMI→MIPI kartı', 'Ürün paneli (numune 2 adet).', 'Aptus Display, Shenzhen: info@aptusdisplay.com (teklif/numune).'),
     (POZ, 'HDMI sürücü kartlı mono LCD kiti (2K/4K)', 'İlk ışık motoru deneyi; panel arayüzünü çözmeden pozlama.',
      'AliExpress: "mono LCD 4K HDMI driver board" (mono olduğunu kontrol et, çoğu ilan RGB).'),
     (POZ, '405 nm COB LED 10–50 W', 'Kendi ışık motoru tasarımı.', 'AliExpress / LED üreticisi; TR\'de yalnız 395–400 nm 3 W LED var.'),
@@ -299,13 +320,38 @@ YURTDISI = [
     (CNC, 'Ön yüklü çift somun ya da C5 taşlanmış bilyalı vida', '±0,02 mm tekrarlanabilirlik.', 'Önce Mermak / Rulmansepetim\'e sor; yoksa Hiwin/TBI distribütörü.'),
 ]
 
+
+# Kesim/delme yontemleri karsilastirmasi (FR4 1,6 mm, 35 µm bakir, 150x100 kart)
+# (yontem, ornek makine, fiyat_TL|None, fiyat notu, url, kesim, delik, bakir isleme, dezavantaj, karar)
+KESIM = [
+    ('CNC freze (ER11 mil)', 'Kendi yapım portal (bu BOM, CNC modülü)', 37854.21, 'BOM toplamı (pim, plaka hariç)', '',
+     'Temiz: 1,6–2,4 mm mısır koçanı freze', 'Evet, 0,3–3 mm, düz ve temiz', 'İzolasyon frezesi yapılabilir (yavaş)',
+     'Cam elyaf tozu: vakum/emiş şart; uç aşınması (sarf)', 'SEÇİLEN: kesim + delme'),
+    ('CNC freze (hazır kit)', 'CNC3018 lazerli kit (775 mil, T-vida, ±0,1 mm)', 26700.00, 'Motorobit, stokta', 'https://www.motorobit.com/cnc3018-15000mw-lazerli-cnc-makinesi-kesim-tezga',
+     'Temiz, ama salgı ve boşluk yüksek', 'Evet; 0,6 mm altı uç kırılır', 'Sınırlı', 'GRBL (GPL), ±0,1 mm', 'Yalnız v0 denemesi'),
+    ('CNC freze (hazır, rayli)', 'DRNC 3025 (bilyalı vida + 15 mm ray, 600 W ER11)', 104611.61, 'Direnc, stokta (1)', 'https://www.direnc.net/drnc-3025-masaustu-cnc-ve-lazer-makinesi',
+     'Temiz', 'Evet', 'Evet', 'Pahalı; kapalı yazılım ürüne girmez', 'Referans/ölçüm makinesi olabilir'),
+    ('Diyot lazer 10–40 W (455 nm)', 'Creality Falcon A1 10 W / Falcon2 Pro 40 W', 28382.64, '10 W Robotistan stokta; 40 W 85.147,91', 'https://www.robotistan.com/creality-falcon-a1-lazer-gravur-ve-kesici-10w',
+     'HAYIR: cam elyaf mavi ışığı emmez, epoksi kömürleşir', 'Hayır', 'Bakıra işlemez; boya/lak maskesi yakılabilir (boya+lazer+aşındırma)',
+     'FR4 yanınca bromlu zehirli duman', 'Kesim için uygun değil'),
+    ('CO2 lazer 40–55 W (10,6 µm)', 'K40 tipi 40 W (ABP/Xenon) … xTool P2S 55 W', None, '900–2.350 $ + KDV (K40); P2S 239–463 bin TL', 'https://www.makinaturkiye.com/40w-co2-lazer-kase-makinesi-p-172299',
+     'Kötü: kenar kömürleşir (iletken olabilir), cam erir', 'Kötü (konik, kömürlü)', 'Hayır: bakır 10,6 µm\'yi yansıtır', 'Zehirli duman, kenar kalitesi', 'Uygun değil'),
+    ('Fiber lazer 20–50 W (1064 nm, galvo)', 'Roboyek 20 W Raycus, 300x300 mm', 122000.00, '30 W 150.000; 50 W 190.000 (KDV belirtilmemiş)', 'https://roboyek.com/urun/roboyek-20w-fiber-lazer-markalama-makinasi/',
+     'Çok paso ile mümkün ama yavaş ve kömürlü', 'Zor (çok paso, konik)', 'EVET: bakırı doğrudan söker (kimyasalsız izolasyon)',
+     'Pahalı, Sınıf 4, duman filtresi, galvo alanı sınırlı', 'v2: kimyasalsız izolasyon için değerlendirilebilir'),
+    ('UV lazer 5 W (355 nm)', 'Ayka JPT 5 W, 100x100 mm', 382653.96, 'KDV dahil, stokta', 'https://www.aykalazer.com/uv-lazer-markalama-makinasi-jpt-5w-ada',
+     'Temiz ("soğuk" kesim), ama 1,6 mm\'de yavaş', 'İnce mikro-delik iyi; büyük delik yavaş', 'Evet, en temiz', 'Çok pahalı; sanayide ayırma (depaneling) için', 'Ürün maliyetine uymaz'),
+    ('405 nm düşük güç lazer (pozlama)', 'KALE 300 mW 405 nm modül', 7476.47, 'Grup Elektronik, 1 adet', 'https://www.grupelektronik.com/urun/300mw-405nm-mor-otesi-ultraviole',
+     'Hayır', 'Hayır', 'Yalnız lak/dry film pozlar (doğrudan lazer pozlama)', 'Yavaş tarama', 'LCD yolunun yedeği'),
+]
+
 UYARILAR = [
     'Fiyatlar 2026-10-04\'te görülen KDV dahil TL fiyatlarıdır; stok ve fiyat her gün değişir. USD bazlı satıcılar (Rulmansepetim, Meon, cnc-marketi) kurla oynar.',
     'Doğrulandı = "hayır" satırları (Hepsiburada, Trendyol, n11, Amazon.com.tr, Akakçe, Koçtaş vb.) yalnız arama özetinden; siparişten önce sayfada kontrol et.',
     'Fiyatı boş satırlar toplamda yok sayılır (Özet sayfasında sayısı yazar): ısıtıcı plaka, konum pimleri, turuncu akrilik, atık bidonu.',
     'Kargo, gümrük, cıvata/somun, alüminyum plakalar, 3D baskı parçalar ve PCB\'ler dahil değil.',
     'Kimyasallar: bazı satıcılar şahıslara satmıyor (Rokim/laboratuvar siteleri, Kimyacınız aseton), Kimyacınız HCl\'yi kargolamıyor. H2O2 ADR 5.1, HCl ADR 8: kargo reddedebilir. Ticari aşamada şirket faturasıyla al.',
-    'Mono LCD panellerin init dizisi/arayüzü yayımlanmamış: ESP32-P4 ile sürmek deneysel. Satılan ürün için panel üreticisinden datasheet (NDA/MOQ) gerekir; yedek parçayı tersine mühendislik yalnız prototip içindir.',
+    'Mono LCD: Aptus (üretici) panelleri HDMI→MIPI kartıyla Raspberry Pi\'den sürülür; ESP32-P4 bu panellere yetmez (8K veri hızı, çift MIPI). Fiyat/MOQ/datasheet Aptus teklifiyle netleşir; teklif gelene kadar pozlama toplamı eksik.',
     'CNC: hazır 3018 kitleri ±0,1 mm; hedef ±0,02 mm için ray + bilyalı vida (bu BOM) ve düşük salgılı mil gerekir. Kitlerle gelen GRBL GPL lisanslı: ürüne girmez.',
     'Akvaryum ısıtıcı termostatı ~32–34 °C\'de keser; 40–50 °C aşındırma için ESP32 + SSR ile sür ve aşırı sıcaklık kesicisi ekle.',
     'Bakırlı atık kanalizasyona dökülmez. HCl buharı metalleri paslandırır: ıslak istasyon CNC ve elektronikten ayrı, havalandırmalı kabinde.',
@@ -396,6 +442,19 @@ def main():
     for row in al.iter_rows(min_row=2):
         row[3].number_format = TL
         link(row[5])
+
+
+    # --- Kesim karsilastirma ---
+    kc = wb.create_sheet('Kesim karşılaştırma', 1)
+    header(kc, ['Yöntem', 'Örnek makine', 'Fiyat (TL)', 'Fiyat notu', 'Link', 'FR4 kesim', 'Delik', 'Bakır işleme',
+                'Dezavantaj', 'Karar'], [24, 32, 14, 30, 36, 30, 26, 32, 32, 26])
+    for row in KESIM:
+        kc.append(list(row))
+    body_style(kc, {1, 2, 4, 6, 7, 8, 9, 10})
+    for row in kc.iter_rows(min_row=2):
+        row[2].number_format = TL
+        link(row[4])
+    kc.cell(row=2, column=10).font = Font(bold=True)
 
     # --- Yurt disi ---
     yd = wb.create_sheet('Yurt dışı')
