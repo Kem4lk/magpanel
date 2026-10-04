@@ -424,16 +424,17 @@ def stl_out():
     for f in os.listdir(d):
         if f.endswith('.stl'):
             os.remove(os.path.join(d, f))
-    done = {}
-    for p in PARTS:
+    done, best = {}, {}
+    for p in PARTS:                       # ayni anahtarli parcalardan en basik olani (baski yonu) yazilir
         if p['kind'] != 'baski':
             continue
         done[p['key']] = done.get(p['key'], 0) + 1
-        if done[p['key']] > 1:
-            continue
-        m = p['mesh'].copy()
+        if p['key'] not in best or p['mesh'].extents[2] < best[p['key']].extents[2]:
+            best[p['key']] = p['mesh']
+    for key, mesh in best.items():
+        m = mesh.copy()
         m.apply_translation(-m.bounds[0])
-        m.export(os.path.join(d, p['key'] + '.stl'))
+        m.export(os.path.join(d, key + '.stl'))
     return done
 
 
