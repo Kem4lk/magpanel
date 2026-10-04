@@ -146,6 +146,75 @@ def H3():
     return P, L, info, (860, -1000, 520)
 
 
+def H4():
+    """H1 + doner kaset: cekmece = R ekseni (Y), kasetteki disk = θ, delici sabit (onde). Plaket hep ayni pimlerde."""
+    P, L = [], []
+    X0, X1, Y0, Y1 = -140, 140, -115, 115
+    ku.feet(P, X0, X1, Y0, Y1, -6)
+    add(P, box(X0, X1, Y0, Y1, -6, 0), ku.WOOD)
+    ys, yl = -80.0, 20.0                   # sabit delici y; LCD merkezi y
+    for sx in (-1, 1):
+        add(P, cyl('y', (sx * 105, 8), 4, Y0 + 5, Y1 - 5, seg=20), ku.ROD)
+    L.append(('Çekmece rayları (R ekseni, Ø8)', (105, Y0 + 5, 12)))
+    yc = -30.0                             # gosterim: delme konumunda
+    add(P, box(-108, 108, yc - 105, yc + 105, 12, 16), ku.PRINT)                       # kaset arabasi
+    add(P, cyl('z', (0, yc), 98, 16, 24, seg=96), '#d98c4a')                             # doner disk
+    add(P, g.tube('z', (0, yc), 98.6, 97.4, 17, 23), '#222')
+    add(P, box(-80, 80, yc - 50, yc + 50, 24, 25.6), ku.PCB)
+    for sx in (-1, 1):
+        add(P, cyl('z', (sx * 76, yc), 1.5, 24, 29, seg=12), ku.ALU)
+    add(P, g.m28byj((104, yc - 60, 16), (0, 0, 1), (1, 0, 0)), ku.MOT)
+    L += [('Döner disk (θ, kenar kayışı ≈16:1)', (98, yc, 22)), ('θ motoru (arabada)', (104, yc - 60, 16))]
+    add(P, g.m28byj((-7, Y1 - 14, 18), (1, 0, 0), (0, 0, 1)), ku.MOT)
+    add(P, box(-3, 3, Y0 + 20, Y1 - 14, 7, 8.4), '#222')
+    L.append(('R motoru + kayış (arka)', (0, Y1 - 14, 30)))
+    lcd_bottom = 34.0
+    z0 = lcd_bottom + 63.3 + F
+    ku.light_engine(P, L, 0, yl, z0, up=False)
+    # sabit delici (onde): Z milleri + araba + 775 + Z motoru, cerceveye sabit braket
+    tip = 25.6 - 2.2
+    nose = tip + 28
+    add(P, cyl('z', (0, ys), 0.4, tip, nose + 10, seg=12), '#e0e0e0')
+    add(P, cyl('z', (0, ys), 9.5, nose, nose + 32), ku.ALU)
+    add(P, cyl('z', (0, ys), 21, nose + 36, nose + 103), ku.MOT)
+    for sx in (-1, 1):
+        add(P, cyl('z', (sx * 30, ys - 22), 4, nose + 20, nose + 125, seg=20), ku.ROD)
+    add(P, box(-40, 40, ys - 32, ys - 12, nose + 50, nose + 95), ku.PRINT)
+    add(P, box(-45, 45, Y0, ys - 12, nose + 125, nose + 135), ku.PRINT)
+    add(P, g.m28byj((0, ys - 22, nose + 150), (0, 0, -1), (0, -1, 0)), ku.MOT)
+    L += [('Sabit delici: 775 + Z (yalnız aşağı-yukarı)', (40, ys - 32, nose + 95)),
+          ('Toz emme ağzı', (30, ys - 10, nose - 10))]
+    add(P, g.tube('z', (0, ys), 16, 13, tip + 5, nose - 4), '#555', 0.6)                  # emis agzi
+    add(P, box(100, 136, 70, 110, 40, 120), ku.EL)
+    L.append(('Elektronik (sağ arka)', (136, 70, 120)))
+    top = z0 + 6
+    ku.frame(P, X0, X1, Y0, Y1, 0, top)
+    ku.panels(P, X0, X1, Y0, Y1, 0, top)
+    ku.vents(P, X0, -30, 70, top - 40, side=-1)
+    ku.control_panel(P, L, X1, -60, 170)
+    add(P, box(X0, X1, Y0, Y1, top, top + 4), ku.WOOD)
+    zi = insul(P, [], -105, 105, -80, 80, top + 4, label='')
+    ht = ku.hotplate(P, L, 0, 0, zi)
+    info = dict(
+        ad='H4. Üstten pozlama + döner kaset + sabit delici', mesafe='Delici sabit; plaket çekmece (R) + disk (θ) ile gezer',
+        floors=[('Ayak + taban', 16), ('Kaset (ray + disk + plaket)', 26), ('Işık motoru / delici', z0 - 26),
+                ('Çatı + yalıtım + hot plate', ht - z0)],
+        akış=['1  Plaketi diskteki pimlere tak (bakır yukarı). Çekmece arkaya, LCD\'nin altına gider, kalkar, pozlar',
+              '2  Islak işlem → plaketi aynı pimlere geri tak',
+              '3  Çekmece (R) ve disk (θ) her deliği öndeki sabit delicinin altına getirir → Z ile del',
+              '4  Montaj → çatıdaki hot plate ile reflow'],
+        arti=['Delme küpün içine girdi: hâlâ 280 × 230 tabanda',
+              'Tek kaset, tek pim: pozlama ile delik ofseti bir kez kalibre edilir',
+              'Delici yalnız Z\'de: rijit, sabit, toz emmesi tek noktada; disk kenarı 16:1 → ~0,02 mm/adım'],
+        eksi=['Kutupsal koordinat (R-θ) yazılımı ve disk merkez kalibrasyonu',
+              'Talaş LCD\'nin altına taşınmamalı: emme ağzı + fırça şart; delici titreşimi LCD\'den yalıtılmalı',
+              'Plaket merkezini delerken kaset ön yüzden ~65 mm dışarı çıkar (çekmece ağzı açık kalmalı)'])
+    drop = {'R motoru + kayış (arka)', 'θ motoru (arabada)', 'Soğutucu + fan', 'Fresnel mercek', 'Elektronik (sağ arka)',
+            'Dokunmatik ekran + acil stop'}
+    L = [l for l in L if l[0] not in drop]
+    return P, L, info, (760, -900, 470)
+
+
 def main():
     import matplotlib
     matplotlib.use('Agg')
@@ -153,7 +222,7 @@ def main():
     from PIL import Image
 
     res = []
-    for i, f in enumerate((H1, H2, H3), 1):
+    for i, f in enumerate((H1, H2, H3, H4), 1):
         P, L, info, cam = f()
         lo = np.min([m.bounds[0] for m, c, o in P], axis=0)
         hi = np.max([m.bounds[1] for m, c, o in P], axis=0)
