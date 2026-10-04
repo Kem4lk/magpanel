@@ -345,6 +345,51 @@ KESIM = [
      'Hayır', 'Hayır', 'Yalnız lak/dry film pozlar (doğrudan lazer pozlama)', 'Yavaş tarama', 'LCD yolunun yedeği'),
 ]
 
+# PCB delme makinesi v0 (delme/gen_delme.py): (kalem, ozellik, adet, birim_fiyat|None, satici, url, stok, dogrulandi, not)
+DELME = [
+    ('28BYJ-48 5 V + ULN2003', 'X, Y, Z eksenleri', 3, 54.05, 'RobitShop',
+     'https://www.robitshop.com/urun/28-byj-48-reduktorlu-step-motor-ve-uln2003-step-motor-surucu-karti-mavi', 'Var (397)', 'evet',
+     'Alt.: Direnc 92,99, Robotistan 100,98. 12 V sürümü TR\'de yok.'),
+    ('LM8UU', '8 mm lineer rulman (X 4, Y 4, Z 4)', 12, 42.00, 'Motorobit',
+     'https://www.motorobit.com/3d-yazici-icin-rulman-lm8uu', 'Var (75)', 'evet', ''),
+    ('Krom mil Ø8, 300 mm', 'Kes: X 2x262, Y 2x250, Z 2x110 (bir milden)', 5, 138.00, 'Motorobit',
+     'https://www.motorobit.com/8mm-induksiyonlu-mil-krom-kapli-300mm', 'Var (26)', 'evet',
+     '250/330 mm TR\'de yok. Sertleştirilmiş mil taşla (avuç taşlama) kesilir; yerel lineer rulmancıda kestirmek daha ucuz olabilir.'),
+    ('GT2 kayış 6 mm, 2 m', 'X 620 + Y 596 mm', 1, 116.24, 'Direnc.net',
+     'https://www.direnc.net/gt2-zamanlama-kayisi-6mm-2-metre', 'Var (22)', 'evet', '1 m yetmez.'),
+    ('GT2 dişsiz rulmanlı avara (3 mm)', 'Hazır avara; baskı avara yerine', 2, 66.00, 'Motorobit',
+     'https://www.motorobit.com/gt2-dissiz-3mm-rulmanli-kasnak', 'Var (524)', 'evet',
+     '623ZZ TR\'de bulunamadı (624ZZ baskı avaraya sığmaz). Baskı kasnaklar yine 28BYJ miline (D 5/3 mm).'),
+    ('RS775 DC motor, 5 mm mil', '12–36 V, rulmanlı, "3000 rpm"', 1, 270.22, 'RobitShop',
+     'https://www.robitshop.com/urun/rs775-dc-motor-rulmanli-12v-3000-rpm-sarjli-matkap-motoru', 'Var (12)', 'evet',
+     'PCB için devir düşük (karbür ~10.000 rpm sever): yavaş ilerle ya da daha hızlı 775 bul (pazaryeri, doğrulanmadı). TR\'de bulunan tek 5 mm milli 12 V 775.'),
+    ('Mandren / pens seti 5 mm mil', '10 pens 0,5–3,2 mm (3,175 saplı karbür uçları tutar)', 1, 318.00, 'Motorobit',
+     'https://www.motorobit.com/el-matkabi-mandren-seti-5mm', 'Var (45)', 'evet',
+     'JT0 yerine pens tipi. MAN02 (≤3 mm) ve MAN01 (≤2,4 mm mil) uymaz.'),
+    ('T8 trapez mil 400 mm + pirinç somun', 'T8x8; 150 mm\'ye kesilir', 1, 300.00, 'Motorobit',
+     'https://www.motorobit.com/3d-yazici-vidali-mil-somun-400mm-40-cm-t8-8mm', 'Var (56)', 'evet',
+     '100–150 mm TR\'de yok. Tork yetmezse T8x2 (4 kat kuvvet, 1/4 hız).'),
+    ('Kaplin 5x8', 'Z motoru – T8', 1, 45.00, 'Motorobit',
+     'https://www.motorobit.com/aluminyum-sabit-kaplin-5x8mm', 'Var (100)', 'evet', 'Esnek alt.: 84 TL (Motorobit).'),
+    ('Mikro switch', 'DM1-00P-130G, X/Y/Z sıfırlama', 3, 4.80, 'Motorobit',
+     'https://www.motorobit.com/dm1-00p-130g-mikro-switch', 'Var', 'evet', ''),
+    ('12 V 3 A adaptör', '5,5 mm jak; spindle + 5 V düşürücü girişi', 1, 240.00, 'Motorobit',
+     'https://www.motorobit.com/12v-3a-adaptor-gs-p120300e553', 'Var (58)', 'evet', ''),
+    ('5 V 3 A düşürücü', 'LM2596-5V; 3 x 28BYJ ~0,75 A', 1, 160.14, 'Robotistan',
+     'https://www.robotistan.com/5v-3a-voltaj-regulator-karti-lm2596-5v', 'Var (536)', 'evet', ''),
+    ('MOSFET kartı', '15 A PWM, 3,3 V tetik (spindle)', 1, 93.21, 'Robotistan',
+     'https://www.robotistan.com/15a-400w-pwm-kontrollu-mosfet-anahtarlama-karti', 'Var (174)', 'evet', '+ 1N5819 diyot 1,20 TL (Motorobit).'),
+    ('M3/M4 vida + somun', 'Direnc paketleri (M3 16 mm, M3 somun, M4 16 mm, M4 somun)', 1, 92.00, 'Direnc.net',
+     'https://www.direnc.net/m3-15mm-ysb-20-adet', 'Var', 'hayır', 'Toplam paket fiyatı, arama verisinden.'),
+    ('PCB karbür uç seti', '0,3–1,2 mm, 10 adet, 3,175 sap', 1, 270.00, 'Motorobit',
+     'https://www.motorobit.com/pcb-matkap-ucu-seti-03-1', 'Var', 'evet', '0,6 mm altı uçlar salgıya hassas.'),
+    ('ESP32-S3', 'Kullanıcıda var', 1, 0.00, '—', '', '—', '—', ''),
+    ('PETG filament', '~300 g (16 parça, %40 doluluk; kaba tahmin)', 1, None, '—', '', '—', 'hayır', 'Elde varsa 0.'),
+    ('Kontrplak / MDF', 'Taban 370x357 (18), kolon 160x278, Z plakası 110x175, 2 yanak 105x175 (18), tabla 180x120 (9), lata 220x40 (8), feda 164x104 (3)', 1, None,
+     'Yerel kesim', '', '—', 'hayır', 'Ölçüler delme/README.md.'),
+    ('Hizalama pimi Ø3', 'DIN 6325 3x16 ya da 3 mm gümüş çelik', 2, None, 'Hırdavat', '', '—', 'hayır', 'TR e-ticarette bulunamadı.'),
+]
+
 UYARILAR = [
     'Fiyatlar 2026-10-04\'te görülen KDV dahil TL fiyatlarıdır; stok ve fiyat her gün değişir. USD bazlı satıcılar (Rulmansepetim, Meon, cnc-marketi) kurla oynar.',
     'Doğrulandı = "hayır" satırları (Hepsiburada, Trendyol, n11, Amazon.com.tr, Akakçe, Koçtaş vb.) yalnız arama özetinden; siparişten önce sayfada kontrol et.',
@@ -444,6 +489,25 @@ def main():
         link(row[5])
 
 
+
+    # --- Delme makinesi v0 ---
+    dm = wb.create_sheet('Delme makinesi v0', 1)
+    header(dm, ['Kalem', 'Özellik', 'Adet', 'Birim fiyat (TL)', 'Toplam (TL)', 'Satıcı', 'Link', 'Stok', 'Doğrulandı', 'Not'],
+           [30, 44, 7, 14, 14, 14, 40, 12, 11, 56])
+    for i, row in enumerate(DELME, 2):
+        k, oz_, n_, f_, sat, url, stok, dog, nt = row
+        dm.append([k, oz_, n_, f_, '=IF(D%d="","",C%d*D%d)' % (i, i, i), sat, url, stok, dog, nt])
+    last = len(DELME) + 1
+    dm.append(['TOPLAM', '', '', '', '=SUM(E2:E%d)' % last, '', '', '', '', 'Fiyatsız satırlar hariç; kargo hariç'])
+    body_style(dm, {1, 2, 10})
+    for row in dm.iter_rows(min_row=2):
+        row[3].number_format = row[4].number_format = TL
+        link(row[6])
+        if row[3].value is None and row[0].value != 'TOPLAM':
+            row[8].fill = WARN
+    for c in dm[last + 1]:
+        c.font = Font(bold=True)
+
     # --- Kesim karsilastirma ---
     kc = wb.create_sheet('Kesim karşılaştırma', 1)
     header(kc, ['Yöntem', 'Örnek makine', 'Fiyat (TL)', 'Fiyat notu', 'Link', 'FR4 kesim', 'Delik', 'Bakır işleme',
@@ -480,6 +544,8 @@ def main():
         print('%-18s %12.2f TL' % (m, tot.get(m, 0)))
     print('%-18s %12.2f TL  (%d kalem, %d fiyatsiz)' % ('TOPLAM', sum(tot.values()), len(BOM),
                                                         sum(1 for r in BOM if r[5] is None)))
+    dt = sum(r[2] * r[3] for r in DELME if r[3] is not None)
+    print('Delme makinesi v0  %.2f TL (%d kalem, %d fiyatsiz)' % (dt, len(DELME), sum(1 for r in DELME if r[3] is None)))
     print('->', OUT)
 
 

@@ -44,7 +44,8 @@ hareketli olduğu bir düzenle (portal) mümkün.
 - **Y ekseni ortadan çekiliyor.** İki uç blok bir kontrplak lata ile bağlı, Y kayışı bu latanın ortasına bağlanıyor.
   Kayış bir yandan çekseydi tabla yanlamasına sıkışırdı.
 - **Z ekseni:** üçüncü 28BYJ, T8 mil, 2 Z mili ve 4 LM8UU. DVD mekanizması yerine bu kullanıldı.
-- **Spindle:** 775 motor ve JT0 mandren. MAN02 mandren 3,175 mm saplı karbür uçları tutmaz (en fazla 3 mm alıyor).
+- **Spindle:** 775 motor (5 mm mil) ve 5 mm mile takılan pens seti (0,5–3,2 mm). MAN02 mandren 3,175 mm saplı
+  karbür uçları tutmaz (en fazla 3 mm alıyor). Modeldeki "JT0 mandren" bu pens setinin yerini tutuyor.
 
 ## Parçalar
 
@@ -67,19 +68,21 @@ Z arabası (spindle kelepçeli), Z alt ve üst braket, Z motor köprüsü.
 | Çapraz lata (8 mm) | 220 × 40 |
 | Feda MDF (3 mm) | 164 × 104 |
 
-**Satın alınacak:**
-- 3 × 28BYJ-48 ve ULN2003
+**Satın alınacak:** fiyatlı liste `../bom-v0.xlsx`, "Delme makinesi v0" sayfasında. Toplam ~3.400 TL (KDV dahil,
+2026-10-04). Kargo, filament, kontrplak ve pimler bu toplama dahil değil.
+- 3 × 28BYJ-48 ve ULN2003 (RobitShop, tanesi 54 TL)
 - 12 × LM8UU
-- Ø8 mil: 2 × 262, 2 × 250, 2 × 110 mm
+- 5 × 300 mm krom mil. Kesilecek boylar: X 2 × 262, Y 2 × 250, Z 2 × 110 mm. 250 mm'lik mil
+  Türkiye'de bulunamadı.
 - 2 m GT2-6 kayış
-- 4 × 623ZZ (avaralar için)
-- T8 mil 150 mm, pirinç somun ve 5×8 kaplin
-- 775 motor ve JT0 mandren
+- 2 hazır dişsiz GT2 avara (3 mm rulmanlı). 623ZZ Türkiye'de bulunamadı; baskı avara yedek.
+- T8x8 400 mm mil ve somun (150 mm'ye kesilecek), 5×8 kaplin
+- RS775 motor ve 5 mm mile takılan pens seti
 - 3 mikro switch
-- 2 × Ø3 pim
-- 12 V 3 A adaptör ve 5 V düşürücü (28BYJ 5 V'luk)
-- MOSFET (spindle için)
-- M3/M4 vida takımı
+- 2 × Ø3 pim (hırdavattan)
+- 12 V 3 A adaptör ve LM2596 5 V düşürücü (28BYJ 5 V'luk)
+- MOSFET kartı ve 1N5819 diyot
+- M3/M4 vida ve somun
 
 ## Elektronik ve yazılım
 
@@ -98,7 +101,9 @@ Z arabası (spindle kelepçeli), Z alt ve üst braket, Z motor köprüsü.
 ## Henüz doğrulanmadı
 
 - Baskı toleransları (rulman sıkı geçmesi, kasnak dişi)
-- 775 motor ve JT0 mandrenin salgısı: 0,6 mm altındaki karbür uçlar için kritik
+- 775 motor ve pens setinin salgısı: 0,6 mm altındaki karbür uçlar için kritik
+- Spindle devri: Türkiye'de bulunan tek 5 mm milli 12 V 775 "3000 rpm" etiketli. Karbür uçlar ~10.000 rpm
+  ister; bu motorla yavaş ilerle ya da daha hızlı bir 775 bul.
 - 28BYJ'nin gerçek boşluğu ve kaçırdığı adım
 - Taban ve kolonun rijitliği
 
