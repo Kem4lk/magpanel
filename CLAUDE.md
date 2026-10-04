@@ -334,6 +334,14 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-60s … alt-85s, cerceve (üst yok). UVtools katman
   görüntüsünde çerçeve 157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
+## PCB üretim makinesi (2026-10-04, `pcb-makinesi/`) — ayrı, satılacak ürün
+- Kullanıcı Saturn'süz, tamamen kendi tasarımı bir makine istiyor: UV LCD maske pozlama (405 nm LED +
+  Fresnel + mono LCD, ESP32-P4 MIPI-DSI ile; PCB için ~50 µm / 4K sınıfı panel yeter), CNC ile önce delme +
+  3 mm pim hizalama (çift yüz otomatik hizalı), kupri klorür + ORP ıslak istasyon (ayrı kabin), reflow hot plate.
+- Kapalı ürün: GPL ürün yazılımı (grbl/grblHAL/FluidNC/Marlin/Klipper/LDGraphy) kullanılamaz.
+- `bom_v0.py` → `bom-v0.xlsx` (Türkiye satıcıları, 2026-10-04 fiyatları, ~92 bin TL). TR'de yok: HDMI'lı mono
+  LCD kiti, 405 nm COB, ORP kartı, UV engelleyici akrilik. En büyük risk: panel tedariki/datasheet (NDA/MOQ).
+
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
 firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).
