@@ -57,7 +57,7 @@ def light_engine(P, L, cx, cy, z0, up=True):
     add(P, box(cx - 77, cx + 77, cy - 49.5, cy + 49.5, *seg(59 + F, 60.3 + F)), LCD)         # LCD 154x99
     add(P, box(cx - 80, cx + 80, cy - 52.5, cy + 52.5, *seg(60.3 + F, 63.3 + F)), GLASS, 0.55)  # koruma cami
     L += [('UV LED 405 nm', (cx, cy, zz(46))), ('Soğutucu + fan', (cx - 46, cy - 46, zz(12))),
-          ('Fresnel mercek', (cx + 82, cy - 57, zz(48 + F))), ('6.6" mono LCD', (cx - 77, cy - 50, zz(61 + F)))]
+          ('Fresnel mercek', (cx + 82, cy + 57, zz(48 + F))), ('6.6" mono LCD', (cx - 77, cy - 50, zz(61 + F)))]
     return zz(63.3 + F)
 
 
