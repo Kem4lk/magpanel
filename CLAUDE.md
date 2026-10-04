@@ -278,7 +278,9 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   olduğu gibi görünür → alt Mirror kapalı, üst açık; doğrulama: kâğıtla provada iki yazı da TERS ve aynı köşede.
 - `fab-diy/saturn3/*.goo` (UVtoolsCmd varsa, `UVTOOLS_CMD=`): taban dosya SL1 arşivinden (Saturn 3 ekran
   değerleri) `convert … GooFile`, sonra `run … <op>.uvtop` (XML: OperationPCBExposure) → `extract` ile katman
-  PNG'si → yeni SL1 → Goo. `pozlama-testi.goo` basamak testi: katman k şeritleri k..6 yakar → 10..60 s. Goo
+  PNG'si → yeni SL1 → Goo. `pozlama-testi.goo` basamak testi `DIY_TEST` = 6 şerit, 60..85 s, 5 s adım: 17 eşit
+  5 s katman, şerit k ilk 12+k katmanda yanar (yazıcı alt katman dışında tek süre kullanır). Kullanıcı: bu film +
+  Saturn 3 Ultra'da **70–80 s ideal** (2026-10-04, kendi deneyimi; ilk 10..60 s testi kaldırıldı). Goo
   başlığındaki tarih DATE'e, tahmini baskı süresi pozlama + 8 s/katman'a sabitlenir (UVtools'un kendi hesabı
   çalıştırmadan çalıştırmaya oynuyor: 337/330 s).
 - **Saturn 3 Ultra (2026-10-04, kullanıcının yazıcısı):** Elegoo yazıcı başka modelin dosyasını format hatasıyla
@@ -287,7 +289,7 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   Ad SL1'in `printerProfile`/`printer_settings_id`'sinden gelir: `set-properties MachineName=` "File was partial
   decoded, a full encode is not possible" hatası veriyor. **Her dosyanın ilk katmanı `DIY_PLACE` = 120 s yalnız
   çerçeve** (alt katman pozlaması): kart o sırada yerleştirilir, bakır kendiliğinden pozlanır (durdur/başlat
-  yok). Bakır dosyaları testteki her süre için: `alt-10s.goo` … `alt-60s.goo` (çift yüzde `ust-…` da);
+  yok). Bakır dosyaları testteki her süre için: `alt-60s.goo` … `alt-85s.goo` (çift yüzde `ust-…` da);
   `DIY_EXPOSURE=25,35` başka süreler. `fab` çerçevenin ekran ortasında ve bakır katmanındakiyle aynı olduğunu
   denetler. Kullanıcı yazıcıda ELEGOO SatelLite açtı: gerek yok, `.goo` USB bellekten basılır.
 - Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
@@ -320,7 +322,7 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - Belirlenimcilik: montaj PDF'lerine eklenen çizimler rastgele UUID alıyordu, KiCad çizim sırası UUID'ye göre →
   `KIID.SeedGenerator` (fab_diy_sheets, fab_print); kicad-cli PDF tarihi `pdf_fix_date` ile DATE'e.
   Tel haritası PDF'i renk azaltmasız (yeşil tel kayboluyordu); tellerin bölgesi otomatik 2x büyütülür.
-- Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-10s … alt-60s, cerceve (üst yok). UVtools katman
+- Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-60s … alt-85s, cerceve (üst yok). UVtools katman
   görüntüsünde çerçeve 157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon

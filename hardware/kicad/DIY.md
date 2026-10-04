@@ -78,15 +78,15 @@ Delikler:
 
 | Dosya | Ne yapar | Süre |
 |---|---|---|
-| `pozlama-testi.goo` | 6 şerit, şerit başına 10 s birikir: 10, 20 … 60 s | 120 s + 6 × 10 s |
-| `alt-10s.goo` … `alt-60s.goo` | alt bakır + çerçeve + pedlerde matkap merkez noktası | 120 s + adındaki süre |
-| `ust-10s.goo` … `ust-60s.goo` | üst bakır, aynalı + çerçeve | 120 s + adındaki süre |
+| `pozlama-testi.goo` | 6 şerit: 60, 65 … 85 s. 5 s'lik eşit pozlamalar birikir | 120 s + 17 × 5 s |
+| `alt-60s.goo` … `alt-85s.goo` | alt bakır + çerçeve + pedlerde matkap merkez noktası | 120 s + adındaki süre |
+| `ust-60s.goo` … `ust-85s.goo` | üst bakır, aynalı + çerçeve | 120 s + adındaki süre |
 | `cerceve.goo` | yalnız hizalama çerçevesi: yerleştirmeyi denemek için, şart değil | 120 s |
 
 Her dosyanın ilk katmanı 2 dakika yalnız hizalama çerçevesini yakar. Kart bu sürede yerleştirilir,
 pozlama sonra kendiliğinden başlar. Dosyayı durdurup yenisini başlatmak gerekmez, kart kaymaz.
 Bakır dosyaları testteki altı süre için ayrı ayrı var: testte en iyi şerit hangisiyse aynı süreli
-dosyayı bas. Başka bir süre için: `DIY_EXPOSURE=25 $PY gen_carrier.py --diy fab` (virgülle birden
+dosyayı bas. Bu filmle Saturn 3 Ultra'da 70–80 s iyi sonuç veriyor, test bu aralığı ortalar. Başka bir süre için: `DIY_EXPOSURE=25 $PY gen_carrier.py --diy fab` (virgülle birden
 çok süre), ya da [UVtools](https://github.com/sn4k3/UVtools)'ta dosyayı aç, **Tools → Edit print
 parameters**, yalnız Exposure time'ı değiştir. Bottom exposure time yerleştirme süresidir.
 
@@ -123,11 +123,11 @@ başlat.
 ölçüldü.
 
 ## 2. Kâğıtla prova
-Hazneyi ve tablayı çıkar. Ekrana beyaz kâğıt koy, `alt-10s.goo`'yu ve `ust-10s.goo`'yu sırayla
-başlat: her biri 2 dakika çerçeve, sonra 10 s desen. Telefon kamerasıyla yukarıdan bak. 405 nm
+Hazneyi ve tablayı çıkar. Ekrana beyaz kâğıt koy, `alt-60s.goo`'yu ve `ust-60s.goo`'yu sırayla
+başlat: her biri 2 dakika çerçeve, sonra 60 s desen. Telefon kamerasıyla yukarıdan bak. 405 nm
 ışığa çıplak gözle uzun bakma.
 - Çerçevenin tamamı ekranda görünmeli.
-- `alt-10s.goo`'da "ALT v1.2", `ust-10s.goo`'da "ÜST v1.2" yazısı **ters** görünmeli. Bakır yüz
+- `alt-60s.goo`'da "ALT v1.2", `ust-60s.goo`'da "ÜST v1.2" yazısı **ters** görünmeli. Bakır yüz
   ekrana bakar, yukarıdan kartın sırtını görürsün. Bir dosyada yazı düz görünüyorsa o dosyanın
   Mirror ayarını değiştir.
 - İki yazı çerçevenin aynı köşesinde olmalı. Öyleyse kart 5. adımda sağdan sola çevrilir.
@@ -157,13 +157,13 @@ Filmin hassasiyeti markadan markaya değişir. `pozlama-testi.goo` altı süreyi
 
 ## 5. Hizala ve pozla
 1. Hazne ve tabla takılı değil. Ekranı alkolle sil.
-2. Testte seçtiğin sürenin alt dosyasını başlat, örneğin `alt-30s.goo`. İlk 2 dakika yalnız
+2. Testte seçtiğin sürenin alt dosyasını başlat, örneğin `alt-75s.goo`. İlk 2 dakika yalnız
    çerçeve yanar. Kartı film yüzü aşağıda, ön kenarı öne bakacak şekilde çerçevenin içine koy.
    Dört kenarda da eşit, ince karanlık boşluk kalsın (0.5 mm). Telefonla yakından bak.
 3. Üstüne düz bir cam ve hafif bir ağırlık koy. Kart ekrana tam otursun ve kaymasın. 2 dakika
    dolunca bakır kendiliğinden pozlanır, bitmesini bekle. Yetişemezsen dosyayı durdur, baştan başlat.
 4. Kartı kitap sayfası çevirir gibi çevir: sol ve sağ kenar yer değiştirir, ön kenar yine önde.
-5. Aynı süreli üst dosyasını başlat, örneğin `ust-30s.goo`, ve kartı aynı şekilde ortala.
+5. Aynı süreli üst dosyasını başlat, örneğin `ust-75s.goo`, ve kartı aynı şekilde ortala.
 
 Sağ ve sol boşluğun eşitliği önemlidir. Çevirme yüzünden sağ-sol kayma iki yüz arasında iki
 katına çıkar: 0.1 mm kayma via'larda 0.2 mm kaçıklık yapar. Via halkası 0.4 mm, buna dayanır.

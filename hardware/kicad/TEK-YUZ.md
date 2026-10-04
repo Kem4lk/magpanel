@@ -61,8 +61,8 @@ pedin hiçbiri bir parçanın altında kalmaz. W2 ise J2 başlığının gövdes
 ## Dosyalar
 | Dosya | İçerik |
 |---|---|
-| `fab-ss/saturn3/pozlama-testi.goo` | 6 şeritli süre testi, 10–60 s |
-| `fab-ss/saturn3/alt-10s.goo` … `alt-60s.goo` | bakır + çerçeve + pedlerde matkap merkez noktası, adındaki süre kadar |
+| `fab-ss/saturn3/pozlama-testi.goo` | 6 şeritli süre testi: 60, 65 … 85 s |
+| `fab-ss/saturn3/alt-60s.goo` … `alt-85s.goo` | bakır + çerçeve + pedlerde matkap merkez noktası, adındaki süre kadar |
 | `fab-ss/saturn3/cerceve.goo` | yalnız hizalama çerçevesi, 120 s. Yerleştirmeyi denemek için, şart değil |
 | `fab-ss/magpanel-carrier-ss-gerber.zip` | B_Cu, Edge_Cuts (`.gko`), Hizalama, PTH/NPTH delik, B_Mask |
 | `fab-ss/magpanel-carrier-ss-teller.pdf` | A4, %100 ölçek: alttan bakış tel haritası, tel listesi, tellerin olduğu bölge büyük |
@@ -74,7 +74,8 @@ pedin hiçbiri bir parçanın altında kalmaz. W2 ise J2 başlığının gövdes
 
 Her `.goo` dosyasının ilk 2 dakikasında yalnız hizalama çerçevesi yanar. Plaket bu sürede
 yerleştirilir, pozlama sonra kendiliğinden başlar. Bakır dosyası testteki altı süre için ayrı ayrı
-var: testte en iyi şerit hangisiyse aynı süreli dosyayı bas.
+var: testte en iyi şerit hangisiyse aynı süreli dosyayı bas. Bu filmle Saturn 3 Ultra'da 70–80 s
+iyi sonuç veriyor, test bu aralığı ortalar.
 
 Dosyalar Saturn 3 Ultra içindir, başlıktaki makine adı `ELEGOO Saturn 3 Ultra`. Yazıcı başka
 modelin dosyasını format hatasıyla reddedebilir. Ekran iki modelde aynıdır. Düz Saturn 3 için
@@ -89,12 +90,12 @@ Edge_Cuts.gko, B_Cu.gbl, Hizalama.gbr ve PTH.drl dosyalarını ekle, Mirror kapa
 1. **Plaket** 150 × 100 mm tek yüz. Eldeki plaket bu ölçüdeyse kesmek gerekmez. Kenarları
    zımparala, bakırı temizle.
 2. **Pozlama testi** aynı: `fab-ss/saturn3/pozlama-testi.goo`.
-3. **Kâğıtla prova.** Ekrana beyaz kâğıt koy, `alt-10s.goo`'yu bas: 2 dakika çerçeve, sonra
-   10 s desen. Desende kart adı ve pin adları **ters** görünmeli: bakır yüz ekrana bakar,
+3. **Kâğıtla prova.** Ekrana beyaz kâğıt koy, `alt-60s.goo`'yu bas: 2 dakika çerçeve, sonra
+   60 s desen. Desende kart adı ve pin adları **ters** görünmeli: bakır yüz ekrana bakar,
    yukarıdan kartın sırtını görürsün. Çerçeve 157 × 107 mm, ekranın ortasındadır. Ekran
    218.88 × 122.88 mm, yanlarda 31 mm, üstte ve altta 8 mm kalır.
 4. **Pozlama.** Tek yüze film lamine et. Testte seçtiğin sürenin dosyasını başlat, örneğin
-   `alt-30s.goo`. İlk 2 dakika yalnız çerçeve yanar: plaketi film yüzü aşağıda çerçevenin
+   `alt-75s.goo`. İlk 2 dakika yalnız çerçeve yanar: plaketi film yüzü aşağıda çerçevenin
    ortasına koy, üstüne cam ve hafif ağırlık. Sonra bakır kendiliğinden pozlanır. Kart çevrilmez.
 5. **Banyo, aşındırma, film sökme** aynı. Kontrolde pin adları bakır yüzde düz okunmalı.
 6. **Delme.** Bakır yüzden, pedlerin ortasından del:

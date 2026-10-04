@@ -2105,11 +2105,13 @@ SATURN3 = {'display_width': 218.88, 'display_height': 122.88, 'display_pixels_x'
 # ayni; duz Saturn 3 icin GOO_MACHINE='ELEGOO Saturn 3'.
 GOO_MACHINE = os.environ.get('GOO_MACHINE', 'ELEGOO Saturn 3 Ultra')
 GOO_MACHINE_Z = 260 if 'Ultra' in GOO_MACHINE else 250
-DIY_TEST = (6, 10)            # pozlama testi: 6 serit, serit basina 10 s -> 10, 20 ... 60 s
+# pozlama testi: serit sayisi, adim, ilk serit (s) -> 60, 65 ... 85 s. Kullanicinin film + Saturn 3 Ultra deneyimi:
+# 70-80 s iyi; test bu araligi ortalar. Normal katman = adim; ilk serit ilk/adim katman isik alir.
+DIY_TEST = (6, 5, 60)
 DIY_PLACE = 120               # s: her dosyanin ilk katmani yalniz cerceveyi yakar, kart bu surede yerlestirilir
 # bakir dosyalari: testteki her sure icin bir dosya (alt-10s.goo ...); DIY_EXPOSURE=25 ya da 25,35 ile baska sureler
 DIY_TIMES = ([float(t) for t in os.environ['DIY_EXPOSURE'].split(',')] if os.environ.get('DIY_EXPOSURE')
-             else [(k + 1) * DIY_TEST[1] for k in range(DIY_TEST[0])])
+             else [DIY_TEST[2] + k * DIY_TEST[1] for k in range(DIY_TEST[0])])
 
 def uvtools(*args):
     r = subprocess.run([UVTOOLS] + [str(a) for a in args], capture_output=True, text=True)
@@ -2187,11 +2189,15 @@ SEG7 = {'0': 'abcdef', '1': 'bc', '2': 'abdeg', '3': 'abcdg', '4': 'bcfg', '5': 
 
 def exposure_test_layers():
     """Pozlama testi: ekran ortasinda DIY_TEST[0] serit. Ilk katman yalniz yerlestirme cercevesi (serit bu sirada
-    konur). Sonraki katman k seritleri k..son yakar, serit k toplam (k+1) adim isik alir. Her seritte sure etiketi
-    (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk (iki yonde: ekran pikseli 19 x 24 um)
-    ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
+    konur). Sonra adim saniyelik esit katmanlar: serit k ilk (ilk/adim + k) katmanda yanar, toplam ilk + k * adim
+    saniye isik alir (esit katman: her yazici alt katman disinda tek pozlama suresi kullanir). Her seritte sure
+    etiketi (film yuzunden duz okunsun diye aynali), 0.2 / 0.25 / 0.3 mm cizgi-bosluk (iki yonde: ekran pikseli
+    19 x 24 um) ve HUB75 pin araligi ornegi: 1.7 mm pedler arasindan 0.25 mm iz."""
     from PIL import Image, ImageDraw
-    n, step = DIY_TEST
+    n, step, first = DIY_TEST
+    base = round(first / step)
+    if base * step != first:
+        raise ValueError('DIY_TEST: ilk serit suresi adimin kati olmali')
     W, H = SATURN3['display_pixels_x'], SATURN3['display_pixels_y']
     sx, sy = W / SATURN3['display_width'], H / SATURN3['display_height']
     bw, bh = 16.0, 24.0                                   # serit (mm)
@@ -2213,7 +2219,7 @@ def exposure_test_layers():
 
     def band(d, k):
         bx = x0 + k * bw
-        label = '%d' % ((k + 1) * step)
+        label = '%d' % (first + k * step)
         for j, ch in enumerate(reversed(label)):         # aynali: sondan basa, soldan saga
             digit(d, ch, bx + 2.0 + j * 3.2, y0 + 1.5)
         for g, gw in enumerate((0.2, 0.25, 0.3)):        # dikey cizgiler (x yonunde bosluk)
@@ -2230,7 +2236,7 @@ def exposure_test_layers():
             rect(d, bx + 9.5, y0 + 15.0 + (m + 0.5) * 2.54 - 0.125, bx + 15.0, y0 + 15.0 + (m + 0.5) * 2.54 + 0.125)
 
     layers = []
-    for i in range(-1, n):                               # -1: yalniz cerceve
+    for i in range(-1, base + n - 1):                    # -1: yalniz cerceve
         im = Image.new('L', (W, H), 0)
         d = ImageDraw.Draw(im)
         g, f = 2.5, DIY_FRAME[1]                          # yerlestirme cercevesi: ~100 x 28 mm serit sigar
@@ -2238,7 +2244,7 @@ def exposure_test_layers():
         rect(d, x0 - g - f, y0 + bh + g, x0 + n * bw + g + f, y0 + bh + g + f)
         rect(d, x0 - g - f, y0 - g, x0 - g, y0 + bh + g)
         rect(d, x0 + n * bw + g, y0 - g, x0 + n * bw + g + f, y0 + bh + g)
-        for k in range(max(i, 0), n if i >= 0 else 0):
+        for k in range(max(i - base + 1, 0), n if i >= 0 else 0):
             band(d, k)
         layers.append(im)
     return layers
