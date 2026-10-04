@@ -1,0 +1,63 @@
+PCB delme makinesi v0 - olculer ve parca sayilari (gen_delme.py)
+
+Taban: 370 x 357 x 18 mm (kontrplak), toplam yukseklik 296 mm
+Hareket: X 160, Y 100, Z 30 mm | ham plaket 160x100, desen <= 143.4 x 89.6 (6.6" LCD)
+Y milleri x = ±122.0, z = 14.0, boy 250 | X milleri y = ±45.0, z = 34.0, boy 262 | Z milleri 2 x 110
+Tabla ust 56.5, plaket ust 61.1 mm | uc asagi 58.9, mandren burnu asagi 87.0 (yukari +30)
+Kayis: X 620 mm, Y 596 mm (kasnak hatve capi 12.73, 20 dis -> 40 mm/tur)
+
+3D baski (stl/):
+   1 x X avara                                      15.4 x   15.4 x    9.0
+   1 x Y avara                                       9.0 x   15.4 x   15.4
+   1 x X kasnak GT2-20                              15.4 x   15.4 x    9.0
+   1 x Y kasnak GT2-20                               9.0 x   15.4 x   15.4
+   4 x Mil tutucu (Y)                               42.0 x   12.0 x   23.0
+   2 x Tabla rulman yuvası                          60.0 x   23.0 x   24.0
+   1 x Uç blok (sağ)                                24.0 x  114.0 x   39.0
+   1 x Uç blok (sol)                                24.0 x  114.0 x   39.0
+   1 x X avara braketi                              20.0 x   20.0 x   13.0
+   1 x X kayis kelepcesi                            20.0 x   10.0 x   15.5
+   1 x X motor braketi                              39.0 x   48.0 x    3.0
+   1 x Y avara braketi                              24.0 x   24.0 x   23.5
+   1 x Y kayis kelepcesi                            16.0 x   20.0 x    4.7
+   1 x Y motor braketi                              26.0 x   44.0 x   41.5
+   1 x Z alt braket                                 74.0 x   27.0 x   10.0
+   1 x Z arabası (spindle kelepçeli)                72.0 x   76.4 x   52.0
+   1 x Z motor köprüsü                              52.0 x   27.0 x   30.5
+   1 x Z üst braket                                 74.0 x   27.0 x   12.0
+
+Kontrplak / MDF:
+   1 x Feda MDF 3 mm                               164.0 x  104.0 x    3.0
+   1 x Kolon (kontrplak 18)                        160.0 x   18.0 x  278.5
+   1 x Taban (kontrplak 18 mm)                     370.0 x  357.0 x   18.0
+   1 x Tabla (kontrplak 9 mm)                      180.0 x  120.0 x    9.0
+   1 x Z plakası (kontrplak 18)                    110.0 x   18.0 x  174.5
+   2 x Yanak (kontrplak 18)                         18.0 x  105.0 x  174.5
+   1 x Çapraz lata (kontrplak 8 mm)                220.0 x   40.0 x    8.0
+
+Satin alinan:
+   1 x X motoru 28BYJ-48                            28.0 x   42.0 x   29.5
+   1 x Y motoru 28BYJ-48                            29.5 x   42.0 x   28.0
+   1 x Z motoru 28BYJ-48                            42.0 x   28.0 x   29.5
+   1 x 775 motor                                    42.0 x   42.0 x   71.0
+   1 x Elektronik (ESP32-S3 + 3x ULN2003 + MOSFET)  135.0 x   36.0 x   22.0
+   1 x Kaplin 5x8                                   19.0 x   19.0 x   25.0
+   2 x GT2 kayis (X)                               290.0 x    1.4 x    6.0
+   2 x GT2 kayis (Y)                                 6.0 x  278.0 x    1.4
+   4 x LM8UU (X)                                    24.0 x   15.0 x   15.0
+   4 x LM8UU (Y)                                    15.0 x   24.0 x   15.0
+   4 x LM8UU (Z)                                    15.0 x   15.0 x   24.0
+   1 x JT0 mandren                                  19.0 x   19.0 x   32.0
+   2 x X mili Ø8                                   262.0 x    8.0 x    8.0
+   2 x Y mili Ø8                                     8.0 x  250.0 x    8.0
+   2 x Z mili Ø8                                     8.0 x    8.0 x  110.0
+   2 x Hizalama pimi Ø3                              3.0 x    3.0 x    9.0
+   1 x Plaket 160x100                              160.0 x  100.0 x    1.6
+   1 x X limit switch                                6.0 x    8.0 x    8.0
+   1 x Y limit switch                                6.0 x    6.0 x    9.0
+   1 x Z limit switch                                8.0 x    8.0 x    8.0
+   1 x T8 trapez mil                                 8.0 x    8.0 x  150.0
+   1 x T8 somun (pirinç)                            22.0 x   22.0 x   15.5
+   1 x Karbür uç (PCB)                               0.8 x    0.8 x   38.1
+
+Kontrol: temiz (cakisma yok)
