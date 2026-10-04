@@ -292,6 +292,15 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
   yok). Bakır dosyaları testteki her süre için: `alt-60s.goo` … `alt-85s.goo` (çift yüzde `ust-…` da);
   `DIY_EXPOSURE=25,35` başka süreler. `fab` çerçevenin ekran ortasında ve bakır katmanındakiyle aynı olduğunu
   denetler. Kullanıcı yazıcıda ELEGOO SatelLite açtı: gerek yok, `.goo` USB bellekten basılır.
+- **Pozitif lak (2026-10-04):** kullanıcı **Positiv 20** kullanıyor (pozitif: ışık alan çözülür; dry film değil).
+  `fab-*/saturn3-pozitif/pozitif-*.goo`: UVtools PCB exposure `InvertColor=true` yalnız kart dış hattının içini
+  çevirir, çerçeve ışıklı kalır (pikselle doğrulandı, `fab` de denetler). Pozitif test: şerit zemini ışıklı, desen
+  karanlık. Banyo NaOH 7 g/L, sökme aseton. Kullanıcı testi atlayıp `pozitif-alt-75s.goo` ile gitti.
+- **Wi-Fi aktarım:** SatelLite Saturn 3 Ultra'ya ağdan göndermiyor ("This printer does not support network
+  transmission"; .goo açarken "convert to 3D model view?" sorusuna **No**). Cassini (github.com/vvuk/cassini)
+  çalışıyor, iki hata yamalandı: `== CurrentStatus.READY` gibi int↔Enum karşılaştırmaları (`.value` eklenir,
+  yoksa yükleme bitince takılır) ve durum ekranında `PrintInfoStatus(0)`. Yazıcı bir yüklemeden sonra ~1 dk yeni
+  bağlantı kabul etmiyor (TimeoutError) → yüklemeler arasında bekle.
 - Kartın doğruluğu donanımda henüz denenmedi: pozlama süresi, aynalama ve hizalama kullanıcının ilk denemesinde
   doğrulanacak.
 
