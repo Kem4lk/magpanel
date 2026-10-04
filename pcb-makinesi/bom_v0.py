@@ -21,12 +21,12 @@ POZ, CNC, ISL, HOT, ELK = ('1 Pozlama', '2 CNC portal', '3 Islak istasyon', '4 H
 # (modul, kalem, ozellik, adet, birim, birim_fiyat|None, satici, url, stok, dogrulandi, not)
 BOM = [
     # --- 1. UV LCD maske pozlama unitesi ---
-    (POZ, 'Mono LCD 10.3" 8K (Aptus)', 'Aptus DBM103M8K01, 7680x4320, ~30 µm, ~228x128 mm (hesap), LTPS, MIPI 50 pin', 2, 'adet', None,
-     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/10-3-inch-8k-7680x4320-mipi-50pin-mono-lcd-screen', 'Numune / teklif', 'hayır',
-     'Üretici kaynağı (yedek parça değil). Fiyat, MOQ, 405 nm geçirgenlik, UV ömrü, cam kalınlığı sorulacak (e-posta taslağı hazır). 150x100 kartı kapsar.'),
+    (POZ, 'Mono LCD 6.6" 4K (Aptus)', 'Aptus DBM066M4K01, 4098x2560, 35 µm, aktif alan 143.43x89.60 mm, MIPI 50 pin (master+slave)', 2, 'adet', None,
+     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/6-6-inch-4k-4098x2560-mono-lcd-display', 'Numune / teklif', 'hayır',
+     'Kullanıcının seçimi (2026-10-04). Desen ≤143x89 mm; ham plaket 160x100, hizalama pimleri kenarda (delme makinesiyle aynı). Fiyat/MOQ/405 nm geçirgenlik sorulacak.'),
     (POZ, 'HDMI → MIPI sürücü kartı (Aptus)', 'Aptus panel için özel HDMI-MIPI kart', 2, 'adet', None,
-     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/10-3-inch-8k-7680x4320-mipi-50pin-mono-lcd-screen', 'Numune / teklif', 'hayır',
-     'Panel MIPI zamanlamasını çözmeden HDMI ile sürülür. Giriş çözünürlüğü/EDID ve mono piksel paketlemesi sorulacak.'),
+     'Aptus Display (Shenzhen, OEM)', 'https://www.aptusdisplay.com/products/6-6-inch-4k-4098x2560-mono-lcd-display', 'Numune / teklif', 'hayır',
+     'Panel MIPI zamanlamasını çözmeden HDMI ile sürülür (6.6" panel için). Giriş çözünürlüğü/EDID ve mono piksel paketlemesi sorulacak.'),
     (POZ, 'Raspberry Pi 5 8 GB', 'Panelin HDMI kaynağı (pozlama görüntüsü); ürün için Compute Module 5', 1, 'adet', 12010.34,
      'Robotistan', 'https://www.robotistan.com/raspberry-pi-5-8gb', 'Stokta', 'evet',
      'Pi 5 4 GB her yerde tükenmiş (~6.900–8.000 TL). Ürün: CM5 2 GB/16 GB 6.228,05 TL stokta + CM5 IO Board 1.260,79 TL (Robotistan).'),
@@ -245,9 +245,9 @@ BOM = [
 
 # Ana listeye girmeyen secenekler: (modul, kalem, ozellik, fiyat|None, satici, url, durum, not)
 ALT = [
-    (POZ, 'Aptus 6.6" 4K mono LCD', 'DBM066M4K01, 4098x2560, 35 µm, aktif alan 143.43x89.60 mm, MIPI 50 pin (master+slave)', None,
-     'Aptus Display', 'https://www.aptusdisplay.com/products/6-6-inch-4k-4098x2560-mono-lcd-display', 'Teklif',
-     'Daha ucuz/yaygın boy ama 150x100 kart SIĞMAZ (en büyük kart ~140x85). HDMI kartı var.'),
+    (POZ, 'Aptus 10.3" 8K mono LCD', 'DBM103M8K01, 7680x4320, ~30 µm, ~228x128 mm (hesap), MIPI 50 pin', None,
+     'Aptus Display', 'https://www.aptusdisplay.com/products/10-3-inch-8k-7680x4320-mipi-50pin-mono-lcd-screen', 'Teklif',
+     'Daha büyük kartlar (150x100 desen) gerekirse.'),
     (POZ, 'Phrozen Sonic Mighty 4K LCD (yedek parça)', '9.3", 3840x2400, ~52 µm', 11280.00,
      '3Dream', 'https://store.3dream.com.tr/products/phrozen-lcd-ekran', 'Stokta',
      'Aptus numunesi gelene kadar deney için; ürüne girmez.'),
@@ -309,7 +309,7 @@ ALT = [
 
 # Turkiye'de bulunamayanlar
 YURTDISI = [
-    (POZ, 'Aptus 10.3" 8K mono LCD + HDMI→MIPI kartı', 'Ürün paneli (numune 2 adet).', 'Aptus Display, Shenzhen: info@aptusdisplay.com (teklif/numune).'),
+    (POZ, 'Aptus 6.6" 4K mono LCD + HDMI→MIPI kartı', 'Ürün paneli (numune 2 adet).', 'Aptus Display, Shenzhen: info@aptusdisplay.com (teklif/numune).'),
     (POZ, 'HDMI sürücü kartlı mono LCD kiti (2K/4K)', 'İlk ışık motoru deneyi; panel arayüzünü çözmeden pozlama.',
      'AliExpress: "mono LCD 4K HDMI driver board" (mono olduğunu kontrol et, çoğu ilan RGB).'),
     (POZ, '405 nm COB LED 10–50 W', 'Kendi ışık motoru tasarımı.', 'AliExpress / LED üreticisi; TR\'de yalnız 395–400 nm 3 W LED var.'),
