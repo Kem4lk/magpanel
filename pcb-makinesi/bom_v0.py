@@ -181,9 +181,9 @@ BOM = [
      'Fiyat gösterilmiyor. Bakırlı atık kanalizasyona dökülmez.'),
 
     # --- 4. Reflow hot plate (kendin yap, urun yolu) ---
-    (HOT, 'Isıtıcı plaka', 'PTC alüminyum 220 V 600 W ~260 °C (ya da silikon ped + 6 mm Al plaka)', 1, 'adet', None,
-     'Amazon.com.tr (Hyuduo)', 'https://www.amazon.com.tr/Hyuduo-istasyonu-lehimleme-plakas%C4%B1-%C3%A7%C4%B1kar%C4%B1c%C4%B1/dp/B09P3RP4ZJ', '?', 'hayır',
-     'Elektronik mağazalarında yok. Ürün için ~200x150 mm 500 W döküm/plaka rezistans teklifi al. Hazır alt.: Sunline 958 130x130, Robotistan 13.145,64 TL (Alternatifler).'),
+    (HOT, 'Isıtıcı plaka', '500 W plaka rezistans, 220 V (ölçü teyit edilecek; hedef ~200x150 mm)', 1, 'adet', 2424.47,
+     'EMS Endüstriyel', '', '?', 'hayır',
+     'Fiyatı kullanıcı buldu (2026-10-04); link/ölçü eklenecek. Üstüne 6 mm alüminyum plaka + termokupl. Hazır alt.: Sunline 958 130x130, Robotistan 13.145,64 TL (Alternatifler).'),
     (HOT, 'Termokupl okuyucu', 'MAX6675 + K-tip prob, SPI', 1, 'adet', 293.39,
      'Robotistan', 'https://www.robotistan.com/max6675-k-type-termokupl-sensor', 'Stokta (149)', 'evet', ''),
     (HOT, 'K-tip prob (vidalı)', 'M6 vidalı, 0–800 °C, 50 cm', 1, 'adet', 150.00,

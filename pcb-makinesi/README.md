@@ -16,9 +16,9 @@ satırları yalnız arama özetinden alındı (pazaryerleri sayfa açmayı engel
 | 1 Pozlama (Aptus 10.3" 8K mono LCD + HDMI kartı (teklif), Raspberry Pi 5, Anycubic UV modülü + Fresnel) | 22.013 + Aptus |
 | 2 CNC portal (HGR15 ray, SFU1204, TMC5160, 400 W ER11 mil) | 37.854 |
 | 3 Islak istasyon (tanklar, ısıtıcı, ORP, peristaltik pompa, kimyasallar, plaket, KKD) | 17.677 |
-| 4 Hot plate (kendin yap; ısıtıcı plaka fiyatı yok) | 3.577 |
+| 4 Hot plate (kendin yap; EMS 500 W plaka rezistans) | 6.002 |
 | 5 Ortak elektronik (ESP32-S3, güç kaynakları, MOSFET, konnektör, acil stop) | 9.523 |
-| **Toplam** (6 kalem fiyatsız: Aptus panel+kart, ısıtıcı plaka, pimler, akrilik, bidon; kargo, cıvata, plakalar hariç) | **~90.600** |
+| **Toplam** (5 kalem fiyatsız: Aptus panel+kart, pimler, akrilik, bidon; kargo, cıvata, plakalar hariç) | **~93.100** |
 
 Kesim ve delme: CNC freze. Lazerler (diyot/CO2) FR4'ü temiz kesemez ve bromlu zehirli duman çıkarır; fiber lazer
 yalnız kimyasalsız bakır izolasyonu için (v2) anlamlı, UV lazer ürün maliyetine uymaz.
