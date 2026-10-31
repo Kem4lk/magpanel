@@ -40,6 +40,10 @@ REV = '1.2'
 DATE = '2026-10-02'
 DIY = False      # --diy: ev yapimi cift yuz surum (dry film + MSLA ekran pozlama); set_variant_diy() tablolari degistirir
 SS = False       # --ss: tek yuz ev yapimi kart, 150 x 100 mm (magpanel-carrier-ss/, fab-ss/); DIY kurallariyla
+SMT = False      # --smt: yalniz SMD, tek yuz, stencil + isitici tabla (magpanel-carrier-smt/, fab-smt/); smt_variant.py
+# Varyant kancalari (sematik ayni netlerle, yalniz ayak izi / parca alani / aciklama yazisi degisir):
+PART_OVERRIDE = {}   # ref -> {'value': ..., 'fields': {...}, 'desc': ...}
+TEXT_SUB = []        # sematik yazilarinda (eski, yeni) degisimleri
 G = 2.54                                     # sematik izgara (100 mil)
 
 # =============================================================================
@@ -248,6 +252,11 @@ class Schematic:
               power=False, justify=('left',), in_bom=True):
         if lib_id not in self.lib_ids:
             self.lib_ids.append(lib_id)
+        ov = PART_OVERRIDE.get(ref, {})
+        value = ov.get('value', value)
+        desc = ov.get('desc', desc)
+        if 'fields' in ov:
+            fields = dict(fields or {}, **ov['fields'])
         inst = Inst(self, lib_id, ref, r4(x), r4(y), rot, mirror)
         flat = self.libs.flat(lib_id)
         lprops = {p[1]: p for p in sexp.find_all(flat, 'property')}
@@ -331,6 +340,8 @@ class Schematic:
                            fx(justify=just), [Sym('uuid'), self._u('l', name)]])
 
     def text(self, s, x, y, size=1.27, bold=False, italic=False, justify=('left', 'bottom')):
+        for a, b in TEXT_SUB:
+            s = s.replace(a, b)
         self.items.append([Sym('text'), s, [Sym('exclude_from_sim'), Sym('no')], [Sym('at'), r4(x), r4(y), 0],
                            fx(size=size, bold=bold, italic=italic, justify=justify), [Sym('uuid'), self._u('t')]])
 
@@ -375,6 +386,8 @@ class Schematic:
         tb = [Sym('title_block'), [Sym('title'), self.tb['title']], [Sym('date'), self.tb['date']],
               [Sym('rev'), self.tb['rev']], [Sym('company'), self.tb['company']]]
         for i, c in enumerate(self.tb.get('comments', []), 1):
+            for a, b in TEXT_SUB:
+                c = c.replace(a, b)
             tb.append([Sym('comment'), i, c])
         return ([Sym('kicad_sch'), [Sym('version'), 20231120], [Sym('generator'), 'eeschema'],
                  [Sym('generator_version'), '8.0'], [Sym('uuid'), self.root], [Sym('paper'), 'A3'], tb,
@@ -2584,16 +2597,23 @@ if __name__ == '__main__':
     ap.add_argument('--diy', action='store_true', help='ev yapimi cift yuz surum (magpanel-carrier-diy/, fab-diy/)')
     ap.add_argument('--ss', action='store_true', help='tek yuz ev yapimi surum, 150 x 100 mm, ust katman gecisleri '
                     'bakir yuzde tel (magpanel-carrier-ss/, fab-ss/)')
+    ap.add_argument('--smt', action='store_true', help='yalniz SMD, tek yuz, stencil + isitici tabla; delik yok '
+                    '(magpanel-carrier-smt/, fab-smt/; kod smt_variant.py)')
     a = ap.parse_args()
-    if a.ss:
+    pcb, route, fab = stage_pcb, stage_route, stage_fab
+    if a.smt:
+        import smt_variant
+        smt_variant.setup(sys.modules[__name__])
+        pcb, route, fab = smt_variant.stage_pcb, smt_variant.stage_route, smt_variant.stage_fab
+    elif a.ss:
         set_variant_ss()
     elif a.diy:
         set_variant_diy()
     if a.stage in ('sch', 'all'):
         stage_sch()
     if a.stage in ('pcb', 'all'):
-        stage_pcb()
+        pcb()
     if a.stage in ('route', 'all'):
-        stage_route()
+        route()
     if a.stage in ('fab', 'all'):
-        stage_fab()
+        fab()

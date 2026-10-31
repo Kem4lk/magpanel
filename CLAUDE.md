@@ -334,6 +334,36 @@ GIF animasyonu istemci tarafında: kareler 0x01 olarak sırayla yollanır
 - Pozlama dosyaları `fab-ss/saturn3/`: pozlama-testi, alt-60s … alt-85s, cerceve (üst yok). UVtools katman
   görüntüsünde çerçeve 157.0 × 107.0 mm, ekran ortasında. Kart donanımda henüz denenmedi.
 
+## Yalnız SMD, deliksiz kart (2026-10-31, `gen_carrier.py --smt`, `hardware/kicad/SMT.md`)
+- Kullanıcı tek yüz kartta delik/delikli parça/kısa devreden yoruldu → **hiç delik yok**, bütün parçalar bakır
+  yüzde (F.Cu = parça yüzü), **el lehimi yok**: UV maske (Saturn) → reçine macun stencil'i → yerleştirme
+  şablonu → ısıtıcı tabla. Kod `hardware/kicad/smt_variant.py` (gen_carrier'a `setup()` ile bağlanır; ana dosyada
+  yalnız `PART_OVERRIDE`/`TEXT_SUB` kancaları ve `--smt` bayrağı). Proje `magpanel-carrier-smt/`, çıktı `fab-smt/`.
+- Kılıflar: 74HCT245 SOIC-20W, pasifler 1206 (%5 → kod 330/103/222), DevKit 2×1x22 SMD dişi + SMD 1xN erkek
+  başlık **evrensel ped** (iki yöne uzanır: Pin1Left/Right ya da bükülmüş düz başlık), SMD IDC 2x8 (pedin iç ucu
+  2.3'e kısaltıldı: gövde altından 4, ped arasından 2 iz), C1 SMD 8x10.5, J1 SMD DC jak (PJ-036AH-SMT, NPTH pimi
+  silindi, ped 3 → '2' GND). Kullanıcı seçti: reçine stencil, UV maske, DC jak.
+- **Bütün izler sabit (Freerouting yok, belirlenimci).** HUB75 sırası: 33R gövdesi altında iki şerit (E, CLK
+  tampon tarafı; LAT2, LAT3 konnektör tarafı), E U3 gövdesi altından; LAT2/LAT3 başlıkların 13-15 aralığından.
+  GND 16 başlıklara alttan dökümle; GND 4 zinciri J4'ün ötesinden J4.16'ya.
+- **Sensör topolojisi:** EXP pin sırası (3V3,GND,IO43,IO44,IO38) tek katmanda bir kesişme zorunlu → IO38 DevKit
+  altından halka; J5.1/J6.3 3V3'ü **JP1 (0 ohm 1206, şematikte yok, FP_BOARD_ONLY)** ile IO38 üstünden. GND sensör
+  pinlerine sağdaki kenar hattından; 3V3 ve sinyaller soldan. Merdivende LDR-MIC, CLK-DT, DT-SW, SW-3V3 arası
+  1.4 mm (halka içindeki R7/C5–C7 GND'si dökümle buradan).
+- **KiCad 8 tuzakları:** 0 ohm'u bağlantı sayan yol yok (aynı numaralı iki ped de, iki parçalı özel ped de
+  [`padstack_invalid`, kapatılamaz hata], B.Cu'lu SMD ped de olmuyor). Çözüm: `route` JP1'in iki ucu arasındaki
+  bağlanmamışı `.kicad_pro` `board.design_settings.drc_exclusions`'a yazar
+  (`unconnected_items|<ilk öğe x nm>|<y nm>|<uuid1>|<uuid2>`, sıra `--severity-all` JSON'undaki gibi);
+  DRC `--severity-error --severity-warning` ile (istisna hariç) sayılır, `fab` tam 1 istisna olduğunu denetler.
+  ERROR_LOC enum'u Python'a açık değil: yazı → çokgen çağrıları çalışmıyor (STL yazıları PIL ile pikselden).
+  Yeni container'da `~/.config/kicad/8.0/sym-lib-table` yoksa ERC 104 lib_symbol_issues verir → şablondan kopyala.
+- Çıktılar: bakır `saturn3/bakir-200..250s.goo` (+test; kullanıcı Bungard pozitif lak 230 s), maske
+  `maske-60..360s.goo` (+test; ped açıklığı karanlık, maske genişlemesi 0.1), F katmanları aynalı. STL (manifold3d,
+  `pip install manifold3d`): macun stencil 0.2 mm + kartı saran dudak, yerleştirme şablonu (courtyard yuvası,
+  C1 pahlı/kutuplu yuva, oyma değer kodu + 1/K/+, ayaklar, büyük konnektörlerde yalnız ped açıklığı), SOIC deneme.
+  Şablon için courtyard'lar arası ≥1.0 mm (DRU `sablon_duvari`). Renkli yerleşim PDF'i (1:1 + iki yarı 2×) ve
+  Komponentci arama adlı BOM (site 503 verdi, stok doğrulanmadı). Donanımda henüz denenmedi.
+
 ## Flicker self-test (0x0F) — teşhis/kalibrasyon
 Web UI "Görüntü ayarları" → **Flicker testi (panele)** butonu (ya da WS `[0x0F]`)
 firmware-tarafı otomatik bir desen dizisini başlatır (`main.cpp` `FT_SEQ`/`ftLoop`).

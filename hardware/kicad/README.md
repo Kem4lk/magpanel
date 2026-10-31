@@ -27,6 +27,9 @@ gerber üretilmez.
   soket sıralarının iç tarafında bakırda yazılı. Anlatım: [`TEK-YUZ.md`](TEK-YUZ.md).
 - Çift yüz, 100 × 63.5 mm: kaplamasız delik, SMD'ler altta, 33 telli via. Anlatım:
   [`DIY.md`](DIY.md).
+- Yalnız SMD, tek yüz, 150 × 100 mm, **delik yok**: bütün parçalar bakır yüzde; UV lehim maskesi,
+  reçine macun stencil'i, yerleştirme şablonu, ısıtıcı tabla. Tel yok, bir 0 Ω köprü. Anlatım:
+  [`SMT.md`](SMT.md).
 
 ## Dosyalar
 | Yol | İçerik |
@@ -42,6 +45,7 @@ gerber üretilmez.
 | `fab/magpanel-carrier-1to1.pdf` | 1:1 yerleşim testi (A4, ölçek çubuklu) |
 | `magpanel-carrier-ss/`, `fab-ss/` | ev yapımı tek yüz sürüm, 150 × 100 mm, bkz. [`TEK-YUZ.md`](TEK-YUZ.md) |
 | `magpanel-carrier-diy/`, `fab-diy/` | ev yapımı çift yüz sürüm, bkz. [`DIY.md`](DIY.md) |
+| `magpanel-carrier-smt/`, `fab-smt/` | ev yapımı yalnız SMD sürüm, deliksiz, bkz. [`SMT.md`](SMT.md); kodu `smt_variant.py` |
 | `img/` | şematik ve kart görselleri |
 
 Şematik: [`img/schematic.png`](img/schematic.png) · Alt yüz: [`img/pcb-bottom.png`](img/pcb-bottom.png)
@@ -105,6 +109,7 @@ $PY gen_carrier.py fab     # ERC/DRC kapısı + gerber/delik/BOM/CPL/PDF + görs
 $PY gen_carrier.py all     # hepsi sırayla
 $PY gen_carrier.py --ss all    # ev yapımı tek yüz: magpanel-carrier-ss/ ve fab-ss/ (TEK-YUZ.md)
 $PY gen_carrier.py --diy all   # ev yapımı çift yüz: magpanel-carrier-diy/ ve fab-diy/ (DIY.md)
+$PY gen_carrier.py --smt all   # yalnız SMD: magpanel-carrier-smt/ ve fab-smt/ (SMT.md)
 ```
 
 - `route` Freerouting jar'ını yoksa `work/` altına indirir (yaklaşık 67 MB).

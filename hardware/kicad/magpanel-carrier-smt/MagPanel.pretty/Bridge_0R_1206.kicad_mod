@@ -1,0 +1,175 @@
+(footprint "Bridge_0R_1206"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(descr "0 ohm 1206 kopru (tek yuz kartta iz gecisi). Iki ped tek ped numarasi: KiCad baglantiyi direncin icinden sayar. Govde altindan bir iz gecer.")
+	(tags "jumper bridge 0R 1206")
+	(property "Reference" "REF**"
+		(at 0 -1.8 0)
+		(layer "F.SilkS")
+		(uuid "28034bde-c99f-4822-830b-effd86e6e179")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "0R"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "74c9fd76-1ee1-4266-b082-98dfe27a7ff9")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Footprint" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f9341cfc-a824-4e1e-b96d-60c9c089825c")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "975cd49a-0dae-4098-af3d-911d4b13b546")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "2bbe949c-c8bb-4d36-9f0b-4b7ed425daaf")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_line
+		(start -2.28 -1.12)
+		(end 2.28 -1.12)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "430ca2c4-9ce7-4eb5-9a07-a82094637f4b")
+	)
+	(fp_line
+		(start -2.28 1.12)
+		(end -2.28 -1.12)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "86594745-3094-4661-9bd3-c45410743f1c")
+	)
+	(fp_line
+		(start 2.28 -1.12)
+		(end 2.28 1.12)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "97f385f9-64ca-4a61-a168-a0a654a875b4")
+	)
+	(fp_line
+		(start 2.28 1.12)
+		(end -2.28 1.12)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "26d0b7d2-154c-4486-bb46-bfb874104213")
+	)
+	(fp_line
+		(start -1.6 -0.8)
+		(end 1.6 -0.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "29cf0727-922f-4689-aae3-183fd2a0c4f4")
+	)
+	(fp_line
+		(start -1.6 0.8)
+		(end -1.6 -0.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "255e36b2-e702-4f00-adc0-00dfff9789e7")
+	)
+	(fp_line
+		(start 1.6 -0.8)
+		(end 1.6 0.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "d77e5ca5-3223-45b6-b5f5-b2d90b6a3b15")
+	)
+	(fp_line
+		(start 1.6 0.8)
+		(end -1.6 0.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.Fab")
+		(uuid "2ee63535-35f4-408b-bff9-e60d4cfb0e5f")
+	)
+	(pad "" smd rect
+		(at -1.4625 0)
+		(size 1 1.6)
+		(layers "F.Paste")
+		(thermal_bridge_angle 45)
+		(uuid "11ed6ab6-37b3-409d-afd8-985a6e1ab101")
+	)
+	(pad "" smd rect
+		(at 1.4625 0)
+		(size 1 1.6)
+		(layers "F.Paste")
+		(thermal_bridge_angle 45)
+		(uuid "a4543e14-4a54-4ec7-8741-9b6eba1e6250")
+	)
+	(pad "1" smd rect
+		(at -1.4625 0)
+		(size 1.125 1.75)
+		(layers "F.Cu" "F.Mask")
+		(thermal_bridge_angle 45)
+		(uuid "238184a5-d6f8-4a39-a820-31bbe649cbe7")
+	)
+	(pad "2" smd rect
+		(at 1.4625 0)
+		(size 1.125 1.75)
+		(layers "F.Cu" "F.Mask")
+		(thermal_bridge_angle 45)
+		(uuid "3ebf8154-f851-45bf-a3ad-40473fb48dc2")
+	)
+)
