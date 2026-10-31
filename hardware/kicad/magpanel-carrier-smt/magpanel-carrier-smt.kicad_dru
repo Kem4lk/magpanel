@@ -1,0 +1,7 @@
+(version 1)
+# gen_carrier.py --smt uretir. Tek yuz, yalniz SMD: termal kollarin bir kismi iz arasinda kalabilir.
+(rule "termal_tek_kol"
+  (constraint min_resolved_spokes 1))
+# Yerlestirme sablonu: parca yuvalari arasinda >= 1 mm duvar (courtyard'lar arasi >= 1.0 mm)
+(rule "sablon_duvari"
+  (constraint courtyard_clearance (min 1.0mm)))
